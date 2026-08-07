@@ -56,17 +56,20 @@ export default function Header({
             onClick={onEditWallet}
             aria-label={`Editar moedas de ${player.name}`}
           >
-            <span className="gold-pill__coin">
-              <span className="gold-pill__value gold-pill__value--gold">{player.gold}</span>
-              <span className="coin-dot coin-dot--gold" />
-            </span>
-            <span className="gold-pill__coin">
-              <span className="gold-pill__value gold-pill__value--silver">{player.silver}</span>
-              <span className="coin-dot coin-dot--silver" />
-            </span>
-            <span className="gold-pill__coin">
-              <span className="gold-pill__value gold-pill__value--copper">{player.copper}</span>
-              <span className="coin-dot coin-dot--copper" />
+            <span className="gold-pill__label">Bolsa</span>
+            <span className="gold-pill__coins">
+              <span className="gold-pill__coin">
+                <span className="gold-pill__value gold-pill__value--gold">{player.gold}</span>
+                <span className="coin-dot coin-dot--gold" />
+              </span>
+              <span className="gold-pill__coin">
+                <span className="gold-pill__value gold-pill__value--silver">{player.silver}</span>
+                <span className="coin-dot coin-dot--silver" />
+              </span>
+              <span className="gold-pill__coin">
+                <span className="gold-pill__value gold-pill__value--copper">{player.copper}</span>
+                <span className="coin-dot coin-dot--copper" />
+              </span>
             </span>
           </button>
         </div>

@@ -1,11 +1,13 @@
 import { useMemo } from 'react'
 import ItemRow from '../components/ItemRow.jsx'
 import Stepper from '../components/Stepper.jsx'
-import { CartIcon } from '../components/Icons.jsx'
+import { PriceBadges } from '../components/Coins.jsx'
+import { ArrowRightIcon } from '../components/Icons.jsx'
 import { useStore } from '../state/store.jsx'
 import { CATEGORY_ORDER, categoryLabel } from '../data/catalog.js'
 import { groupInventory, matchesContent, matchesFilters, matchesSearch, resolveItem } from '../lib/items.js'
-import { formatCopper, toCopper } from '../lib/money.js'
+import { toCopper } from '../lib/money.js'
+import { plural } from '../lib/text.js'
 
 export default function ShopScreen({ player, shop, filters, openId, onToggle }) {
   const { state, dispatch } = useStore()
@@ -31,7 +33,9 @@ export default function ShopScreen({ player, shop, filters, openId, onToggle }) 
     .map(([itemId, qty]) => ({ item: resolveItem(state, itemId), qty }))
     .filter((line) => line.item && line.qty > 0)
   const totalCp = lines.reduce((sum, line) => sum + line.item.priceCp * line.qty, 0)
-  const affordable = toCopper(player) >= totalCp
+  const itemCount = lines.reduce((sum, line) => sum + line.qty, 0)
+  const walletCp = toCopper(player)
+  const affordable = walletCp >= totalCp
 
   if (!shop) {
     return <div className="empty">Nenhuma loja cadastrada.{'\n'}O mestre cria as lojas na aba Mestre.</div>
@@ -59,14 +63,26 @@ export default function ShopScreen({ player, shop, filters, openId, onToggle }) 
                   open={openId === item.id}
                   onToggle={() => onToggle(item.id)}
                   cart={
-                    <Stepper
-                      size={24}
-                      value={qty}
-                      canDec={qty > 0}
-                      onDec={() => dispatch({ type: 'CART_SET', itemId: item.id, qty: qty - 1 })}
-                      onInc={() => dispatch({ type: 'CART_SET', itemId: item.id, qty: qty + 1 })}
-                      label="itens no carrinho"
-                    />
+                    qty > 0 ? (
+                      <div className="item__cart-pill">
+                        <Stepper
+                          size={24}
+                          value={qty}
+                          canDec={qty > 0}
+                          onDec={() => dispatch({ type: 'CART_SET', itemId: item.id, qty: qty - 1 })}
+                          onInc={() => dispatch({ type: 'CART_SET', itemId: item.id, qty: qty + 1 })}
+                          label="itens no carrinho"
+                        />
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="item__add-btn"
+                        onClick={() => dispatch({ type: 'CART_SET', itemId: item.id, qty: 1 })}
+                      >
+                        Comprar
+                      </button>
+                    )
                   }
                 />
               )
@@ -76,16 +92,32 @@ export default function ShopScreen({ player, shop, filters, openId, onToggle }) 
       )}
 
       {lines.length ? (
-        <button
-          type="button"
-          className="fab fab--wide"
-          style={{ opacity: affordable ? 1 : 0.5 }}
-          onClick={() => affordable && dispatch({ type: 'BUY_CART' })}
-          aria-label={`Comprar tudo por ${formatCopper(totalCp)}`}
-        >
-          <CartIcon />
-          Comprar tudo · {formatCopper(totalCp)}
-        </button>
+        <div className="shop-summary">
+          <div className="shop-summary__row">
+            <div className="shop-summary__col">
+              <div className="shop-summary__label">Carteira</div>
+              <PriceBadges totalCp={walletCp} />
+            </div>
+            <ArrowRightIcon />
+            <div className="shop-summary__col shop-summary__col--right">
+              <div className={`shop-summary__label${affordable ? '' : ' shop-summary__label--danger'}`}>
+                Depois da compra
+              </div>
+              <PriceBadges totalCp={Math.max(0, walletCp - totalCp)} />
+            </div>
+          </div>
+          <div className="shop-summary__divider" />
+          <button
+            type="button"
+            className="shop-summary__buy"
+            style={{ opacity: affordable ? 1 : 0.45 }}
+            onClick={() => affordable && dispatch({ type: 'BUY_CART' })}
+            aria-label={`Comprar ${plural(itemCount, 'item', 'itens')}`}
+          >
+            <span className="shop-summary__buy-label">Comprar {plural(itemCount, 'item', 'itens')}</span>
+            <PriceBadges totalCp={totalCp} />
+          </button>
+        </div>
       ) : null}
     </>
   )

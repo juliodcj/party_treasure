@@ -348,14 +348,6 @@ export function reducer(state, action) {
         ),
       }
 
-    case 'RENAME_SHOP':
-      return {
-        ...state,
-        shops: state.shops.map((shop) =>
-          shop.id === action.shopId ? { ...shop, name: action.name } : shop,
-        ),
-      }
-
     case 'REMOVE_SHOP': {
       const shops = state.shops.filter((shop) => shop.id !== action.shopId)
       const activeShopId =

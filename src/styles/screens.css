@@ -41,17 +41,31 @@
   color: var(--accent-ink);
 }
 
-/* Pílula branca com as três moedas do personagem em foco */
+/* Cartão branco com as três moedas do personagem em foco, sob o rótulo "Bolsa" */
 .gold-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  background: var(--surface);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: var(--r-xl);
+  padding: 6px 12px 7px;
+  box-shadow: var(--shadow-pill);
+  flex-shrink: 0;
+  text-align: left;
+}
+
+.gold-pill__label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-inactive);
+}
+
+.gold-pill__coins {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--surface);
-  border: 1px solid rgba(0, 0, 0, 0.07);
-  border-radius: var(--r-pill);
-  padding: 8px 14px;
-  box-shadow: var(--shadow-pill);
-  flex-shrink: 0;
 }
 
 .gold-pill__coin {
@@ -93,6 +107,15 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Mesma linha do seletor de loja, mas o Inventário só mostra o nome, sem menu */
+.shop-picker__name {
+  display: inline-flex;
+  align-items: center;
   font-size: 16px;
   font-weight: 700;
   color: var(--text);
@@ -164,6 +187,29 @@
 
 .filters__row .icon-btn {
   flex-shrink: 0;
+}
+
+.filters__row .search {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Botão de alternar filtros: funil que revela tipo/nível ao lado da busca */
+.filters__toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--line-field);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.filters__toggle--on {
+  background: var(--accent-tint);
+  border-color: var(--accent-tint);
 }
 
 /* Botão de nível tickável: mesma cara do <select> ao lado, com popover próprio */
@@ -325,8 +371,8 @@
 .item__qty {
   font-size: 11px;
   font-weight: 700;
-  color: var(--accent-ink);
-  background: var(--accent-tint);
+  color: var(--text-muted);
+  background: var(--surface-muted);
   padding: 1px 6px;
   border-radius: var(--r-pill);
   flex-shrink: 0;
@@ -347,6 +393,115 @@
   padding: 2px 12px 12px;
   border-top: 1px solid var(--line);
   margin-top: 2px;
+}
+
+/* Pílula "Comprar" — item da Loja ainda fora do carrinho */
+.item__add-btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  background: var(--accent-tint);
+  color: var(--accent-ink);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Stepper do item da Loja, envolto numa pílula quando já está no carrinho */
+.item__cart-pill {
+  display: flex;
+  align-items: center;
+  background: var(--accent-tint);
+  border-radius: var(--r-pill);
+  padding: 3px;
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------- resumo da Loja */
+
+/* Cartão flutuante: carteira agora -> depois da compra, e o botão de comprar */
+.shop-summary {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(var(--nav-h) + 12px + env(safe-area-inset-bottom));
+  z-index: 30;
+  max-width: 488px;
+  margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-2xl);
+  box-shadow: var(--shadow-modal);
+  padding: 12px 14px;
+}
+
+@media (min-width: 520px) {
+  .shop-summary {
+    left: calc(50% - 260px + 16px);
+    right: calc(50% - 260px + 16px);
+  }
+}
+
+.shop-summary__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.shop-summary__col {
+  flex: 1;
+  min-width: 0;
+}
+
+.shop-summary__col--right {
+  text-align: right;
+}
+
+.shop-summary__label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-fainter);
+  white-space: nowrap;
+  margin-bottom: 4px;
+}
+
+.shop-summary__label--danger {
+  color: var(--danger);
+}
+
+.shop-summary__col--right .coin-badges {
+  justify-content: flex-end;
+}
+
+.shop-summary__divider {
+  height: 1px;
+  background: var(--line);
+  margin: 11px 0;
+}
+
+.shop-summary__buy {
+  width: 100%;
+  height: 48px;
+  border-radius: var(--r-lg);
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+
+.shop-summary__buy-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.shop-summary__buy .coin-badge__amount {
+  color: #fff;
 }
 
 .item__meta {

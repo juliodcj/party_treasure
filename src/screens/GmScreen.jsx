@@ -341,14 +341,14 @@ function PlayerCard({ player, canDelete, onDelete }) {
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               type="button"
-              className="btn btn--neutral btn--block"
+              className="btn btn--neutral btn--wide"
               onClick={() => setPanel(null)}
             >
               Cancelar
             </button>
             <button
               type="button"
-              className="btn btn--solid btn--block"
+              className="btn btn--solid btn--wide"
               onClick={() => {
                 dispatch({
                   type: 'GIVE_COINS',
@@ -401,14 +401,14 @@ function PlayerCard({ player, canDelete, onDelete }) {
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               type="button"
-              className="btn btn--neutral btn--block"
+              className="btn btn--neutral btn--wide"
               onClick={() => setPanel(null)}
             >
               Cancelar
             </button>
             <button
               type="button"
-              className="btn btn--solid btn--block"
+              className="btn btn--solid btn--wide"
               disabled={!hasDraft}
               onClick={() => {
                 for (const [itemId, qty] of Object.entries(drafts)) {
@@ -483,14 +483,9 @@ function ShopCard({ shop, isOpen, onToggle, onDelete, onEdit }) {
     <div className="card card--folder">
       <div className="gm__card-head">
         <div style={{ flex: 1, minWidth: 0 }}>
-          <input
-            className="inline-input"
-            value={shop.name}
-            onChange={(event) =>
-              dispatch({ type: 'RENAME_SHOP', shopId: shop.id, name: event.target.value })
-            }
-            aria-label="Nome da loja"
-          />
+          <button type="button" className="inline-input" onClick={onToggle} aria-expanded={isOpen}>
+            {shop.name}
+          </button>
           <div className="folder__count">
             {plural(shop.itemIds.length, 'item cadastrado', 'itens cadastrados')}
           </div>
