@@ -1,0 +1,20 @@
+{
+  "name": "party-treasure",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Gerenciador de inventario, dinheiro e lojas para mesas de Pathfinder 2e",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.5",
+    "vite": "^8.2.1"
+  }
+}

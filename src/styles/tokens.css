@@ -1,0 +1,58 @@
+/* Tokens visuais. Tudo que for cor, espaço ou raio sai daqui. */
+
+:root {
+  /* Superfícies — preto quente de pergaminho velho */
+  --bg: #17140f;
+  --surface: #201c15;
+  --surface-2: #2a251c;
+  --surface-3: #342d22;
+  --line: #3b3327;
+  --line-strong: #4d4231;
+
+  /* Texto */
+  --text: #efe6d6;
+  --text-muted: #a2937b;
+  --text-faint: #7a6d59;
+
+  /* Moedas */
+  --gold: #d9a441;
+  --silver: #b9c2cc;
+  --copper: #c07445;
+
+  /* Semânticas */
+  --accent: #c8a24a;
+  --accent-soft: rgba(200, 162, 74, 0.16);
+  --danger: #cd5b50;
+  --danger-soft: rgba(205, 91, 80, 0.16);
+  --ok: #7aa860;
+  --ok-soft: rgba(122, 168, 96, 0.16);
+
+  /* Espaço */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+
+  /* Formas */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+
+  /* Tipografia */
+  --fs-xs: 11px;
+  --fs-sm: 13px;
+  --fs-md: 15px;
+  --fs-lg: 18px;
+  --fs-xl: 22px;
+
+  /* Alvo mínimo de toque no Android */
+  --touch: 44px;
+
+  --header-h: 112px;
+  --nav-h: 60px;
+
+  --shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
