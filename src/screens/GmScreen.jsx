@@ -341,14 +341,14 @@ function PlayerCard({ player, canDelete, onDelete }) {
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               type="button"
-              className="btn btn--neutral btn--block"
+              className="btn btn--neutral btn--wide"
               onClick={() => setPanel(null)}
             >
               Cancelar
             </button>
             <button
               type="button"
-              className="btn btn--solid btn--block"
+              className="btn btn--solid btn--wide"
               onClick={() => {
                 dispatch({
                   type: 'GIVE_COINS',
@@ -401,14 +401,14 @@ function PlayerCard({ player, canDelete, onDelete }) {
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               type="button"
-              className="btn btn--neutral btn--block"
+              className="btn btn--neutral btn--wide"
               onClick={() => setPanel(null)}
             >
               Cancelar
             </button>
             <button
               type="button"
-              className="btn btn--solid btn--block"
+              className="btn btn--solid btn--wide"
               disabled={!hasDraft}
               onClick={() => {
                 for (const [itemId, qty] of Object.entries(drafts)) {
