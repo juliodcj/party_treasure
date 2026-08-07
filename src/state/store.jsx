@@ -1,8 +1,11 @@
 import { createContext, useContext, useEffect, useMemo, useReducer } from 'react'
 import { reducer } from './reducer.js'
+import { withHistory } from './history.js'
 import { createInitialState } from './initialState.js'
 import { migrate } from './migrations.js'
 import { STORAGE_KEY } from '../config.js'
+
+const reducerWithHistory = withHistory(reducer)
 
 const StoreContext = createContext(null)
 
@@ -43,7 +46,7 @@ function loadState() {
 }
 
 export function StoreProvider({ children }) {
-  const [state, dispatch] = useReducer(reducer, null, loadState)
+  const [state, dispatch] = useReducer(reducerWithHistory, null, loadState)
 
   useEffect(() => {
     try {

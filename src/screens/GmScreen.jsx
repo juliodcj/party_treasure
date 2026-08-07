@@ -32,6 +32,7 @@ export default function GmScreen() {
         onCreateShop={() => setShopEditor(null)}
         onEditShop={(shop) => setShopEditor(shop)}
       />
+      <HistorySection />
 
       {deleting ? (
         <DeleteConfirmSheet target={deleting} onClose={() => setDeleting(null)} />
@@ -41,6 +42,110 @@ export default function GmScreen() {
         <ShopEditScreen shop={shopEditor} onClose={() => setShopEditor(undefined)} />
       ) : null}
     </div>
+  )
+}
+
+/* -------------------------------------------------------------- histórico */
+
+function formatHistoryTime(at) {
+  return new Date(at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+}
+
+function HistorySection() {
+  const { state, dispatch } = useStore()
+  const [confirming, setConfirming] = useState(null) // { entryId, label, count }
+  const [clearing, setClearing] = useState(false)
+
+  const total = state.history.length
+  const entries = [...state.history].reverse() // mais recente primeiro
+
+  return (
+    <section>
+      <div className="gm__section-head">
+        <h2 className="gm__section-title">Histórico</h2>
+        {total ? (
+          <button type="button" className="link link--muted" onClick={() => setClearing(true)}>
+            Limpar
+          </button>
+        ) : null}
+      </div>
+
+      <div className="card card--folder">
+        {entries.length === 0 ? (
+          <div className="empty" style={{ padding: '24px 16px' }}>
+            Nenhuma alteração recente.
+          </div>
+        ) : (
+          <div className="gm__list" style={{ gap: 0, padding: '4px 14px' }}>
+            {entries.map((entry, position) => {
+              const originalIndex = total - 1 - position
+              const count = total - originalIndex
+              return (
+                <div
+                  className="gm__row"
+                  key={entry.id}
+                  style={{
+                    padding: '10px 0',
+                    borderTop: position > 0 ? '1px solid var(--line)' : 'none',
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13.5, color: 'var(--text)' }}>{entry.label}</div>
+                    <div style={{ fontSize: 11.5, color: 'var(--text-faint)', marginTop: 1 }}>
+                      {formatHistoryTime(entry.at)}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn--neutral"
+                    style={{ fontSize: 12, padding: '6px 12px', flexShrink: 0 }}
+                    onClick={() => setConfirming({ entryId: entry.id, label: entry.label, count })}
+                  >
+                    Reverter
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {confirming ? (
+        <Sheet center onClose={() => setConfirming(null)}>
+          <div className="sheet__question">
+            {confirming.count === 1
+              ? `Reverter "${confirming.label}"?`
+              : `Reverter até "${confirming.label}"? Isso também desfaz as ${confirming.count - 1} alterações mais recentes depois dela.`}
+          </div>
+          <SheetActions
+            onCancel={() => setConfirming(null)}
+            onConfirm={() => {
+              dispatch({ type: 'UNDO_TO', entryId: confirming.entryId })
+              setConfirming(null)
+            }}
+            confirmLabel="Reverter"
+            confirmVariant="danger"
+          />
+        </Sheet>
+      ) : null}
+
+      {clearing ? (
+        <Sheet center onClose={() => setClearing(false)}>
+          <div className="sheet__question">
+            Limpar o histórico? Isso só apaga a lista — não desfaz nada que já foi feito.
+          </div>
+          <SheetActions
+            onCancel={() => setClearing(false)}
+            onConfirm={() => {
+              dispatch({ type: 'CLEAR_HISTORY' })
+              setClearing(false)
+            }}
+            confirmLabel="Limpar"
+            confirmVariant="danger"
+          />
+        </Sheet>
+      ) : null}
+    </section>
   )
 }
 
