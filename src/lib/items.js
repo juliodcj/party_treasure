@@ -1,5 +1,6 @@
 import { CATALOG, CATEGORY_ORDER } from '../data/catalog.js'
 import { parseBulk } from './bulk.js'
+import { sourceCategory } from './sourceCategory.js'
 
 let counter = 0
 /** Id local estável o bastante para uma mesa; o servidor da Fase 3 assume isso depois. */
@@ -50,9 +51,26 @@ export function matchesSearch(item, search) {
   )
 }
 
-export function matchesFilters(item, { category = 'all', level = 'all' } = {}) {
+export function matchesFilters(item, { category = 'all', levels = [] } = {}) {
   if (category !== 'all' && item.category !== category) return false
-  if (level !== 'all' && String(item.level ?? 0) !== String(level)) return false
+  if (levels.length && !levels.includes(item.level ?? 0)) return false
+  return true
+}
+
+/**
+ * Filtro de conteúdo (config da mesa, persistida): livros que o mestre
+ * possui + remaster/legado. Item sem `source` (manual, campanha) sempre
+ * passa — é da mesa, não de um livro.
+ */
+export function matchesContent(item, settings) {
+  const { ownedCategories = [], remasterFilter = 'all' } = settings ?? {}
+  if (!item.source) return true
+  if (ownedCategories.length) {
+    const category = sourceCategory(item.source.title)
+    if (category && !ownedCategories.includes(category)) return false
+  }
+  if (remasterFilter === 'remaster' && item.source.remaster !== true) return false
+  if (remasterFilter === 'legacy' && item.source.remaster !== false) return false
   return true
 }
 

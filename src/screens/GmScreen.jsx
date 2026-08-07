@@ -9,6 +9,7 @@ import { useStore } from '../state/store.jsx'
 import {
   availableLevels,
   libraryItems,
+  matchesContent,
   matchesFilters,
   matchesSearch,
   resolveItem,
@@ -356,7 +357,10 @@ function ShopCard({ shop, isOpen, onToggle, onDelete, onEdit }) {
     [state, shop.itemIds],
   )
   const rows = stocked.filter(
-    (item) => matchesSearch(item, filters.search) && matchesFilters(item, filters),
+    (item) =>
+      matchesSearch(item, filters.search) &&
+      matchesFilters(item, filters) &&
+      matchesContent(item, state.settings),
   )
 
   return (

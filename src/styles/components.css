@@ -136,6 +136,14 @@
   border-color: var(--accent);
 }
 
+.chip--sm {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 3px;
+  min-width: 30px;
+  text-align: center;
+}
+
 /* Lista vertical de personagens clicáveis, para escolher o destino de um envio */
 .target-list {
   display: flex;

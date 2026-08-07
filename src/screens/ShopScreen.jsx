@@ -4,7 +4,7 @@ import Stepper from '../components/Stepper.jsx'
 import { CartIcon } from '../components/Icons.jsx'
 import { useStore } from '../state/store.jsx'
 import { CATEGORY_ORDER, categoryLabel } from '../data/catalog.js'
-import { groupInventory, matchesFilters, matchesSearch, resolveItem } from '../lib/items.js'
+import { groupInventory, matchesContent, matchesFilters, matchesSearch, resolveItem } from '../lib/items.js'
 import { formatCopper, toCopper } from '../lib/money.js'
 
 export default function ShopScreen({ player, shop, filters, openId, onToggle }) {
@@ -16,7 +16,10 @@ export default function ShopScreen({ player, shop, filters, openId, onToggle }) 
   }, [state, shop])
 
   const visible = stock.filter(
-    (item) => matchesSearch(item, filters.search) && matchesFilters(item, filters),
+    (item) =>
+      matchesSearch(item, filters.search) &&
+      matchesFilters(item, filters) &&
+      matchesContent(item, state.settings),
   )
   // A loja usa os mesmos grupos do inventário, para a lista ler igual.
   const grouped = useMemo(

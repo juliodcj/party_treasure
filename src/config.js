@@ -4,5 +4,5 @@
  */
 export const SELL_RATE = 0.5
 
-/** Chave do armazenamento local. Subir a versão descarta estados antigos. */
+/** Chave do armazenamento local. Estados de versão antiga são migrados, não descartados. */
 export const STORAGE_KEY = 'party-treasure/state/v1'

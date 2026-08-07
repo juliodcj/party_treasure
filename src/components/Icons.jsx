@@ -164,6 +164,20 @@ export function StepperMinus({ width }) {
   )
 }
 
+/** Três controles deslizantes — botão "Conteúdo" (livros/remaster). */
+export function TuneIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 20 20" aria-hidden="true">
+      <line x1="3" y1="5" x2="17" y2="5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <line x1="3" y1="15" x2="17" y2="15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="7" cy="5" r="2" fill="var(--surface)" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="13" cy="10" r="2" fill="var(--surface)" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="9" cy="15" r="2" fill="var(--surface)" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  )
+}
+
 export function CheckIcon() {
   return (
     <svg width="10" height="8" viewBox="0 0 10 8" aria-hidden="true">

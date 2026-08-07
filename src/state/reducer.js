@@ -25,6 +25,10 @@ export function reducer(state, action) {
     case 'SELECT_SHOP':
       return { ...state, activeShopId: action.shopId, cart: {} }
 
+    case 'SET_SETTINGS':
+      // Config da mesa (livros possuídos, remaster/legado): mescla, não substitui.
+      return { ...state, settings: { ...state.settings, ...action.settings } }
+
     // ---------------------------------------------------------------- jogadores
 
     case 'ADD_PLAYER':

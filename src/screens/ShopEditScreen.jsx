@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { SearchBox, FilterSelects, EMPTY_FILTERS } from '../components/ItemFilters.jsx'
 import { CheckIcon } from '../components/Icons.jsx'
 import { useStore } from '../state/store.jsx'
-import { availableLevels, libraryItems, matchesFilters, matchesSearch } from '../lib/items.js'
+import { availableLevels, libraryItems, matchesContent, matchesFilters, matchesSearch } from '../lib/items.js'
 import { formatCopper } from '../lib/money.js'
 import { plural } from '../lib/text.js'
 
@@ -36,7 +36,10 @@ export default function ShopEditScreen({ shop = null, onClose }) {
   const catalog = useMemo(() => libraryItems(state), [state])
   const levels = useMemo(() => availableLevels(catalog), [catalog])
   const matches = catalog.filter(
-    (item) => matchesSearch(item, filters.search) && matchesFilters(item, filters),
+    (item) =>
+      matchesSearch(item, filters.search) &&
+      matchesFilters(item, filters) &&
+      matchesContent(item, state.settings),
   )
   const rows = matches.slice(0, LIST_LIMIT)
 

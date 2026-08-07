@@ -3,10 +3,13 @@ import { CATALOG } from '../data/catalog.js'
 /** Mesa de exemplo, usada na primeira vez que o app abre no aparelho. */
 export function createInitialState() {
   return {
-    version: 2,
+    version: 3,
     activePlayerId: 'p-valeros',
     activeShopId: 'shop-smith',
     cart: {},
+    // Config da mesa: livros que o mestre possui + remaster/legado, persistida
+    // e compartilhada por todas as telas (não é um filtro por aba, como os outros).
+    settings: { ownedCategories: [], remasterFilter: 'all' },
     players: [
       {
         id: 'p-valeros',

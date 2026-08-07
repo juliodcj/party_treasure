@@ -6,9 +6,10 @@ import { ChevronRight, EditIcon, PlusIcon, TrashIcon } from '../components/Icons
 import { useStore } from '../state/store.jsx'
 import { CATALOG, CATEGORY_ORDER, categoryLabel } from '../data/catalog.js'
 import { importFoundryJson } from '../lib/foundryImport.js'
+import { matchesContent, matchesFilters, matchesSearch } from '../lib/items.js'
 import { plural } from '../lib/text.js'
 
-export default function LibraryScreen({ search, openId, onToggle }) {
+export default function LibraryScreen({ filters, openId, onToggle }) {
   const { state, dispatch } = useStore()
   // Como no protótipo, só uma pasta fica aberta de cada vez.
   const [openFolder, setOpenFolder] = useState(null)
@@ -16,8 +17,10 @@ export default function LibraryScreen({ search, openId, onToggle }) {
   const [editing, setEditing] = useState(null)
   const [deleting, setDeleting] = useState(null)
 
-  const term = search.trim().toLowerCase()
-  const keep = (item) => !term || item.name.toLowerCase().includes(term)
+  const keep = (item) =>
+    matchesSearch(item, filters.search) &&
+    matchesFilters(item, filters) &&
+    matchesContent(item, state.settings)
 
   const campaign = state.campaignItems.filter(keep)
   const folders = useMemo(() => {
@@ -27,7 +30,7 @@ export default function LibraryScreen({ search, openId, onToggle }) {
       label: categoryLabel(id),
       items: official.filter((item) => item.category === id).sort((a, b) => a.name.localeCompare(b.name)),
     })).filter((folder) => folder.items.length > 0)
-  }, [term])
+  }, [filters.search, filters.category, filters.levels, state.settings])
 
   return (
     <>

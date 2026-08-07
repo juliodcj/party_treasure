@@ -10,6 +10,7 @@ import { CATEGORY_ORDER, categoryLabel } from '../data/catalog.js'
 import {
   groupInventory,
   libraryItems,
+  matchesContent,
   matchesFilters,
   matchesSearch,
   playerInventory,
@@ -27,13 +28,21 @@ export default function InventoryScreen({ player, filters, openId, onToggle }) {
 
   const entries = useMemo(() => playerInventory(state, player), [state, player])
   const visible = entries.filter(
-    ({ item }) => matchesSearch(item, filters.search) && matchesFilters(item, filters),
+    ({ item }) =>
+      matchesSearch(item, filters.search) &&
+      matchesFilters(item, filters) &&
+      matchesContent(item, state.settings),
   )
   const grouped = useMemo(() => groupInventory(visible), [visible])
 
   const isCustom = (itemId) => player.customItems.some((custom) => custom.id === itemId)
+  const { ownedCategories = [], remasterFilter = 'all' } = state.settings ?? {}
   const filtersActive =
-    !!filters.search.trim() || filters.category !== 'all' || filters.level !== 'all'
+    !!filters.search.trim() ||
+    filters.category !== 'all' ||
+    filters.levels.length > 0 ||
+    ownedCategories.length > 0 ||
+    remasterFilter !== 'all'
 
   return (
     <>
