@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import Header from './components/Header.jsx'
 import SendMoneySheet from './components/SendMoneySheet.jsx'
 import AdjustCoinsSheet from './components/AdjustCoinsSheet.jsx'
+import EditWalletSheet from './components/EditWalletSheet.jsx'
 import { SearchBox, FilterSelects, LevelPicker, EMPTY_FILTERS } from './components/ItemFilters.jsx'
 import SettingsSheet from './components/SettingsSheet.jsx'
 import { BagIcon, BookIcon, ChevronDown, CrownIcon, ShopIcon } from './components/Icons.jsx'
@@ -33,6 +34,7 @@ export default function App() {
   const [adjustCoinsOpen, setAdjustCoinsOpen] = useState(false)
   const [shopPickerOpen, setShopPickerOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [editWalletOpen, setEditWalletOpen] = useState(false)
 
   const isInventory = tab === 'inventory'
   const isShop = tab === 'shop'
@@ -89,6 +91,7 @@ export default function App() {
         onAdjust={() => setAdjustCoinsOpen(true)}
         onSend={() => setSendMoneyOpen(true)}
         onSettings={() => setSettingsOpen(true)}
+        onEditWallet={() => setEditWalletOpen(true)}
       />
 
       {isShop && shop ? (
@@ -226,6 +229,9 @@ export default function App() {
         <AdjustCoinsSheet player={player} onClose={() => setAdjustCoinsOpen(false)} />
       ) : null}
       {settingsOpen ? <SettingsSheet onClose={() => setSettingsOpen(false)} /> : null}
+      {editWalletOpen ? (
+        <EditWalletSheet player={player} onClose={() => setEditWalletOpen(false)} />
+      ) : null}
     </div>
   )
 }

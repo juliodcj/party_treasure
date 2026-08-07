@@ -10,6 +10,7 @@ export default function Header({
   onAdjust,
   onSend,
   onSettings,
+  onEditWallet,
 }) {
   return (
     <header className="header">
@@ -49,7 +50,12 @@ export default function Header({
               <PaperPlaneIcon />
             </button>
           ) : null}
-          <div className="gold-pill">
+          <button
+            type="button"
+            className="gold-pill"
+            onClick={onEditWallet}
+            aria-label={`Editar moedas de ${player.name}`}
+          >
             <span className="gold-pill__coin">
               <span className="gold-pill__value gold-pill__value--gold">{player.gold}</span>
               <span className="coin-dot coin-dot--gold" />
@@ -62,7 +68,7 @@ export default function Header({
               <span className="gold-pill__value gold-pill__value--copper">{player.copper}</span>
               <span className="coin-dot coin-dot--copper" />
             </span>
-          </div>
+          </button>
         </div>
       ) : null}
     </header>

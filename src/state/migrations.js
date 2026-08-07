@@ -8,6 +8,12 @@ const MIGRATIONS = {
     version: 3,
     settings: state.settings ?? { ownedCategories: [], remasterFilter: 'all' },
   }),
+  3: (state) => ({
+    ...state,
+    version: 4,
+    history: state.history ?? [],
+    players: state.players.map((player) => ({ ...player, itemNotes: player.itemNotes ?? {} })),
+  }),
 }
 
 export function migrate(state, targetVersion) {

@@ -16,6 +16,14 @@ function withItemDelta(items, itemId, delta) {
   return next
 }
 
+/** Tira a observação de um item — usado sempre que ele sai todo da mochila. */
+function withoutNote(itemNotes, itemId) {
+  if (!itemNotes[itemId]) return itemNotes
+  const next = { ...itemNotes }
+  delete next[itemId]
+  return next
+}
+
 export function reducer(state, action) {
   switch (action.type) {
     case 'SELECT_PLAYER':
@@ -44,6 +52,7 @@ export function reducer(state, action) {
             copper: 0,
             items: {},
             customItems: [],
+            itemNotes: {},
           },
         ],
       }
@@ -104,6 +113,18 @@ export function reducer(state, action) {
         ),
       }
 
+    case 'SET_COINS':
+      // Clicar no dinheiro e definir o valor exato — diferente do "±", que soma/subtrai.
+      return {
+        ...state,
+        players: mapPlayer(state.players, action.playerId, (player) => ({
+          ...player,
+          gold: Math.max(0, Math.round(action.coins.gold ?? 0)),
+          silver: Math.max(0, Math.round(action.coins.silver ?? 0)),
+          copper: Math.max(0, Math.round(action.coins.copper ?? 0)),
+        })),
+      }
+
     case 'GIVE_COINS':
       // Mestre criando dinheiro do nada, para um jogador específico.
       return {
@@ -153,6 +174,19 @@ export function reducer(state, action) {
         })),
       }
 
+    case 'SET_ITEM_NOTE': {
+      const note = action.note.trim()
+      return {
+        ...state,
+        players: mapPlayer(state.players, action.playerId, (player) => ({
+          ...player,
+          itemNotes: note
+            ? { ...player.itemNotes, [action.itemId]: note }
+            : withoutNote(player.itemNotes, action.itemId),
+        })),
+      }
+    }
+
     case 'DROP_ITEM':
       // Excluir tira o item da mochila inteiro. Não devolve dinheiro.
       return {
@@ -164,6 +198,7 @@ export function reducer(state, action) {
             ...player,
             items,
             customItems: player.customItems.filter((custom) => custom.id !== action.itemId),
+            itemNotes: withoutNote(player.itemNotes, action.itemId),
           }
         }),
       }
@@ -186,6 +221,7 @@ export function reducer(state, action) {
               sold >= owned
                 ? player.customItems.filter((custom) => custom.id !== action.itemId)
                 : player.customItems,
+            itemNotes: sold >= owned ? withoutNote(player.itemNotes, action.itemId) : player.itemNotes,
           }
         }),
       }
@@ -213,6 +249,8 @@ export function reducer(state, action) {
                 isCustom && leftBehind <= 0
                   ? player.customItems.filter((custom) => custom.id !== action.itemId)
                   : player.customItems,
+              // A observação é anotação de quem escreveu, não viaja com o item.
+              itemNotes: leftBehind <= 0 ? withoutNote(player.itemNotes, action.itemId) : player.itemNotes,
             }
           }
           if (player.id === action.toId) {

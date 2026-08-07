@@ -54,6 +54,7 @@ export default function ItemRow({
   priceInBody = false,
   cart = null,
   nested = false,
+  hasNote = false,
   children,
 }) {
   const weaponStats = weaponSummary(item.weapon)
@@ -64,6 +65,7 @@ export default function ItemRow({
       <div className="item__head">
         <button type="button" className="item__name-btn" onClick={onToggle} aria-expanded={open}>
           <span className={`item__name${open ? ' item__name--open' : ''}`}>{item.name}</span>
+          {hasNote ? <span className="item__note-dot" title="Tem observação" aria-hidden="true" /> : null}
           <span className="item__level">Nv {item.level ?? 0}</span>
         </button>
 

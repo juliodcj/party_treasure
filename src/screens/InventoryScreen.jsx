@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import ItemRow from '../components/ItemRow.jsx'
 import Sheet, { SheetActions } from '../components/Sheet.jsx'
 import Stepper from '../components/Stepper.jsx'
@@ -68,7 +68,9 @@ export default function InventoryScreen({ player, filters, openId, onToggle }) {
                   priceInBody
                   open={openId === item.id}
                   onToggle={() => onToggle(item.id)}
+                  hasNote={!!player.itemNotes?.[item.id]}
                 >
+                  <ItemNote player={player} item={item} />
                   <div className="item__foot">
                     <div className="item__tools">
                       <button
@@ -215,6 +217,53 @@ export default function InventoryScreen({ player, filters, openId, onToggle }) {
         </Sheet>
       ) : null}
     </>
+  )
+}
+
+/** Observação do jogador sobre o item — pessoal, não viaja se o item for enviado. */
+function ItemNote({ player, item }) {
+  const { dispatch } = useStore()
+  const saved = player.itemNotes?.[item.id] ?? ''
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(saved)
+
+  useEffect(() => {
+    setDraft(saved)
+  }, [saved])
+
+  const save = () => {
+    dispatch({ type: 'SET_ITEM_NOTE', playerId: player.id, itemId: item.id, note: draft })
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <textarea
+        className="textarea"
+        style={{ marginTop: 10, minHeight: 60 }}
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={save}
+        placeholder="Escreva uma observação..."
+        aria-label={`Observação sobre ${item.name}`}
+        autoFocus
+      />
+    )
+  }
+
+  if (saved) {
+    return (
+      <button type="button" className="item-note" onClick={() => setEditing(true)}>
+        <EditIcon />
+        {saved}
+      </button>
+    )
+  }
+
+  return (
+    <button type="button" className="link" style={{ marginTop: 10 }} onClick={() => setEditing(true)}>
+      + Observação
+    </button>
   )
 }
 

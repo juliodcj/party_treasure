@@ -33,6 +33,7 @@ function loadState() {
       ...parsed,
       cart: {},
       settings: { ...fallback.settings, ...parsed.settings },
+      history: parsed.history ?? fallback.history,
       activePlayerId: playerExists ? parsed.activePlayerId : parsed.players[0]?.id,
       activeShopId: shopExists ? parsed.activeShopId : parsed.shops?.[0]?.id,
     }

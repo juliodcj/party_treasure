@@ -297,6 +297,31 @@
   flex-shrink: 0;
 }
 
+/* Bolinha ao lado do nome: o item tem observação escrita, mesmo fechado */
+.item__note-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.item-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-body);
+  text-align: left;
+}
+
+.item-note svg {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
 .item__qty {
   font-size: 11px;
   font-weight: 700;

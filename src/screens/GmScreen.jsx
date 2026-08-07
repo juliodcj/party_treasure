@@ -4,6 +4,7 @@ import Stepper from '../components/Stepper.jsx'
 import { CoinInputs } from '../components/ItemForm.jsx'
 import { SearchBox, FilterSelects, EMPTY_FILTERS } from '../components/ItemFilters.jsx'
 import { ChevronRight, EditIcon, TrashIcon } from '../components/Icons.jsx'
+import EditWalletSheet from '../components/EditWalletSheet.jsx'
 import ShopEditScreen from './ShopEditScreen.jsx'
 import { useStore } from '../state/store.jsx'
 import {
@@ -160,6 +161,7 @@ function PlayerCard({ player, canDelete, onDelete }) {
   const [copper, setCopper] = useState('')
   const [search, setSearch] = useState('')
   const [drafts, setDrafts] = useState({})
+  const [editingWallet, setEditingWallet] = useState(false)
 
   const catalog = useMemo(() => libraryItems(state), [state])
   const term = search.trim().toLowerCase()
@@ -184,7 +186,12 @@ function PlayerCard({ player, canDelete, onDelete }) {
             }
             aria-label="Nome do personagem"
           />
-          <div className="gm__coins">
+          <button
+            type="button"
+            className="gm__coins"
+            onClick={() => setEditingWallet(true)}
+            aria-label={`Editar moedas de ${player.name}`}
+          >
             {[
               ['gold', player.gold],
               ['silver', player.silver],
@@ -195,7 +202,7 @@ function PlayerCard({ player, canDelete, onDelete }) {
                 <span className={`coin-dot coin-dot--${coin}`} />
               </span>
             ))}
-          </div>
+          </button>
         </div>
         <button type="button" className="btn btn--solid" onClick={() => openPanel('coins')}>
           Dar moedas
@@ -310,6 +317,10 @@ function PlayerCard({ player, canDelete, onDelete }) {
             </button>
           </div>
         </div>
+      ) : null}
+
+      {editingWallet ? (
+        <EditWalletSheet player={player} onClose={() => setEditingWallet(false)} />
       ) : null}
     </div>
   )
