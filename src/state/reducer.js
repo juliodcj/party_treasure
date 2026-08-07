@@ -287,9 +287,24 @@ export function reducer(state, action) {
     }
 
     case 'ADD_SHOP': {
-      const shop = { id: makeId('shop'), name: 'Nova loja', itemIds: [] }
+      const shop = {
+        id: makeId('shop'),
+        name: action.name?.trim() || 'Nova loja',
+        itemIds: action.itemIds ?? [],
+      }
       return { ...state, shops: [...state.shops, shop] }
     }
+
+    case 'UPDATE_SHOP':
+      // Salva de uma vez o nome e a composição inteira, vindos da tela de edição.
+      return {
+        ...state,
+        shops: state.shops.map((shop) =>
+          shop.id === action.shopId
+            ? { ...shop, name: action.name?.trim() || shop.name, itemIds: action.itemIds }
+            : shop,
+        ),
+      }
 
     case 'RENAME_SHOP':
       return {

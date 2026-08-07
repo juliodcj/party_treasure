@@ -3,23 +3,40 @@ import Sheet, { SheetActions } from '../components/Sheet.jsx'
 import Stepper from '../components/Stepper.jsx'
 import { CoinInputs } from '../components/ItemForm.jsx'
 import { SearchBox, FilterSelects, EMPTY_FILTERS } from '../components/ItemFilters.jsx'
-import { CheckIcon, ChevronRight, TrashIcon } from '../components/Icons.jsx'
+import { ChevronRight, EditIcon, TrashIcon } from '../components/Icons.jsx'
+import ShopEditScreen from './ShopEditScreen.jsx'
 import { useStore } from '../state/store.jsx'
-import { availableLevels, libraryItems, matchesFilters, matchesSearch } from '../lib/items.js'
+import {
+  availableLevels,
+  libraryItems,
+  matchesFilters,
+  matchesSearch,
+  resolveItem,
+} from '../lib/items.js'
 import { formatCopper } from '../lib/money.js'
 import { plural } from '../lib/text.js'
 
 export default function GmScreen() {
   // Uma única confirmação por vez, compartilhada entre jogadores e lojas.
   const [deleting, setDeleting] = useState(null) // { type: 'player' | 'shop', id, name }
+  // undefined = fechada; null = criando loja nova; objeto = editando essa loja.
+  const [shopEditor, setShopEditor] = useState(undefined)
 
   return (
     <div className="gm">
       <PlayersSection onRequestDelete={(id, name) => setDeleting({ type: 'player', id, name })} />
-      <ShopsSection onRequestDelete={(id, name) => setDeleting({ type: 'shop', id, name })} />
+      <ShopsSection
+        onRequestDelete={(id, name) => setDeleting({ type: 'shop', id, name })}
+        onCreateShop={() => setShopEditor(null)}
+        onEditShop={(shop) => setShopEditor(shop)}
+      />
 
       {deleting ? (
         <DeleteConfirmSheet target={deleting} onClose={() => setDeleting(null)} />
+      ) : null}
+
+      {shopEditor !== undefined ? (
+        <ShopEditScreen shop={shopEditor} onClose={() => setShopEditor(undefined)} />
       ) : null}
     </div>
   )
@@ -299,15 +316,15 @@ function PlayerCard({ player, canDelete, onDelete }) {
 
 /* ------------------------------------------------------------------- lojas */
 
-function ShopsSection({ onRequestDelete }) {
-  const { state, dispatch } = useStore()
+function ShopsSection({ onRequestDelete, onCreateShop, onEditShop }) {
+  const { state } = useStore()
   const [openId, setOpenId] = useState(null)
 
   return (
     <section>
       <div className="gm__section-head">
         <h2 className="gm__section-title">Lojas</h2>
-        <button type="button" className="link" onClick={() => dispatch({ type: 'ADD_SHOP' })}>
+        <button type="button" className="link" onClick={onCreateShop}>
           + Nova loja
         </button>
       </div>
@@ -320,6 +337,7 @@ function ShopsSection({ onRequestDelete }) {
             isOpen={openId === shop.id}
             onToggle={() => setOpenId(openId === shop.id ? null : shop.id)}
             onDelete={() => onRequestDelete(shop.id, shop.name)}
+            onEdit={() => onEditShop(shop)}
           />
         ))}
       </div>
@@ -327,12 +345,17 @@ function ShopsSection({ onRequestDelete }) {
   )
 }
 
-function ShopCard({ shop, isOpen, onToggle, onDelete }) {
+function ShopCard({ shop, isOpen, onToggle, onDelete, onEdit }) {
   const { state, dispatch } = useStore()
   const [filters, setFilters] = useState(EMPTY_FILTERS)
 
-  const catalog = useMemo(() => libraryItems(state), [state])
-  const rows = catalog.filter(
+  // Aqui dentro só interessa o que já está na prateleira — o catálogo
+  // inteiro para marcar/desmarcar vive na tela cheia de edição.
+  const stocked = useMemo(
+    () => shop.itemIds.map((itemId) => resolveItem(state, itemId)).filter(Boolean),
+    [state, shop.itemIds],
+  )
+  const rows = stocked.filter(
     (item) => matchesSearch(item, filters.search) && matchesFilters(item, filters),
   )
 
@@ -352,6 +375,15 @@ function ShopCard({ shop, isOpen, onToggle, onDelete }) {
             {plural(shop.itemIds.length, 'item cadastrado', 'itens cadastrados')}
           </div>
         </div>
+        <button
+          type="button"
+          className="icon-btn icon-btn--accent"
+          title="Editar loja"
+          aria-label={`Editar ${shop.name}`}
+          onClick={onEdit}
+        >
+          <EditIcon />
+        </button>
         <button
           type="button"
           className="icon-btn icon-btn--danger"
@@ -383,32 +415,36 @@ function ShopCard({ shop, isOpen, onToggle, onDelete }) {
             small
             value={filters}
             onChange={setFilters}
-            levels={availableLevels(catalog)}
+            levels={availableLevels(stocked)}
           />
           <div className="gm__scroll" style={{ maxHeight: 260, gap: 2 }}>
-            {rows.map((item) => {
-              const checked = shop.itemIds.includes(item.id)
-              return (
+            {rows.map((item) => (
+              <div className="gm__row" key={item.id}>
+                <span className="gm__row-name">{item.name}</span>
+                <span className="item__level">Nv {item.level}</span>
+                <span className="gm__check-price">{formatCopper(item.priceCp)}</span>
                 <button
                   type="button"
-                  className="gm__check-row"
-                  key={item.id}
+                  className="icon-btn icon-btn--danger"
+                  style={{ width: 24, height: 24 }}
+                  title="Remover da loja"
+                  aria-label={`Remover ${item.name} da loja`}
                   onClick={() =>
                     dispatch({ type: 'TOGGLE_SHOP_ITEM', shopId: shop.id, itemId: item.id })
                   }
-                  aria-pressed={checked}
                 >
-                  <span className={`checkbox${checked ? ' checkbox--on' : ''}`}>
-                    {checked ? <CheckIcon /> : null}
-                  </span>
-                  <span className="gm__check-name">{item.name}</span>
-                  <span className="gm__check-price">{formatCopper(item.priceCp)}</span>
+                  <TrashIcon />
                 </button>
-              )
-            })}
+              </div>
+            ))}
+            {rows.length === 0 ? (
+              <div className="empty">
+                {stocked.length === 0 ? 'Nenhum item cadastrado.' : 'Nenhum item encontrado.'}
+              </div>
+            ) : null}
           </div>
-          <button type="button" className="btn btn--solid btn--block" onClick={onToggle}>
-            Inserir
+          <button type="button" className="btn btn--solid btn--block" onClick={onEdit}>
+            Editar loja
           </button>
         </div>
       ) : null}
