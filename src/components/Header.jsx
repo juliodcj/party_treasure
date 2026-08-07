@@ -1,4 +1,4 @@
-import { PaperPlaneIcon } from './Icons.jsx'
+import { GearIcon, PaperPlaneIcon } from './Icons.jsx'
 
 /** Título grande da tela e, nas telas de personagem, a pílula com a carteira. */
 export default function Header({
@@ -6,12 +6,25 @@ export default function Header({
   player = null,
   showAdjust = false,
   showSend = false,
+  showSettings = false,
   onAdjust,
   onSend,
+  onSettings,
 }) {
   return (
     <header className="header">
       <div className="header__title">{title}</div>
+      {showSettings ? (
+        <button
+          type="button"
+          className="header-icon-btn"
+          title="Configurações"
+          aria-label="Configurações"
+          onClick={onSettings}
+        >
+          <GearIcon />
+        </button>
+      ) : null}
       {player ? (
         <div className="header-coins">
           {showAdjust ? (

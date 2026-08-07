@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import Header from './components/Header.jsx'
 import SendMoneySheet from './components/SendMoneySheet.jsx'
 import AdjustCoinsSheet from './components/AdjustCoinsSheet.jsx'
-import { SearchBox, FilterSelects, LevelPicker, ContentFilterButton, EMPTY_FILTERS } from './components/ItemFilters.jsx'
+import { SearchBox, FilterSelects, LevelPicker, EMPTY_FILTERS } from './components/ItemFilters.jsx'
+import SettingsSheet from './components/SettingsSheet.jsx'
 import { BagIcon, BookIcon, ChevronDown, CrownIcon, ShopIcon } from './components/Icons.jsx'
 import InventoryScreen from './screens/InventoryScreen.jsx'
 import ShopScreen from './screens/ShopScreen.jsx'
@@ -31,6 +32,7 @@ export default function App() {
   const [sendMoneyOpen, setSendMoneyOpen] = useState(false)
   const [adjustCoinsOpen, setAdjustCoinsOpen] = useState(false)
   const [shopPickerOpen, setShopPickerOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const isInventory = tab === 'inventory'
   const isShop = tab === 'shop'
@@ -83,8 +85,10 @@ export default function App() {
         player={isCharacterTab ? player : null}
         showAdjust={isInventory}
         showSend={isInventory && state.players.length > 1}
+        showSettings={tab === 'gm'}
         onAdjust={() => setAdjustCoinsOpen(true)}
         onSend={() => setSendMoneyOpen(true)}
+        onSettings={() => setSettingsOpen(true)}
       />
 
       {isShop && shop ? (
@@ -177,7 +181,6 @@ export default function App() {
               value={filters.levels}
               onChange={(levels) => setFilters({ ...filters, levels })}
             />
-            <ContentFilterButton />
           </div>
         </div>
       ) : null}
@@ -222,6 +225,7 @@ export default function App() {
       {adjustCoinsOpen ? (
         <AdjustCoinsSheet player={player} onClose={() => setAdjustCoinsOpen(false)} />
       ) : null}
+      {settingsOpen ? <SettingsSheet onClose={() => setSettingsOpen(false)} /> : null}
     </div>
   )
 }

@@ -178,6 +178,21 @@ export function TuneIcon() {
   )
 }
 
+/** Engrenagem — botão "Configurações", na aba Mestre. */
+export function GearIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 20 20" aria-hidden="true">
+      <circle cx="10" cy="10" r="3" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path
+        d="M10 2v2.2M10 15.8V18M18 10h-2.2M4.2 10H2M15.5 4.5l-1.5 1.5M6 12.5l-1.5 1.5M15.5 15.5l-1.5-1.5M6 7.5l-1.5-1.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
 export function CheckIcon() {
   return (
     <svg width="10" height="8" viewBox="0 0 10 8" aria-hidden="true">
