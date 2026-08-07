@@ -1,36 +1,33 @@
 import { useState } from 'react'
+import { SheetActions } from './Sheet.jsx'
 import { CATEGORIES } from '../data/catalog.js'
-import { parsePriceInput, toPriceInput } from '../lib/money.js'
+import { fromCopper, toCopper } from '../lib/money.js'
 
-/** Formulário de item manual, usado pelo item avulso e pelo item de campanha. */
-export default function ItemForm({ item = null, onSubmit, submitLabel = 'Salvar' }) {
+/** Formulário de item manual: o item avulso da mochila e o item de campanha. */
+export default function ItemForm({ item = null, onSubmit, onCancel, submitLabel = 'Salvar' }) {
+  const seedPrice = fromCopper(item?.priceCp ?? 0)
   const [name, setName] = useState(item?.name ?? '')
-  const [level, setLevel] = useState(String(item?.level ?? 0))
+  const [level, setLevel] = useState(item ? String(item.level ?? 0) : '')
   const [category, setCategory] = useState(item?.category ?? 'equipment')
-  const [price, setPrice] = useState(item ? toPriceInput(item.priceCp) : '')
   const [bulk, setBulk] = useState(item?.bulk != null ? String(item.bulk) : '')
   const [traits, setTraits] = useState((item?.traits ?? []).join(', '))
   const [description, setDescription] = useState(item?.description ?? '')
-  const [error, setError] = useState('')
+  const [gold, setGold] = useState(seedPrice.gold ? String(seedPrice.gold) : '')
+  const [silver, setSilver] = useState(seedPrice.silver ? String(seedPrice.silver) : '')
+  const [copper, setCopper] = useState(seedPrice.copper ? String(seedPrice.copper) : '')
 
-  const submit = (event) => {
-    event.preventDefault()
-    if (!name.trim()) {
-      setError('Dê um nome ao item.')
-      return
-    }
-    const priceCp = parsePriceInput(price)
-    if (priceCp == null) {
-      setError('Preço não entendido. Use algo como "5 po" ou "1 po 5 pp".')
-      return
-    }
-    setError('')
+  const submit = () => {
+    if (!name.trim()) return
     onSubmit({
       ...(item?.id ? { id: item.id } : {}),
       name: name.trim(),
       level: Number.parseInt(level, 10) || 0,
       category,
-      priceCp,
+      priceCp: toCopper({
+        gold: Number.parseInt(gold, 10) || 0,
+        silver: Number.parseInt(silver, 10) || 0,
+        copper: Number.parseInt(copper, 10) || 0,
+      }),
       bulk: bulk.trim(),
       traits: traits
         .split(',')
@@ -41,85 +38,115 @@ export default function ItemForm({ item = null, onSubmit, submitLabel = 'Salvar'
   }
 
   return (
-    <form className="stack" onSubmit={submit}>
-      <label className="field">
-        <span className="field__label">Nome</span>
-        <input className="input" value={name} onChange={(event) => setName(event.target.value)} />
-      </label>
+    <>
+      <input
+        className="input"
+        style={{ marginBottom: 8 }}
+        placeholder="Nome do item"
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        aria-label="Nome do item"
+      />
 
-      <div className="field-row">
-        <label className="field">
-          <span className="field__label">Nível</span>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        <input
+          className="input"
+          type="number"
+          inputMode="numeric"
+          placeholder="Nível"
+          value={level}
+          onChange={(event) => setLevel(event.target.value)}
+          style={{ flex: 1, minWidth: 0 }}
+          aria-label="Nível"
+        />
+        <input
+          className="input"
+          placeholder="Bulk"
+          value={bulk}
+          onChange={(event) => setBulk(event.target.value)}
+          style={{ flex: 1, minWidth: 0 }}
+          aria-label="Bulk"
+        />
+      </div>
+
+      <select
+        className="input"
+        style={{ marginBottom: 8 }}
+        value={category}
+        onChange={(event) => setCategory(event.target.value)}
+        aria-label="Tipo"
+      >
+        {Object.entries(CATEGORIES).map(([id, meta]) => (
+          <option key={id} value={id}>
+            {meta.label}
+          </option>
+        ))}
+      </select>
+
+      <input
+        className="input"
+        style={{ marginBottom: 8 }}
+        placeholder="Traços (separados por vírgula)"
+        value={traits}
+        onChange={(event) => setTraits(event.target.value)}
+        aria-label="Traços"
+      />
+
+      <textarea
+        className="textarea"
+        style={{ marginBottom: 10 }}
+        placeholder="Descrição"
+        value={description}
+        onChange={(event) => setDescription(event.target.value)}
+        aria-label="Descrição"
+      />
+
+      <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text-faint)', marginBottom: 6 }}>
+        Valor
+      </div>
+      <CoinInputs
+        gold={gold}
+        silver={silver}
+        copper={copper}
+        onGold={setGold}
+        onSilver={setSilver}
+        onCopper={setCopper}
+      />
+
+      <SheetActions
+        onCancel={onCancel}
+        onConfirm={submit}
+        confirmLabel={submitLabel}
+        disabled={!name.trim()}
+      />
+    </>
+  )
+}
+
+/** Três campos numéricos, cada um com o pontinho da sua denominação. */
+export function CoinInputs({ gold, silver, copper, onGold, onSilver, onCopper, small = false }) {
+  const fields = [
+    ['gold', 'Ouro', gold, onGold],
+    ['silver', 'Prata', silver, onSilver],
+    ['copper', 'Cobre', copper, onCopper],
+  ]
+  return (
+    <div style={{ display: 'flex', gap: 8 }}>
+      {fields.map(([coin, label, value, onChange]) => (
+        <div className="coin-field" key={coin}>
           <input
-            className="input"
+            className={`input${small ? ' input--sm' : ''}`}
             type="number"
             inputMode="numeric"
             min="0"
-            value={level}
-            onChange={(event) => setLevel(event.target.value)}
+            placeholder="0"
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            aria-label={label}
           />
-        </label>
-        <label className="field" style={{ gridColumn: 'span 2' }}>
-          <span className="field__label">Tipo</span>
-          <select
-            className="select"
-            value={category}
-            onChange={(event) => setCategory(event.target.value)}
-          >
-            {Object.entries(CATEGORIES).map(([id, meta]) => (
-              <option key={id} value={id}>
-                {meta.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      <div className="field-row">
-        <label className="field" style={{ gridColumn: 'span 2' }}>
-          <span className="field__label">Preço</span>
-          <input
-            className="input"
-            placeholder="ex.: 5 po ou 1 po 5 pp"
-            value={price}
-            onChange={(event) => setPrice(event.target.value)}
-          />
-        </label>
-        <label className="field">
-          <span className="field__label">Bulk</span>
-          <input
-            className="input"
-            placeholder="1, L ou —"
-            value={bulk}
-            onChange={(event) => setBulk(event.target.value)}
-          />
-        </label>
-      </div>
-
-      <label className="field">
-        <span className="field__label">Traços (separados por vírgula)</span>
-        <input
-          className="input"
-          placeholder="magical, consumable"
-          value={traits}
-          onChange={(event) => setTraits(event.target.value)}
-        />
-      </label>
-
-      <label className="field">
-        <span className="field__label">Descrição</span>
-        <textarea
-          className="textarea"
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-        />
-      </label>
-
-      {error ? <div className="notice notice--error">{error}</div> : null}
-
-      <button type="submit" className="btn btn--primary btn--block">
-        {submitLabel}
-      </button>
-    </form>
+          <span className={`coin-dot coin-dot--lg coin-dot--${coin}`} />
+        </div>
+      ))}
+    </div>
   )
 }

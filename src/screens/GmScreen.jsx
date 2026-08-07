@@ -1,158 +1,63 @@
 import { useMemo, useState } from 'react'
-import ItemCard from '../components/ItemCard.jsx'
-import ItemFilters, { EMPTY_FILTERS } from '../components/ItemFilters.jsx'
-import Modal from '../components/Modal.jsx'
-import { CoinBadges } from '../components/Coins.jsx'
+import Stepper from '../components/Stepper.jsx'
+import { CoinInputs } from '../components/ItemForm.jsx'
+import { SearchBox, FilterSelects, EMPTY_FILTERS } from '../components/ItemFilters.jsx'
+import { CheckIcon, ChevronRight } from '../components/Icons.jsx'
 import { useStore } from '../state/store.jsx'
-import { availableLevels, libraryItems, matchesFilters, matchesSearch, resolveItem } from '../lib/items.js'
-import { formatCopper, toCopper } from '../lib/money.js'
+import { availableLevels, libraryItems, matchesFilters, matchesSearch } from '../lib/items.js'
+import { formatCopper } from '../lib/money.js'
 import { plural } from '../lib/text.js'
 
 export default function GmScreen() {
-  const { state } = useStore()
-  const [tab, setTab] = useState('players')
-
-  const partyCp = state.players.reduce((sum, player) => sum + toCopper(player), 0)
-
   return (
-    <div className="stack">
-      <div className="chips">
-        <button
-          type="button"
-          className={`chip${tab === 'players' ? ' chip--on' : ''}`}
-          onClick={() => setTab('players')}
-        >
-          Jogadores
-        </button>
-        <button
-          type="button"
-          className={`chip${tab === 'shops' ? ' chip--on' : ''}`}
-          onClick={() => setTab('shops')}
-        >
-          Lojas
-        </button>
-      </div>
-
-      {tab === 'players' ? (
-        <>
-          <div className="total-bar">
-            Tesouro do grupo
-            <span className="total-bar__value">{formatCopper(partyCp)}</span>
-          </div>
-          <PlayersPanel />
-        </>
-      ) : (
-        <ShopsPanel />
-      )}
+    <div className="gm">
+      <PlayersSection />
+      <ShopsSection />
     </div>
   )
 }
 
 /* --------------------------------------------------------------- jogadores */
 
-function PlayersPanel() {
+function PlayersSection() {
   const { state, dispatch } = useStore()
-  const [giving, setGiving] = useState(null) // { playerIds, title }
-  const [givingItem, setGivingItem] = useState(null) // playerId
-  const [renaming, setRenaming] = useState(null)
-  const [newName, setNewName] = useState('')
+  const [groupOpen, setGroupOpen] = useState(false)
 
   return (
-    <div className="stack">
-      {state.players.map((player) => (
-        <div key={player.id} className="stack" style={{ gap: 'var(--sp-2)' }}>
-          <div className="gm-player">
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div className="gm-player__name">{player.name}</div>
-              <CoinBadges wallet={player} />
-            </div>
-            <span className="item__price">{formatCopper(toCopper(player))}</span>
-          </div>
-          <div className="row row--wrap">
-            <button
-              type="button"
-              className="btn btn--sm"
-              onClick={() => setGiving({ playerIds: [player.id], title: `Dar moedas a ${player.name}` })}
-            >
-              Dar moedas
-            </button>
-            <button type="button" className="btn btn--sm" onClick={() => setGivingItem(player.id)}>
-              Dar item
-            </button>
-            <button type="button" className="btn btn--sm" onClick={() => setRenaming(player)}>
-              Renomear
-            </button>
-            <button
-              type="button"
-              className="btn btn--sm btn--danger"
-              onClick={() => dispatch({ type: 'REMOVE_PLAYER', playerId: player.id })}
-              disabled={state.players.length <= 1}
-            >
-              Remover
-            </button>
-          </div>
+    <section>
+      <div className="gm__section-head">
+        <h2 className="gm__section-title">Jogadores</h2>
+        <button type="button" className="link" onClick={() => dispatch({ type: 'ADD_PLAYER' })}>
+          + Novo jogador
+        </button>
+      </div>
+
+      <div className="card card--folder" style={{ marginBottom: 8 }}>
+        <div className="gm__card-head">
+          <span style={{ flex: 1, fontSize: 13.5, color: 'var(--text-muted)' }}>
+            Dar moedas ao grupo (dividido igualmente)
+          </span>
+          <button
+            type="button"
+            className="btn btn--solid"
+            onClick={() => setGroupOpen((value) => !value)}
+          >
+            Distribuir
+          </button>
         </div>
-      ))}
-
-      <div className="row">
-        <button
-          type="button"
-          className="btn btn--primary"
-          style={{ flex: 1 }}
-          onClick={() => setGiving({ playerIds: null, title: 'Dar moedas ao grupo' })}
-        >
-          Dar moedas ao grupo
-        </button>
+        {groupOpen ? <GroupGivePanel onDone={() => setGroupOpen(false)} /> : null}
       </div>
 
-      <div className="row">
-        <input
-          className="input"
-          placeholder="Nome do novo personagem"
-          value={newName}
-          onChange={(event) => setNewName(event.target.value)}
-        />
-        <button
-          type="button"
-          className="btn"
-          disabled={!newName.trim()}
-          onClick={() => {
-            dispatch({ type: 'ADD_PLAYER', name: newName })
-            setNewName('')
-          }}
-        >
-          Adicionar
-        </button>
+      <div className="gm__list">
+        {state.players.map((player) => (
+          <PlayerCard key={player.id} player={player} />
+        ))}
       </div>
-
-      {giving ? (
-        <GiveCoinsSheet
-          title={giving.title}
-          playerIds={giving.playerIds}
-          onClose={() => setGiving(null)}
-        />
-      ) : null}
-
-      {givingItem ? (
-        <GiveItemSheet playerId={givingItem} onClose={() => setGivingItem(null)} />
-      ) : null}
-
-      {renaming ? (
-        <RenameSheet
-          player={renaming}
-          onClose={() => setRenaming(null)}
-          onSubmit={(name) => {
-            dispatch({ type: 'RENAME_PLAYER', playerId: renaming.id, name })
-            setRenaming(null)
-          }}
-        />
-      ) : null}
-    </div>
+    </section>
   )
 }
 
-/** `playerIds: null` significa o grupo todo. */
-function GiveCoinsSheet({ title, playerIds, onClose }) {
+function GroupGivePanel({ onDone }) {
   const { dispatch } = useStore()
   const [gold, setGold] = useState('')
   const [silver, setSilver] = useState('')
@@ -163,222 +68,291 @@ function GiveCoinsSheet({ title, playerIds, onClose }) {
     silver: Number.parseInt(silver, 10) || 0,
     copper: Number.parseInt(copper, 10) || 0,
   }
-  const empty = !coins.gold && !coins.silver && !coins.copper
 
   return (
-    <Modal title={title} onClose={onClose}>
-      <div className="stack">
-        <div className="field-row">
-          <label className="field">
-            <span className="field__label">Ouro</span>
-            <input className="input" type="number" inputMode="numeric" min="0" value={gold} onChange={(e) => setGold(e.target.value)} />
-          </label>
-          <label className="field">
-            <span className="field__label">Prata</span>
-            <input className="input" type="number" inputMode="numeric" min="0" value={silver} onChange={(e) => setSilver(e.target.value)} />
-          </label>
-          <label className="field">
-            <span className="field__label">Cobre</span>
-            <input className="input" type="number" inputMode="numeric" min="0" value={copper} onChange={(e) => setCopper(e.target.value)} />
-          </label>
-        </div>
-
-        {playerIds === null ? (
-          <p className="card__sub">Cada personagem recebe essa quantia. Não é uma divisão.</p>
-        ) : null}
-
-        <button
-          type="button"
-          className="btn btn--primary btn--block"
-          disabled={empty}
-          onClick={() => {
-            dispatch({ type: 'GIVE_COINS', playerIds, coins })
-            onClose()
-          }}
-        >
-          Entregar
-        </button>
-      </div>
-    </Modal>
+    <div className="gm__panel">
+      <CoinInputs
+        small
+        gold={gold}
+        silver={silver}
+        copper={copper}
+        onGold={setGold}
+        onSilver={setSilver}
+        onCopper={setCopper}
+      />
+      <button
+        type="button"
+        className="btn btn--solid btn--block"
+        disabled={!coins.gold && !coins.silver && !coins.copper}
+        onClick={() => {
+          dispatch({ type: 'SPLIT_COINS', coins })
+          onDone()
+        }}
+      >
+        Distribuir
+      </button>
+    </div>
   )
 }
 
-function GiveItemSheet({ playerId, onClose }) {
+function PlayerCard({ player }) {
   const { state, dispatch } = useStore()
-  const [filters, setFilters] = useState(EMPTY_FILTERS)
+  const [panel, setPanel] = useState(null) // 'coins' | 'items'
+  const [gold, setGold] = useState('')
+  const [silver, setSilver] = useState('')
+  const [copper, setCopper] = useState('')
+  const [search, setSearch] = useState('')
+  const [drafts, setDrafts] = useState({})
+
   const catalog = useMemo(() => libraryItems(state), [state])
-  const visible = catalog.filter(
-    (item) => matchesSearch(item, filters.search) && matchesFilters(item, filters),
-  )
-  const player = state.players.find((current) => current.id === playerId)
+  const term = search.trim().toLowerCase()
+  const rows = catalog.filter((item) => !term || item.name.toLowerCase().includes(term))
+  const hasDraft = Object.values(drafts).some((qty) => qty > 0)
+
+  const openPanel = (next) => {
+    setPanel((current) => (current === next ? null : next))
+    setDrafts({})
+    setSearch('')
+  }
 
   return (
-    <Modal title={`Dar item a ${player?.name ?? ''}`} onClose={onClose}>
-      <div className="stack">
-        <ItemFilters value={filters} onChange={setFilters} levels={availableLevels(catalog)} />
-        {visible.length === 0 ? <div className="empty">Nada encontrado.</div> : null}
-        {visible.map((item) => (
-          <ItemCard
-            key={item.id}
-            item={item}
-            right={
-              <button
-                type="button"
-                className="btn btn--sm btn--primary"
-                onClick={() => dispatch({ type: 'GIVE_ITEM', playerId, itemId: item.id, qty: 1 })}
-              >
-                Dar
-              </button>
+    <div className="card card--folder">
+      <div className="gm__card-head">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <input
+            className="inline-input"
+            value={player.name}
+            onChange={(event) =>
+              dispatch({ type: 'RENAME_PLAYER', playerId: player.id, name: event.target.value })
             }
+            aria-label="Nome do personagem"
           />
-        ))}
-      </div>
-    </Modal>
-  )
-}
-
-function RenameSheet({ player, onClose, onSubmit }) {
-  const [name, setName] = useState(player.name)
-  return (
-    <Modal title="Renomear personagem" onClose={onClose}>
-      <div className="stack">
-        <label className="field">
-          <span className="field__label">Nome</span>
-          <input className="input" value={name} onChange={(event) => setName(event.target.value)} />
-        </label>
-        <button
-          type="button"
-          className="btn btn--primary btn--block"
-          disabled={!name.trim()}
-          onClick={() => onSubmit(name)}
-        >
-          Salvar
+          <div className="gm__coins">
+            {[
+              ['gold', player.gold],
+              ['silver', player.silver],
+              ['copper', player.copper],
+            ].map(([coin, value]) => (
+              <span className="gm__coin" key={coin}>
+                <span className="gm__coin-value">{value}</span>
+                <span className={`coin-dot coin-dot--${coin}`} />
+              </span>
+            ))}
+          </div>
+        </div>
+        <button type="button" className="btn btn--solid" onClick={() => openPanel('coins')}>
+          Dar moedas
+        </button>
+        <button type="button" className="btn btn--tint" onClick={() => openPanel('items')}>
+          Dar item
         </button>
       </div>
-    </Modal>
+
+      {panel === 'coins' ? (
+        <div className="gm__panel">
+          <CoinInputs
+            small
+            gold={gold}
+            silver={silver}
+            copper={copper}
+            onGold={setGold}
+            onSilver={setSilver}
+            onCopper={setCopper}
+          />
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              type="button"
+              className="btn btn--neutral btn--block"
+              onClick={() => setPanel(null)}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="btn btn--solid btn--block"
+              onClick={() => {
+                dispatch({
+                  type: 'GIVE_COINS',
+                  playerId: player.id,
+                  coins: {
+                    gold: Number.parseInt(gold, 10) || 0,
+                    silver: Number.parseInt(silver, 10) || 0,
+                    copper: Number.parseInt(copper, 10) || 0,
+                  },
+                })
+                setGold('')
+                setSilver('')
+                setCopper('')
+                setPanel(null)
+              }}
+            >
+              Dar
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {panel === 'items' ? (
+        <div className="gm__panel">
+          <SearchBox
+            sunken
+            small
+            value={search}
+            onChange={setSearch}
+            placeholder="Buscar item para dar..."
+          />
+          <div className="gm__scroll">
+            {rows.map((item) => {
+              const qty = drafts[item.id] ?? 0
+              return (
+                <div className="gm__row" key={item.id}>
+                  <span className="gm__row-name">{item.name}</span>
+                  <span className="item__level">Nv {item.level}</span>
+                  <Stepper
+                    size={22}
+                    value={qty}
+                    canDec={qty > 0}
+                    onDec={() => setDrafts({ ...drafts, [item.id]: qty - 1 })}
+                    onInc={() => setDrafts({ ...drafts, [item.id]: qty + 1 })}
+                  />
+                </div>
+              )
+            })}
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              type="button"
+              className="btn btn--neutral btn--block"
+              onClick={() => setPanel(null)}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="btn btn--solid btn--block"
+              disabled={!hasDraft}
+              onClick={() => {
+                for (const [itemId, qty] of Object.entries(drafts)) {
+                  if (qty > 0) dispatch({ type: 'GIVE_ITEM', playerId: player.id, itemId, qty })
+                }
+                setDrafts({})
+                setPanel(null)
+              }}
+            >
+              Finalizar
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
   )
 }
 
 /* ------------------------------------------------------------------- lojas */
 
-function ShopsPanel() {
+function ShopsSection() {
   const { state, dispatch } = useStore()
-  const [stocking, setStocking] = useState(null) // shopId
-  const [newShop, setNewShop] = useState('')
+  const [openId, setOpenId] = useState(null)
 
   return (
-    <div className="stack">
-      {state.shops.map((shop) => (
-        <div key={shop.id} className="stack" style={{ gap: 'var(--sp-2)' }}>
-          <div className="gm-player">
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div className="gm-player__name">{shop.name}</div>
-              <div className="card__sub">
-                {plural(shop.itemIds.length, 'item', 'itens')} na prateleira
-              </div>
-            </div>
-          </div>
-          <div className="row row--wrap">
-            <button type="button" className="btn btn--sm" onClick={() => setStocking(shop.id)}>
-              Itens da loja
-            </button>
-            <button
-              type="button"
-              className="btn btn--sm btn--danger"
-              onClick={() => dispatch({ type: 'REMOVE_SHOP', shopId: shop.id })}
-            >
-              Remover loja
-            </button>
-          </div>
-        </div>
-      ))}
-
-      <div className="row">
-        <input
-          className="input"
-          placeholder="Nome da nova loja"
-          value={newShop}
-          onChange={(event) => setNewShop(event.target.value)}
-        />
-        <button
-          type="button"
-          className="btn"
-          disabled={!newShop.trim()}
-          onClick={() => {
-            dispatch({ type: 'ADD_SHOP', name: newShop })
-            setNewShop('')
-          }}
-        >
-          Criar
+    <section>
+      <div className="gm__section-head">
+        <h2 className="gm__section-title">Lojas</h2>
+        <button type="button" className="link" onClick={() => dispatch({ type: 'ADD_SHOP' })}>
+          + Nova loja
         </button>
       </div>
 
-      {stocking ? <StockSheet shopId={stocking} onClose={() => setStocking(null)} /> : null}
-    </div>
+      <div className="gm__list">
+        {state.shops.map((shop) => (
+          <ShopCard
+            key={shop.id}
+            shop={shop}
+            isOpen={openId === shop.id}
+            onToggle={() => setOpenId(openId === shop.id ? null : shop.id)}
+          />
+        ))}
+      </div>
+    </section>
   )
 }
 
-/** Cadastrar e remover itens da prateleira de uma loja. */
-function StockSheet({ shopId, onClose }) {
+function ShopCard({ shop, isOpen, onToggle }) {
   const { state, dispatch } = useStore()
   const [filters, setFilters] = useState(EMPTY_FILTERS)
-  const shop = state.shops.find((current) => current.id === shopId)
-  const catalog = useMemo(() => libraryItems(state), [state])
 
-  const visible = catalog.filter(
+  const catalog = useMemo(() => libraryItems(state), [state])
+  const rows = catalog.filter(
     (item) => matchesSearch(item, filters.search) && matchesFilters(item, filters),
   )
 
-  if (!shop) return null
-
   return (
-    <Modal title={shop.name} onClose={onClose}>
-      <div className="stack">
-        <h3 className="section-title">Na prateleira ({shop.itemIds.length})</h3>
-        {shop.itemIds.length === 0 ? (
-          <div className="empty">Prateleira vazia.</div>
-        ) : (
-          shop.itemIds.map((itemId) => {
-            const item = resolveItem(state, itemId)
-            if (!item) return null
-            return (
-              <ItemCard
-                key={itemId}
-                item={item}
-                right={
-                  <button
-                    type="button"
-                    className="btn btn--sm btn--danger"
-                    onClick={() => dispatch({ type: 'SHOP_REMOVE_ITEM', shopId, itemId })}
-                  >
-                    Tirar
-                  </button>
-                }
-              />
-            )
-          })
-        )}
+    <div className="card card--folder">
+      <div className="gm__card-head">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <input
+            className="inline-input"
+            value={shop.name}
+            onChange={(event) =>
+              dispatch({ type: 'RENAME_SHOP', shopId: shop.id, name: event.target.value })
+            }
+            aria-label="Nome da loja"
+          />
+          <div className="folder__count">
+            {plural(shop.itemIds.length, 'item cadastrado', 'itens cadastrados')}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={isOpen}
+          aria-label={`${isOpen ? 'Fechar' : 'Abrir'} itens de ${shop.name}`}
+        >
+          <ChevronRight open={isOpen} />
+        </button>
+      </div>
 
-        <h3 className="section-title">Adicionar da biblioteca</h3>
-        <ItemFilters value={filters} onChange={setFilters} levels={availableLevels(catalog)} />
-        {visible
-          .filter((item) => !shop.itemIds.includes(item.id))
-          .map((item) => (
-            <ItemCard
-              key={item.id}
-              item={item}
-              right={
+      {isOpen ? (
+        <div className="gm__panel">
+          <SearchBox
+            sunken
+            small
+            value={filters.search}
+            onChange={(search) => setFilters({ ...filters, search })}
+          />
+          <FilterSelects
+            small
+            value={filters}
+            onChange={setFilters}
+            levels={availableLevels(catalog)}
+          />
+          <div className="gm__scroll" style={{ maxHeight: 260, gap: 2 }}>
+            {rows.map((item) => {
+              const checked = shop.itemIds.includes(item.id)
+              return (
                 <button
                   type="button"
-                  className="btn btn--sm btn--primary"
-                  onClick={() => dispatch({ type: 'SHOP_ADD_ITEM', shopId, itemId: item.id })}
+                  className="gm__check-row"
+                  key={item.id}
+                  onClick={() =>
+                    dispatch({ type: 'TOGGLE_SHOP_ITEM', shopId: shop.id, itemId: item.id })
+                  }
+                  aria-pressed={checked}
                 >
-                  Pôr
+                  <span className={`checkbox${checked ? ' checkbox--on' : ''}`}>
+                    {checked ? <CheckIcon /> : null}
+                  </span>
+                  <span className="gm__check-name">{item.name}</span>
+                  <span className="gm__check-price">{formatCopper(item.priceCp)}</span>
                 </button>
-              }
-            />
-          ))}
-      </div>
-    </Modal>
+              )
+            })}
+          </div>
+          <button type="button" className="btn btn--solid btn--block" onClick={onToggle}>
+            Inserir
+          </button>
+        </div>
+      ) : null}
+    </div>
   )
 }

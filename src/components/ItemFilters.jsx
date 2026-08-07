@@ -1,47 +1,53 @@
+import { SearchIcon } from './Icons.jsx'
 import { CATEGORIES } from '../data/catalog.js'
 
-/** Busca + filtro por tipo e nível, compartilhado por Inventário, Loja e Biblioteca. */
-export default function ItemFilters({ value, onChange, levels = [], placeholder = 'Buscar item…' }) {
-  const set = (patch) => onChange({ ...value, ...patch })
-
+/** Caixa de busca com a lupa dentro, como no protótipo. */
+export function SearchBox({ value, onChange, placeholder = 'Buscar item...', sunken = false, small = false }) {
   return (
-    <div className="toolbar">
+    <div className={`search${sunken ? ' search--sunken' : ''}`}>
+      <SearchIcon size={small ? 14 : 15} />
       <input
-        type="search"
-        className="input"
+        className="search__input"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        value={value.search}
-        onChange={(event) => set({ search: event.target.value })}
-        aria-label="Buscar item"
+        aria-label={placeholder}
       />
-      <div className="toolbar__filters">
-        <select
-          className="select"
-          value={value.category}
-          onChange={(event) => set({ category: event.target.value })}
-          aria-label="Filtrar por tipo"
-        >
-          <option value="all">Todos os tipos</option>
-          {Object.entries(CATEGORIES).map(([id, meta]) => (
-            <option key={id} value={id}>
-              {meta.label}
-            </option>
-          ))}
-        </select>
-        <select
-          className="select"
-          value={value.level}
-          onChange={(event) => set({ level: event.target.value })}
-          aria-label="Filtrar por nível"
-        >
-          <option value="all">Todos os níveis</option>
-          {levels.map((level) => (
-            <option key={level} value={String(level)}>
-              Nível {level}
-            </option>
-          ))}
-        </select>
-      </div>
+    </div>
+  )
+}
+
+/** Os dois seletores: tipo e nível. */
+export function FilterSelects({ value, onChange, levels = [], small = false }) {
+  const cls = `select${small ? ' select--sm' : ''}`
+  return (
+    <div className="filters__row">
+      <select
+        className={cls}
+        value={value.category}
+        onChange={(event) => onChange({ ...value, category: event.target.value })}
+        aria-label="Filtrar por tipo"
+      >
+        <option value="all">Todos os tipos</option>
+        {Object.entries(CATEGORIES).map(([id, meta]) => (
+          <option key={id} value={id}>
+            {meta.label}
+          </option>
+        ))}
+      </select>
+      <select
+        className={cls}
+        value={value.level}
+        onChange={(event) => onChange({ ...value, level: event.target.value })}
+        aria-label="Filtrar por nível"
+      >
+        <option value="all">Todos os níveis</option>
+        {levels.map((level) => (
+          <option key={level} value={String(level)}>
+            Nível {level}
+          </option>
+        ))}
+      </select>
     </div>
   )
 }

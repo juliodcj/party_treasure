@@ -19,12 +19,15 @@ function loadState() {
     if (!parsed || parsed.version !== fallback.version || !Array.isArray(parsed.players)) {
       return fallback
     }
-    // O jogador selecionado pode ter sido apagado noutro aparelho.
-    const activeExists = parsed.players.some((player) => player.id === parsed.activePlayerId)
+    // O jogador ou a loja em foco podem ter sido apagados noutro aparelho.
+    const playerExists = parsed.players.some((player) => player.id === parsed.activePlayerId)
+    const shopExists = parsed.shops?.some((shop) => shop.id === parsed.activeShopId)
     return {
       ...fallback,
       ...parsed,
-      activePlayerId: activeExists ? parsed.activePlayerId : parsed.players[0]?.id,
+      cart: {},
+      activePlayerId: playerExists ? parsed.activePlayerId : parsed.players[0]?.id,
+      activeShopId: shopExists ? parsed.activeShopId : parsed.shops?.[0]?.id,
     }
   } catch {
     return fallback

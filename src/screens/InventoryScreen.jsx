@@ -1,307 +1,359 @@
 import { useMemo, useState } from 'react'
-import ItemCard from '../components/ItemCard.jsx'
-import ItemFilters, { EMPTY_FILTERS } from '../components/ItemFilters.jsx'
-import ItemForm from '../components/ItemForm.jsx'
-import Modal from '../components/Modal.jsx'
+import ItemRow from '../components/ItemRow.jsx'
+import Sheet, { SheetActions } from '../components/Sheet.jsx'
 import Stepper from '../components/Stepper.jsx'
+import ItemForm from '../components/ItemForm.jsx'
+import { SearchBox } from '../components/ItemFilters.jsx'
+import { EditIcon, PlusIcon, SellIcon, SendIcon, TrashIcon } from '../components/Icons.jsx'
 import { useStore } from '../state/store.jsx'
 import { GROUPS } from '../data/catalog.js'
 import {
-  availableLevels,
   groupInventory,
   libraryItems,
   matchesFilters,
   matchesSearch,
   playerInventory,
-  totalBulk,
 } from '../lib/items.js'
-import { formatBulk } from '../lib/bulk.js'
-import { formatCopper } from '../lib/money.js'
-import { plural } from '../lib/text.js'
+import { formatCopper, toCopper } from '../lib/money.js'
 import { SELL_RATE } from '../config.js'
 
-export default function InventoryScreen({ player }) {
+export default function InventoryScreen({ player, filters, openId, onToggle }) {
   const { state, dispatch } = useStore()
-  const [filters, setFilters] = useState(EMPTY_FILTERS)
-  const [adding, setAdding] = useState(null) // 'manual' | 'catalog'
-  const [transfer, setTransfer] = useState(null) // { item }
-  const [editing, setEditing] = useState(null) // item avulso
+  const [adding, setAdding] = useState(false)
+  const [deleting, setDeleting] = useState(null)
+  const [selling, setSelling] = useState(null)
+  const [sending, setSending] = useState(null)
+  const [editing, setEditing] = useState(null)
 
   const entries = useMemo(() => playerInventory(state, player), [state, player])
-  const visible = useMemo(
-    () => entries.filter(({ item }) => matchesSearch(item, filters.search) && matchesFilters(item, filters)),
-    [entries, filters],
+  const visible = entries.filter(
+    ({ item }) => matchesSearch(item, filters.search) && matchesFilters(item, filters),
   )
   const grouped = useMemo(() => groupInventory(visible), [visible])
-  const levels = useMemo(() => availableLevels(entries.map((entry) => entry.item)), [entries])
 
+  const walletCp = toCopper(player)
   const isCustom = (itemId) => player.customItems.some((custom) => custom.id === itemId)
+  const filtersActive =
+    !!filters.search.trim() || filters.category !== 'all' || filters.level !== 'all'
 
   return (
-    <div className="stack">
-      <PlayerChips />
-
-      <div className="row">
-        <span className="card__sub">
-          {plural(entries.reduce((sum, entry) => sum + entry.qty, 0), 'item', 'itens')} · Bulk{' '}
-          {formatBulk(totalBulk(entries))}
-        </span>
-        <div className="spacer" />
-        <button type="button" className="btn btn--sm btn--primary" onClick={() => setAdding('catalog')}>
-          + Adicionar
-        </button>
-      </div>
-
-      <ItemFilters value={filters} onChange={setFilters} levels={levels} />
-
+    <>
       {visible.length === 0 ? (
         <div className="empty">
-          {entries.length === 0
-            ? 'A mochila está vazia. Toque em “Adicionar”.'
-            : 'Nenhum item bate com a busca.'}
+          {filtersActive
+            ? 'Nenhum item encontrado.'
+            : 'Sua mochila está vazia.\nAdicione itens na Loja.'}
         </div>
       ) : null}
 
       {GROUPS.map((group) =>
         grouped[group.id].length ? (
-          <section key={group.id} className="stack">
-            <h2 className="section-title">
-              {group.label} <span>({grouped[group.id].length})</span>
-            </h2>
-            {grouped[group.id].map(({ item, qty }) => (
-              <ItemCard
-                key={item.id}
-                item={item}
-                qty={qty}
-                right={
-                  <Stepper
-                    value={qty}
-                    min={0}
-                    onChange={(next) =>
-                      dispatch({
-                        type: 'CHANGE_ITEM_QTY',
-                        playerId: player.id,
-                        itemId: item.id,
-                        delta: next - qty,
-                      })
-                    }
-                  />
-                }
-              >
-                <div className="item__actions">
-                  <button
-                    type="button"
-                    className="btn btn--sm"
-                    onClick={() => setTransfer({ item, qty })}
-                    disabled={state.players.length < 2}
-                  >
-                    Enviar
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--sm"
-                    onClick={() =>
-                      dispatch({ type: 'SELL_ITEM', playerId: player.id, itemId: item.id, qty: 1 })
-                    }
-                  >
-                    Vender ({formatCopper(Math.floor(item.priceCp * SELL_RATE))})
-                  </button>
-                  {isCustom(item.id) ? (
-                    <button type="button" className="btn btn--sm" onClick={() => setEditing(item)}>
-                      Editar
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="btn btn--sm btn--danger"
-                    onClick={() =>
-                      dispatch({
-                        type: 'DROP_ITEM',
-                        playerId: player.id,
-                        itemId: item.id,
-                        refund: true,
-                      })
-                    }
-                  >
-                    Excluir c/ reembolso
-                  </button>
-                </div>
-              </ItemCard>
-            ))}
+          <section key={group.id} style={{ display: 'contents' }}>
+            <h2 className="group-title">{group.label}</h2>
+            {grouped[group.id].map(({ item, qty }) => {
+              const custom = isCustom(item.id)
+              const canBuyMore = custom || walletCp >= item.priceCp
+              return (
+                <ItemRow
+                  key={item.id}
+                  item={item}
+                  qty={qty}
+                  priceInBody
+                  open={openId === item.id}
+                  onToggle={() => onToggle(item.id)}
+                >
+                  <div className="item__foot">
+                    <div className="item__tools">
+                      <button
+                        type="button"
+                        className="icon-btn icon-btn--danger"
+                        title="Excluir"
+                        aria-label={`Excluir ${item.name}`}
+                        onClick={() => setDeleting(item)}
+                      >
+                        <TrashIcon />
+                      </button>
+                      {qty > 0 && !custom ? (
+                        <button
+                          type="button"
+                          className="icon-btn icon-btn--accent"
+                          title="Vender"
+                          aria-label={`Vender ${item.name}`}
+                          onClick={() => setSelling({ item, qty: 1, owned: qty })}
+                        >
+                          <SellIcon />
+                        </button>
+                      ) : null}
+                      {qty > 0 && state.players.length > 1 ? (
+                        <button
+                          type="button"
+                          className="icon-btn icon-btn--accent"
+                          title="Enviar a outro personagem"
+                          aria-label={`Enviar ${item.name}`}
+                          onClick={() => setSending({ item, qty: 1, owned: qty })}
+                        >
+                          <SendIcon />
+                        </button>
+                      ) : null}
+                      {custom ? (
+                        <button
+                          type="button"
+                          className="icon-btn icon-btn--accent"
+                          title="Editar"
+                          aria-label={`Editar ${item.name}`}
+                          onClick={() => setEditing(item)}
+                        >
+                          <EditIcon />
+                        </button>
+                      ) : null}
+                    </div>
+
+                    <Stepper
+                      value={qty}
+                      canDec={qty > 0}
+                      canInc={canBuyMore}
+                      onDec={() =>
+                        dispatch(
+                          custom
+                            ? {
+                                type: 'CHANGE_CUSTOM_QTY',
+                                playerId: player.id,
+                                itemId: item.id,
+                                delta: -1,
+                              }
+                            : { type: 'REFUND_ONE', playerId: player.id, itemId: item.id },
+                        )
+                      }
+                      onInc={() =>
+                        dispatch(
+                          custom
+                            ? {
+                                type: 'CHANGE_CUSTOM_QTY',
+                                playerId: player.id,
+                                itemId: item.id,
+                                delta: 1,
+                              }
+                            : { type: 'BUY_ONE', playerId: player.id, itemId: item.id },
+                        )
+                      }
+                    />
+                  </div>
+
+                  {!canBuyMore ? <div className="item__warn">Ouro insuficiente</div> : null}
+                </ItemRow>
+              )
+            })}
           </section>
         ) : null,
       )}
 
-      {adding ? (
-        <AddItemSheet mode={adding} player={player} onMode={setAdding} onClose={() => setAdding(null)} />
+      <button type="button" className="fab" onClick={() => setAdding(true)} aria-label="Adicionar item">
+        <PlusIcon />
+      </button>
+
+      {adding ? <AddItemSheet player={player} onClose={() => setAdding(false)} /> : null}
+
+      {deleting ? (
+        <Sheet center onClose={() => setDeleting(null)}>
+          <div className="sheet__question">Excluir {deleting.name} da mochila?</div>
+          <SheetActions
+            onCancel={() => setDeleting(null)}
+            onConfirm={() => {
+              dispatch({ type: 'DROP_ITEM', playerId: player.id, itemId: deleting.id })
+              setDeleting(null)
+            }}
+            confirmLabel="Excluir"
+            confirmVariant="danger"
+          />
+        </Sheet>
       ) : null}
 
-      {transfer ? (
-        <TransferSheet player={player} entry={transfer} onClose={() => setTransfer(null)} />
+      {selling ? (
+        <Sheet center onClose={() => setSelling(null)}>
+          <div className="sheet__question">
+            Deseja vender {selling.qty}x {selling.item.name} por{' '}
+            {formatCopper(Math.floor(selling.item.priceCp * SELL_RATE) * selling.qty)}?
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+            <Stepper
+              size={34}
+              gap={18}
+              valueSize={18}
+              value={selling.qty}
+              canDec={selling.qty > 1}
+              canInc={selling.qty < selling.owned}
+              onDec={() => setSelling({ ...selling, qty: selling.qty - 1 })}
+              onInc={() => setSelling({ ...selling, qty: selling.qty + 1 })}
+            />
+          </div>
+          <SheetActions
+            onCancel={() => setSelling(null)}
+            onConfirm={() => {
+              dispatch({
+                type: 'SELL_ITEM',
+                playerId: player.id,
+                itemId: selling.item.id,
+                qty: selling.qty,
+              })
+              setSelling(null)
+            }}
+          />
+        </Sheet>
+      ) : null}
+
+      {sending ? (
+        <SendItemSheet player={player} entry={sending} onClose={() => setSending(null)} />
       ) : null}
 
       {editing ? (
-        <Modal title="Editar item" onClose={() => setEditing(null)}>
+        <Sheet title="Editar item" onClose={() => setEditing(null)}>
           <ItemForm
             item={editing}
-            submitLabel="Salvar alterações"
+            submitLabel="Salvar"
+            onCancel={() => setEditing(null)}
             onSubmit={(item) => {
               dispatch({ type: 'UPDATE_CUSTOM_ITEM', playerId: player.id, item })
               setEditing(null)
             }}
           />
-        </Modal>
+        </Sheet>
       ) : null}
-    </div>
+    </>
   )
 }
 
-/** Seletor de personagem em chips roláveis. */
-function PlayerChips() {
+/** Folha "Adicionar item": cadastrar um avulso ou pegar da biblioteca. */
+function AddItemSheet({ player, onClose }) {
   const { state, dispatch } = useStore()
+  const [mode, setMode] = useState('manual')
+  const [search, setSearch] = useState('')
+
+  const term = search.trim().toLowerCase()
+  const rows = libraryItems(state).filter(
+    (item) => !term || item.name.toLowerCase().includes(term),
+  )
+
   return (
-    <div className="chips" role="tablist" aria-label="Escolher personagem">
-      {state.players.map((player) => (
+    <Sheet onClose={onClose}>
+      <div className="seg">
         <button
-          key={player.id}
           type="button"
-          role="tab"
-          aria-selected={player.id === state.activePlayerId}
-          className={`chip${player.id === state.activePlayerId ? ' chip--on' : ''}`}
-          onClick={() => dispatch({ type: 'SELECT_PLAYER', playerId: player.id })}
+          className={`seg__tab${mode === 'manual' ? ' seg__tab--on' : ''}`}
+          onClick={() => setMode('manual')}
         >
-          {player.name}
+          Item manual
         </button>
-      ))}
-    </div>
-  )
-}
-
-/** Adicionar item: escolher do catálogo/campanha ou cadastrar um avulso. */
-function AddItemSheet({ mode, player, onMode, onClose }) {
-  const { state, dispatch } = useStore()
-  const [filters, setFilters] = useState(EMPTY_FILTERS)
-
-  const catalog = useMemo(() => libraryItems(state), [state])
-  const visible = catalog.filter(
-    (item) => matchesSearch(item, filters.search) && matchesFilters(item, filters),
-  )
-
-  return (
-    <Modal title="Adicionar item" onClose={onClose}>
-      <div className="stack">
-        <div className="chips">
-          <button
-            type="button"
-            className={`chip${mode === 'catalog' ? ' chip--on' : ''}`}
-            onClick={() => onMode('catalog')}
-          >
-            Do catálogo
-          </button>
-          <button
-            type="button"
-            className={`chip${mode === 'manual' ? ' chip--on' : ''}`}
-            onClick={() => onMode('manual')}
-          >
-            Item avulso
-          </button>
-        </div>
-
-        {mode === 'catalog' ? (
-          <>
-            <ItemFilters
-              value={filters}
-              onChange={setFilters}
-              levels={availableLevels(catalog)}
-            />
-            {visible.length === 0 ? <div className="empty">Nada encontrado.</div> : null}
-            {visible.map((item) => (
-              <ItemCard
-                key={item.id}
-                item={item}
-                right={
-                  <button
-                    type="button"
-                    className="btn btn--sm btn--primary"
-                    onClick={() =>
-                      dispatch({ type: 'GIVE_ITEM', playerId: player.id, itemId: item.id, qty: 1 })
-                    }
-                  >
-                    Pegar
-                  </button>
-                }
-              />
-            ))}
-          </>
-        ) : (
-          <>
-            <p className="card__sub">
-              O item avulso fica só na ficha de {player.name} — não entra no catálogo da mesa.
-            </p>
-            <ItemForm
-              submitLabel="Adicionar à mochila"
-              onSubmit={(item) => {
-                dispatch({ type: 'ADD_CUSTOM_ITEM', playerId: player.id, item, qty: 1 })
-                onClose()
-              }}
-            />
-          </>
-        )}
+        <button
+          type="button"
+          className={`seg__tab${mode === 'catalog' ? ' seg__tab--on' : ''}`}
+          onClick={() => setMode('catalog')}
+        >
+          Biblioteca
+        </button>
       </div>
-    </Modal>
+
+      {mode === 'manual' ? (
+        <ItemForm
+          submitLabel="Adicionar à mochila"
+          onCancel={onClose}
+          onSubmit={(item) => {
+            dispatch({ type: 'ADD_CUSTOM_ITEM', playerId: player.id, item, qty: 1 })
+            onClose()
+          }}
+        />
+      ) : (
+        <>
+          <div style={{ marginBottom: 10 }}>
+            <SearchBox
+              sunken
+              small
+              value={search}
+              onChange={setSearch}
+              placeholder="Buscar na biblioteca..."
+            />
+          </div>
+          <div style={{ overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {rows.map((item) => (
+              <div className="gm__row" key={item.id} style={{ padding: '6px 2px' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5 }}>{item.name}</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--text-faint)', marginTop: 1 }}>
+                    Nv {item.level} · {formatCopper(item.priceCp)}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn--solid"
+                  style={{ fontSize: 11.5, padding: '6px 11px', borderRadius: 7 }}
+                  onClick={() =>
+                    dispatch({ type: 'GIVE_ITEM', playerId: player.id, itemId: item.id, qty: 1 })
+                  }
+                >
+                  Adicionar
+                </button>
+              </div>
+            ))}
+            {rows.length === 0 ? <div className="empty">Nenhum item encontrado.</div> : null}
+          </div>
+        </>
+      )}
+    </Sheet>
   )
 }
 
 /** Enviar item a outro personagem. */
-function TransferSheet({ player, entry, onClose }) {
+function SendItemSheet({ player, entry, onClose }) {
   const { state, dispatch } = useStore()
   const others = state.players.filter((other) => other.id !== player.id)
   const [targetId, setTargetId] = useState(others[0]?.id ?? '')
   const [qty, setQty] = useState(1)
 
   return (
-    <Modal title={`Enviar ${entry.item.name}`} onClose={onClose}>
-      <div className="stack">
-        <label className="field">
-          <span className="field__label">Para quem</span>
-          <select
-            className="select"
-            value={targetId}
-            onChange={(event) => setTargetId(event.target.value)}
-          >
-            {others.map((other) => (
-              <option key={other.id} value={other.id}>
-                {other.name}
-              </option>
-            ))}
-          </select>
-        </label>
+    <Sheet center onClose={onClose}>
+      <div className="sheet__question">Enviar {entry.item.name} para quem?</div>
 
-        <div className="row">
-          <span className="field__label" style={{ flex: 1 }}>
-            Quantidade (tem {entry.qty})
-          </span>
-          <Stepper value={qty} min={1} max={entry.qty} onChange={setQty} />
-        </div>
+      <select
+        className="input"
+        style={{ marginTop: 14 }}
+        value={targetId}
+        onChange={(event) => setTargetId(event.target.value)}
+        aria-label="Para quem enviar"
+      >
+        {others.map((other) => (
+          <option key={other.id} value={other.id}>
+            {other.name}
+          </option>
+        ))}
+      </select>
 
-        <button
-          type="button"
-          className="btn btn--primary btn--block"
-          disabled={!targetId}
-          onClick={() => {
-            dispatch({
-              type: 'TRANSFER_ITEM',
-              fromId: player.id,
-              toId: targetId,
-              itemId: entry.item.id,
-              qty,
-            })
-            onClose()
-          }}
-        >
-          Enviar
-        </button>
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+        <Stepper
+          size={34}
+          gap={18}
+          valueSize={18}
+          value={qty}
+          canDec={qty > 1}
+          canInc={qty < entry.owned}
+          onDec={() => setQty(qty - 1)}
+          onInc={() => setQty(qty + 1)}
+        />
       </div>
-    </Modal>
+
+      <SheetActions
+        onCancel={onClose}
+        onConfirm={() => {
+          dispatch({
+            type: 'TRANSFER_ITEM',
+            fromId: player.id,
+            toId: targetId,
+            itemId: entry.item.id,
+            qty,
+          })
+          onClose()
+        }}
+        confirmLabel="Enviar"
+        disabled={!targetId}
+      />
+    </Sheet>
   )
 }

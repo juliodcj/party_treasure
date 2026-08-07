@@ -1,60 +1,196 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Header from './components/Header.jsx'
+import WalletSheet from './components/WalletSheet.jsx'
+import { SearchBox, FilterSelects, EMPTY_FILTERS } from './components/ItemFilters.jsx'
+import { BagIcon, BookIcon, ChevronDown, CrownIcon, ShopIcon } from './components/Icons.jsx'
 import InventoryScreen from './screens/InventoryScreen.jsx'
 import ShopScreen from './screens/ShopScreen.jsx'
 import LibraryScreen from './screens/LibraryScreen.jsx'
 import GmScreen from './screens/GmScreen.jsx'
 import { useActivePlayer, useStore } from './state/store.jsx'
+import { CATALOG } from './data/catalog.js'
+import { availableLevels } from './lib/items.js'
+import { plural } from './lib/text.js'
 
 const TABS = [
-  { id: 'inventory', label: 'Inventário', icon: '🎒' },
-  { id: 'shop', label: 'Loja', icon: '⚖️' },
-  { id: 'library', label: 'Biblioteca', icon: '📖' },
-  { id: 'gm', label: 'Mestre', icon: '🎲' },
+  { id: 'inventory', label: 'Inventário', Icon: BagIcon },
+  { id: 'shop', label: 'Loja', Icon: ShopIcon },
+  { id: 'library', label: 'Biblioteca', Icon: BookIcon },
+  { id: 'gm', label: 'Mestre', Icon: CrownIcon },
 ]
 
 export default function App() {
-  const { state } = useStore()
-  const [tab, setTab] = useState('inventory')
+  const { state, dispatch } = useStore()
   const player = useActivePlayer()
 
-  // Só as telas de personagem mostram carteira no cabeçalho.
-  const showsWallet = tab === 'inventory' || tab === 'shop'
+  const [tab, setTab] = useState('inventory')
+  const [filters, setFilters] = useState(EMPTY_FILTERS)
+  // Como no protótipo, só um item fica aberto de cada vez.
+  const [openId, setOpenId] = useState(null)
+  const [walletOpen, setWalletOpen] = useState(false)
+  const [shopPickerOpen, setShopPickerOpen] = useState(false)
+
+  const isInventory = tab === 'inventory'
+  const isShop = tab === 'shop'
+  const isLibrary = tab === 'library'
+  const isCharacterTab = isInventory || isShop
+
+  const shop = state.shops.find((current) => current.id === state.activeShopId) ?? state.shops[0]
+  const levels = useMemo(
+    () => availableLevels([...state.campaignItems, ...CATALOG]),
+    [state.campaignItems],
+  )
+
+  const goTo = (next) => {
+    setTab(next)
+    setOpenId(null)
+    setFilters(EMPTY_FILTERS)
+    setShopPickerOpen(false)
+  }
+
+  const toggleItem = (id) => setOpenId((current) => (current === id ? null : id))
+
+  // O botão só aparece quando há moedas soltas o bastante para valer a pena.
+  const showSimplify = isInventory && (player.silver >= 10 || player.copper >= 10)
+
+  const subhead = isShop
+    ? `${plural(shop?.itemIds.length ?? 0, 'item disponível', 'itens disponíveis')}`
+    : isLibrary
+      ? `${state.campaignItems.length} da campanha · ${CATALOG.length} oficiais`
+      : tab === 'gm'
+        ? `${plural(state.players.length, 'jogador', 'jogadores')} · ${plural(state.shops.length, 'loja cadastrada', 'lojas cadastradas')}`
+        : ''
 
   return (
     <div className="app">
       <Header
-        title={showsWallet ? player.name : TABS.find((current) => current.id === tab).label}
-        subtitle={showsWallet ? 'Personagem' : 'Tesouro do Grupo'}
-        player={showsWallet ? player : null}
+        title={TABS.find((current) => current.id === tab).label}
+        player={isCharacterTab ? player : null}
+        onWallet={() => setWalletOpen(true)}
       />
 
-      <main className="app__content">
-        {tab === 'inventory' ? <InventoryScreen player={player} /> : null}
-        {tab === 'shop' ? <ShopScreen player={player} /> : null}
-        {tab === 'library' ? <LibraryScreen /> : null}
+      {isShop && shop ? (
+        <div className="shop-picker">
+          <button
+            type="button"
+            className="shop-picker__button"
+            onClick={() => setShopPickerOpen((value) => !value)}
+            aria-expanded={shopPickerOpen}
+          >
+            {shop.name}
+            <ChevronDown open={shopPickerOpen} />
+          </button>
+          {shopPickerOpen ? (
+            <>
+              <div className="shop-picker__scrim" onClick={() => setShopPickerOpen(false)} />
+              <div className="shop-picker__menu">
+                {state.shops.map((current) => (
+                  <button
+                    key={current.id}
+                    type="button"
+                    className={`shop-picker__option${current.id === shop.id ? ' shop-picker__option--on' : ''}`}
+                    onClick={() => {
+                      dispatch({ type: 'SELECT_SHOP', shopId: current.id })
+                      setShopPickerOpen(false)
+                      setOpenId(null)
+                    }}
+                  >
+                    {current.name}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="subhead">
+        <span className="subhead__label">{subhead}</span>
+        {showSimplify ? (
+          <button
+            type="button"
+            className="link link--muted"
+            onClick={() => dispatch({ type: 'SIMPLIFY_COINS', playerId: player.id })}
+          >
+            Simplificar moedas
+          </button>
+        ) : null}
+      </div>
+
+      {isCharacterTab ? (
+        <div className="chips" role="tablist" aria-label="Escolher personagem">
+          {state.players.map((current) => (
+            <button
+              key={current.id}
+              type="button"
+              role="tab"
+              aria-selected={current.id === player.id}
+              className={`chip${current.id === player.id ? ' chip--on' : ''}`}
+              onClick={() => {
+                dispatch({ type: 'SELECT_PLAYER', playerId: current.id })
+                setOpenId(null)
+              }}
+            >
+              {current.name}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {isCharacterTab ? (
+        <div className="filters">
+          <SearchBox
+            value={filters.search}
+            onChange={(search) => setFilters({ ...filters, search })}
+          />
+          <FilterSelects value={filters} onChange={setFilters} levels={levels} />
+        </div>
+      ) : null}
+
+      {isLibrary ? (
+        <div className="filters">
+          <SearchBox
+            value={filters.search}
+            onChange={(search) => setFilters({ ...filters, search })}
+          />
+        </div>
+      ) : null}
+
+      <main className="app__scroll">
+        {isInventory ? (
+          <InventoryScreen player={player} filters={filters} openId={openId} onToggle={toggleItem} />
+        ) : null}
+        {isShop ? (
+          <ShopScreen
+            player={player}
+            shop={shop}
+            filters={filters}
+            openId={openId}
+            onToggle={toggleItem}
+          />
+        ) : null}
+        {isLibrary ? (
+          <LibraryScreen search={filters.search} openId={openId} onToggle={toggleItem} />
+        ) : null}
         {tab === 'gm' ? <GmScreen /> : null}
       </main>
 
       <nav className="nav" aria-label="Navegação principal">
-        {TABS.map((current) => (
+        {TABS.map(({ id, label, Icon }) => (
           <button
-            key={current.id}
+            key={id}
             type="button"
-            className={`nav__tab${tab === current.id ? ' nav__tab--on' : ''}`}
-            aria-current={tab === current.id ? 'page' : undefined}
-            onClick={() => setTab(current.id)}
+            className={`nav__tab${tab === id ? ' nav__tab--on' : ''}`}
+            aria-current={tab === id ? 'page' : undefined}
+            onClick={() => goTo(id)}
           >
-            <span className="nav__icon" aria-hidden="true">
-              {current.icon}
-            </span>
-            {current.label}
+            <Icon />
+            <span className="nav__label">{label}</span>
           </button>
         ))}
       </nav>
 
-      {/* Sem jogadores o app não tem o que mostrar; o estado semente evita isso. */}
-      {state.players.length === 0 ? <div className="empty">Nenhum personagem na mesa.</div> : null}
+      {walletOpen ? <WalletSheet player={player} onClose={() => setWalletOpen(false)} /> : null}
     </div>
   )
 }

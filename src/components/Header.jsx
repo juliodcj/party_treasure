@@ -1,50 +1,23 @@
-import { useState } from 'react'
-import WalletSheet from './WalletSheet.jsx'
-import { formatCopper, toCopper } from '../lib/money.js'
-
-/** Cabeçalho fixo: quem está em foco e a carteira dele. */
-export default function Header({ title, subtitle, player = null }) {
-  const [walletOpen, setWalletOpen] = useState(false)
-
+/** Título grande da tela e, nas telas de personagem, a pílula com a carteira. */
+export default function Header({ title, player = null, onWallet }) {
   return (
     <header className="header">
-      <div className="header__top">
-        <div style={{ minWidth: 0 }}>
-          <div className="header__role">{subtitle}</div>
-          <div className="header__name">{title}</div>
-        </div>
-        <div className="spacer" />
-        {player ? (
-          <span className="item__price">{formatCopper(toCopper(player))}</span>
-        ) : null}
-      </div>
-
+      <div className="header__title">{title}</div>
       {player ? (
-        <button
-          type="button"
-          className="wallet"
-          onClick={() => setWalletOpen(true)}
-          aria-label="Abrir carteira"
-        >
-          <span className="wallet__coins">
-            <span className="wallet__coin wallet__coin--gold">
-              <span className="wallet__value">{player.gold}</span>
-              <span className="wallet__unit">ouro</span>
-            </span>
-            <span className="wallet__coin wallet__coin--silver">
-              <span className="wallet__value">{player.silver}</span>
-              <span className="wallet__unit">prata</span>
-            </span>
-            <span className="wallet__coin wallet__coin--copper">
-              <span className="wallet__value">{player.copper}</span>
-              <span className="wallet__unit">cobre</span>
-            </span>
+        <button type="button" className="gold-pill" onClick={onWallet} aria-label="Abrir carteira">
+          <span className="gold-pill__coin">
+            <span className="gold-pill__value gold-pill__value--gold">{player.gold}</span>
+            <span className="coin-dot coin-dot--gold" />
+          </span>
+          <span className="gold-pill__coin">
+            <span className="gold-pill__value gold-pill__value--silver">{player.silver}</span>
+            <span className="coin-dot coin-dot--silver" />
+          </span>
+          <span className="gold-pill__coin">
+            <span className="gold-pill__value gold-pill__value--copper">{player.copper}</span>
+            <span className="coin-dot coin-dot--copper" />
           </span>
         </button>
-      ) : null}
-
-      {walletOpen && player ? (
-        <WalletSheet player={player} onClose={() => setWalletOpen(false)} />
       ) : null}
     </header>
   )

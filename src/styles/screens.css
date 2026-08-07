@@ -1,102 +1,494 @@
 /* ---------------------------------------------------------------- cabeçalho */
 
+/* No protótipo o topo era a barra de status do iPhone (58px fixos).
+   No Android quem reserva esse espaço é a área segura. */
 .header {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  padding: calc(env(safe-area-inset-top) + var(--sp-3)) var(--sp-4) var(--sp-3);
-  border-bottom: 1px solid var(--line);
-  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  padding: calc(env(safe-area-inset-top) + 14px) 20px 6px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
-.header__top {
+.header__title {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+/* Pílula branca com as três moedas do personagem em foco */
+.gold-pill {
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
-}
-
-.header__name {
-  font-size: var(--fs-xl);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.header__role {
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-
-.wallet {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  width: 100%;
-  margin-top: var(--sp-3);
-  padding: var(--sp-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
+  gap: 10px;
   background: var(--surface);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: var(--r-pill);
+  padding: 8px 14px;
+  box-shadow: var(--shadow-pill);
+  flex-shrink: 0;
 }
 
-.wallet__coins {
+.gold-pill__coin {
   display: flex;
-  gap: var(--sp-2);
-  flex: 1;
+  align-items: center;
+  gap: 5px;
 }
 
-.wallet__coin {
-  flex: 1;
+.gold-pill__value {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.gold-pill__value--gold {
+  color: var(--gold-ink);
+}
+.gold-pill__value--silver {
+  color: var(--text-muted);
+}
+.gold-pill__value--copper {
+  color: var(--copper-ink);
+}
+
+.gold-pill .coin-dot {
+  width: 10px;
+  height: 10px;
+}
+
+/* Seletor de loja: título com seta que abre um menu */
+.shop-picker {
+  padding: 0 20px 10px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.shop-picker__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.shop-picker__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+}
+
+.shop-picker__menu {
+  position: absolute;
+  top: 32px;
+  left: 20px;
+  z-index: 40;
+  background: var(--surface);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-menu);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  min-width: 200px;
+}
+
+.shop-picker__option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text);
+  border-bottom: 1px solid var(--surface-muted);
+}
+
+.shop-picker__option--on {
+  color: var(--accent-ink);
+}
+
+/* Linha entre o título e a lista: contagem + "Simplificar moedas" */
+.subhead {
+  padding: 0 20px 12px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 18px;
+}
+
+.subhead__label {
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.filters {
+  padding: 0 16px 10px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: var(--sp-2) 0;
-  border-radius: var(--r-sm);
-  background: var(--surface-2);
+  gap: 8px;
 }
 
-.wallet__value {
-  font-size: var(--fs-lg);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
+.filters__row {
+  display: flex;
+  gap: 8px;
 }
 
-.wallet__unit {
-  font-size: 10px;
+.group-title {
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  color: var(--text-fainter);
   text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 4px 2px 0;
+}
+
+.group-title + .group-title,
+.card + .group-title,
+.card--folder + .group-title {
+  margin-top: 10px;
+}
+
+/* -------------------------------------------------------------- item na lista */
+
+.item__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+}
+
+.item__name-btn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  overflow: hidden;
+  text-align: left;
+}
+
+.item__name {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.item__name--open {
+  white-space: normal;
+}
+
+.item__level {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.item__qty {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-ink);
+  background: var(--accent-tint);
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+  flex-shrink: 0;
+}
+
+/* Carrinho encostado na direita, separado por um filete */
+.item__cart {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding-left: 10px;
+  margin-left: 2px;
+  border-left: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+.item__body {
+  padding: 2px 12px 12px;
+  border-top: 1px solid var(--line);
+  margin-top: 2px;
+}
+
+.item__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.item__meta-label {
+  font-size: 12px;
   color: var(--text-faint);
 }
 
-.wallet__coin--gold .wallet__value {
-  color: var(--gold);
-}
-.wallet__coin--silver .wallet__value {
-  color: var(--silver);
-}
-.wallet__coin--copper .wallet__value {
-  color: var(--copper);
+.item__unit {
+  font-size: 10.5px;
+  color: var(--text-inactive);
 }
 
-/* ------------------------------------------------------------- navegação */
+.item__desc {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-body);
+  margin-top: 8px;
+}
+
+.item__desc p {
+  margin: 0 0 8px;
+}
+
+.item__desc table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.item__desc th,
+.item__desc td {
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.item__source {
+  font-size: 11.5px;
+  color: var(--text-inactive);
+  margin-top: 8px;
+}
+
+/* Rodapé do item aberto: ações à esquerda, quantidade à direita */
+.item__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  gap: 8px;
+}
+
+.item__tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon-btn--danger {
+  background: var(--danger-tint);
+}
+
+.icon-btn--accent {
+  background: var(--accent-tint);
+}
+
+.item__warn {
+  font-size: 12.5px;
+  color: var(--danger);
+  margin-top: 8px;
+  text-align: right;
+}
+
+/* Item dentro de uma pasta da Biblioteca: fundo rebaixado */
+.subitem {
+  background: var(--surface-sunken);
+  border-radius: var(--r-md);
+  margin-top: 6px;
+}
+
+.subitem .item__head {
+  padding: 9px 10px;
+}
+
+.subitem .item__name {
+  font-size: 14px;
+}
+
+.subitem .item__body {
+  padding: 2px 10px 10px;
+}
+
+.folder__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  width: 100%;
+  text-align: left;
+}
+
+.folder__name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.folder__count {
+  font-size: 12.5px;
+  color: var(--text-soft);
+  margin-top: 2px;
+}
+
+.folder__body {
+  padding: 0 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid var(--line);
+}
+
+/* ------------------------------------------------------------------ mestre */
+
+.gm {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.gm__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.gm__section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gm__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gm__card-head {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+}
+
+.gm__panel {
+  padding: 0 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.gm__panel > *:first-child {
+  margin-top: 10px;
+}
+
+.gm__coins {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 3px;
+}
+
+.gm__coin {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gm__coin-value {
+  font-size: 12px;
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.gm__coin .coin-dot {
+  width: 7px;
+  height: 7px;
+}
+
+.gm__scroll {
+  max-height: 220px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gm__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 2px;
+}
+
+.gm__row-name {
+  font-size: 13px;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+}
+
+.gm__check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  width: 100%;
+  text-align: left;
+}
+
+.gm__check-name {
+  font-size: 13.5px;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+}
+
+.gm__check-price {
+  font-size: 12.5px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------ barra de abas */
 
 .nav {
-  position: fixed;
+  position: sticky;
   bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 30;
   display: flex;
-  max-width: 720px;
-  margin: 0 auto;
-  padding-bottom: env(safe-area-inset-bottom);
+  flex-shrink: 0;
+  padding: 8px 8px calc(10px + env(safe-area-inset-bottom));
+  background: var(--surface);
   border-top: 1px solid var(--line);
-  background: var(--surface-2);
 }
 
 .nav__tab {
@@ -104,188 +496,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 2px;
-  height: var(--nav-h);
-  border: 0;
-  background: transparent;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-faint);
+  gap: 3px;
+  padding: 6px 0;
+  color: var(--text-inactive);
 }
 
 .nav__tab--on {
-  color: var(--accent);
-  box-shadow: inset 0 2px 0 var(--accent);
+  color: var(--accent-ink);
 }
 
-.nav__icon {
-  font-size: 19px;
-  line-height: 1;
-}
-
-/* --------------------------------------------------------------- filtros */
-
-.toolbar {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-}
-
-.toolbar__filters {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--sp-2);
-}
-
-.section-title {
-  display: flex;
-  align-items: baseline;
-  gap: var(--sp-2);
-  margin-top: var(--sp-2);
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-
-.section-title::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--line);
-}
-
-/* ------------------------------------------------------------ item na lista */
-
-.item__qty {
-  flex: 0 0 auto;
-  min-width: 30px;
-  padding: 3px var(--sp-2);
-  border-radius: var(--r-sm);
-  background: var(--surface-3);
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  text-align: center;
-  color: var(--accent);
-}
-
-.item__price {
-  flex: 0 0 auto;
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--gold);
-  white-space: nowrap;
-}
-
-.item__desc {
-  font-size: var(--fs-sm);
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-/* Tabelas vindas das descrições do Foundry precisam rolar sozinhas */
-.item__desc table {
-  display: block;
-  width: 100%;
-  overflow-x: auto;
-  border-collapse: collapse;
-  font-size: var(--fs-xs);
-}
-
-.item__desc th,
-.item__desc td {
-  padding: 4px var(--sp-2);
-  border: 1px solid var(--line);
-  text-align: left;
-  white-space: nowrap;
-}
-
-.item__desc p {
-  margin: 0 0 var(--sp-2);
-}
-
-.item__actions {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--sp-2);
-  margin-top: var(--sp-3);
-}
-
-/* A ação destrutiva fecha o bloco ocupando a linha inteira. */
-.item__actions .btn--danger {
-  grid-column: 1 / -1;
-}
-
-.item__stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-  font-size: var(--fs-xs);
-  color: var(--text-muted);
-}
-
-.item__stat strong {
-  color: var(--text);
-}
-
-/* ------------------------------------------------------------------ mestre */
-
-.gm-player {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-3);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background: var(--surface);
-}
-
-.gm-player__name {
+.nav__label {
+  font-size: 11px;
   font-weight: 600;
-}
-
-.total-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-3);
-  border: 1px solid var(--accent);
-  border-radius: var(--r-md);
-  background: var(--accent-soft);
-  font-weight: 700;
-}
-
-.total-bar__value {
-  margin-left: auto;
-  color: var(--accent);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Carrinho da loja: barra presa acima da navegação, sem cobrir a lista. */
-.checkout {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
-  z-index: 25;
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  max-width: 720px;
-  margin: 0 auto;
-  padding: var(--sp-3);
-  border-top: 1px solid var(--line-strong);
-  background: var(--surface-2);
-  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.4);
-}
-
-/* Reserva o espaço que a barra ocupa, para o último item continuar alcançável. */
-.checkout-spacer {
-  height: 148px;
 }

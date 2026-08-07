@@ -1,215 +1,260 @@
 import { useMemo, useState } from 'react'
-import ItemCard from '../components/ItemCard.jsx'
-import ItemFilters, { EMPTY_FILTERS } from '../components/ItemFilters.jsx'
+import ItemRow from '../components/ItemRow.jsx'
+import Sheet, { SheetActions } from '../components/Sheet.jsx'
 import ItemForm from '../components/ItemForm.jsx'
-import Modal from '../components/Modal.jsx'
+import { ChevronRight, EditIcon, PlusIcon, TrashIcon } from '../components/Icons.jsx'
 import { useStore } from '../state/store.jsx'
-import { CATALOG, categoryLabel } from '../data/catalog.js'
-import { availableLevels, matchesFilters, matchesSearch } from '../lib/items.js'
+import { CATALOG, GROUPS, groupOf } from '../data/catalog.js'
 import { importFoundryJson } from '../lib/foundryImport.js'
 import { plural } from '../lib/text.js'
 
-export default function LibraryScreen() {
+export default function LibraryScreen({ search, openId, onToggle }) {
   const { state, dispatch } = useStore()
-  const [filters, setFilters] = useState(EMPTY_FILTERS)
-  const [open, setOpen] = useState({ campaign: true })
-  const [sheet, setSheet] = useState(null) // 'manual' | 'import'
+  // Como no protótipo, só uma pasta fica aberta de cada vez.
+  const [openFolder, setOpenFolder] = useState(null)
+  const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState(null)
+  const [deleting, setDeleting] = useState(null)
 
-  const keep = (item) => matchesSearch(item, filters.search) && matchesFilters(item, filters)
+  const term = search.trim().toLowerCase()
+  const keep = (item) => !term || item.name.toLowerCase().includes(term)
 
   const campaign = state.campaignItems.filter(keep)
-  const catalogFolders = useMemo(() => {
-    const buckets = new Map()
-    for (const item of CATALOG) {
-      if (!keep(item)) continue
-      const list = buckets.get(item.category) ?? []
-      list.push(item)
-      buckets.set(item.category, list)
-    }
-    return [...buckets.entries()]
-      .map(([category, items]) => ({
-        id: `cat:${category}`,
-        label: categoryLabel(category),
-        items: items.sort((a, b) => a.name.localeCompare(b.name)),
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label))
-  }, [filters])
-
-  const toggle = (id) => setOpen((current) => ({ ...current, [id]: !current[id] }))
-  const nothingFound = !campaign.length && !catalogFolders.length
+  const folders = useMemo(() => {
+    const official = CATALOG.filter(keep)
+    return GROUPS.map((group) => ({
+      ...group,
+      items: official
+        .filter((item) => groupOf(item.category) === group.id)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    })).filter((folder) => folder.items.length > 0)
+  }, [term])
 
   return (
-    <div className="stack">
-      <div className="row">
-        <button type="button" className="btn btn--sm" onClick={() => setSheet('manual')}>
-          + Item manual
-        </button>
-        <button type="button" className="btn btn--sm btn--primary" onClick={() => setSheet('import')}>
-          Importar JSON
-        </button>
-      </div>
-
-      <ItemFilters
-        value={filters}
-        onChange={setFilters}
-        levels={availableLevels([...state.campaignItems, ...CATALOG])}
-        placeholder="Buscar na biblioteca…"
-      />
-
-      {nothingFound ? <div className="empty">Nenhum item bate com a busca.</div> : null}
-
-      {campaign.length || !filters.search ? (
-        <Folder
-          label="Itens da campanha"
-          count={campaign.length}
-          isOpen={open.campaign}
-          onToggle={() => toggle('campaign')}
-        >
-          {campaign.length === 0 ? (
-            <div className="empty">
-              Nada aqui ainda. Crie um item manual ou cole o JSON de um item do Foundry.
-            </div>
-          ) : (
-            campaign.map((item) => (
-              <ItemCard key={item.id} item={item}>
-                <div className="item__actions">
-                  <button type="button" className="btn btn--sm" onClick={() => setEditing(item)}>
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--sm btn--danger"
-                    onClick={() => dispatch({ type: 'REMOVE_CAMPAIGN_ITEM', itemId: item.id })}
-                  >
-                    Excluir
-                  </button>
-                </div>
-              </ItemCard>
-            ))
-          )}
-        </Folder>
-      ) : null}
-
-      {catalogFolders.map((folder) => (
-        <Folder
-          key={folder.id}
-          label={folder.label}
-          count={folder.items.length}
-          isOpen={open[folder.id]}
-          onToggle={() => toggle(folder.id)}
-        >
-          {folder.items.map((item) => (
-            <ItemCard key={item.id} item={item} />
+    <>
+      {campaign.length ? (
+        <>
+          <h2 className="group-title">Itens da Campanha</h2>
+          {campaign.map((item) => (
+            <ItemRow
+              key={item.id}
+              item={item}
+              priceInHead
+              open={openId === item.id}
+              onToggle={() => onToggle(item.id)}
+            >
+              <div className="item__tools" style={{ marginTop: 12 }}>
+                <button
+                  type="button"
+                  className="icon-btn icon-btn--danger"
+                  title="Excluir"
+                  aria-label={`Excluir ${item.name}`}
+                  onClick={() => setDeleting(item)}
+                >
+                  <TrashIcon />
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn icon-btn--accent"
+                  title="Editar"
+                  aria-label={`Editar ${item.name}`}
+                  onClick={() => setEditing(item)}
+                >
+                  <EditIcon />
+                </button>
+              </div>
+            </ItemRow>
           ))}
-        </Folder>
-      ))}
-
-      {sheet === 'manual' ? (
-        <Modal title="Novo item de campanha" onClose={() => setSheet(null)}>
-          <ItemForm
-            submitLabel="Criar item"
-            onSubmit={(item) => {
-              dispatch({ type: 'ADD_CAMPAIGN_ITEMS', items: [item] })
-              setSheet(null)
-            }}
-          />
-        </Modal>
+        </>
       ) : null}
 
-      {sheet === 'import' ? <ImportSheet onClose={() => setSheet(null)} /> : null}
+      <h2 className="group-title">Itens Oficiais</h2>
+      {folders.length === 0 ? <div className="empty">Nenhum item encontrado.</div> : null}
+      {folders.map((folder) => {
+        const isOpen = openFolder === folder.id
+        return (
+          <div className="card card--folder" key={folder.id}>
+            <button
+              type="button"
+              className="folder__head"
+              onClick={() => setOpenFolder(isOpen ? null : folder.id)}
+              aria-expanded={isOpen}
+            >
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span className="folder__name" style={{ display: 'block' }}>
+                  {folder.label}
+                </span>
+                <span className="folder__count" style={{ display: 'block' }}>
+                  {plural(folder.items.length, 'item', 'itens')}
+                </span>
+              </span>
+              <ChevronRight open={isOpen} />
+            </button>
+            {isOpen ? (
+              <div className="folder__body">
+                {folder.items.map((item) => (
+                  <ItemRow
+                    key={item.id}
+                    item={item}
+                    nested
+                    priceInHead
+                    open={openId === item.id}
+                    onToggle={() => onToggle(item.id)}
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        )
+      })}
+
+      <button
+        type="button"
+        className="fab"
+        onClick={() => setCreating(true)}
+        aria-label="Novo item de campanha"
+      >
+        <PlusIcon />
+      </button>
+
+      {creating ? <CreateSheet onClose={() => setCreating(false)} /> : null}
 
       {editing ? (
-        <Modal title="Editar item de campanha" onClose={() => setEditing(null)}>
+        <Sheet title="Editar item da campanha" onClose={() => setEditing(null)}>
           <ItemForm
             item={editing}
-            submitLabel="Salvar alterações"
+            submitLabel="Salvar"
+            onCancel={() => setEditing(null)}
             onSubmit={(item) => {
               dispatch({ type: 'UPDATE_CAMPAIGN_ITEM', item })
               setEditing(null)
             }}
           />
-        </Modal>
+        </Sheet>
       ) : null}
-    </div>
+
+      {deleting ? (
+        <Sheet center onClose={() => setDeleting(null)}>
+          <div className="sheet__question">Excluir {deleting.name} da biblioteca?</div>
+          <SheetActions
+            onCancel={() => setDeleting(null)}
+            onConfirm={() => {
+              dispatch({ type: 'REMOVE_CAMPAIGN_ITEM', itemId: deleting.id })
+              setDeleting(null)
+            }}
+            confirmLabel="Excluir"
+            confirmVariant="danger"
+          />
+        </Sheet>
+      ) : null}
+    </>
   )
 }
 
-function Folder({ label, count, isOpen, onToggle, children }) {
+/** Criar item da campanha: à mão, ou colando o JSON de um pack do Foundry. */
+function CreateSheet({ onClose }) {
+  const { dispatch } = useStore()
+  const [mode, setMode] = useState('manual')
+
   return (
-    <section className="stack" style={{ gap: 'var(--sp-2)' }}>
-      <button type="button" className="folder__head" onClick={onToggle} aria-expanded={!!isOpen}>
-        <span className={`caret${isOpen ? ' caret--open' : ''}`}>›</span>
-        {label}
-        <span className="folder__count">{count}</span>
-      </button>
-      {isOpen ? <div className="stack">{children}</div> : null}
-    </section>
+    <Sheet onClose={onClose}>
+      <div className="seg">
+        <button
+          type="button"
+          className={`seg__tab${mode === 'manual' ? ' seg__tab--on' : ''}`}
+          onClick={() => setMode('manual')}
+        >
+          Item manual
+        </button>
+        <button
+          type="button"
+          className={`seg__tab${mode === 'import' ? ' seg__tab--on' : ''}`}
+          onClick={() => setMode('import')}
+        >
+          Importar JSON
+        </button>
+      </div>
+
+      {mode === 'manual' ? (
+        <ItemForm
+          submitLabel="Criar item"
+          onCancel={onClose}
+          onSubmit={(item) => {
+            dispatch({ type: 'ADD_CAMPAIGN_ITEMS', items: [item] })
+            onClose()
+          }}
+        />
+      ) : (
+        <ImportPanel onClose={onClose} />
+      )}
+    </Sheet>
   )
 }
 
-/** Importador: cola o JSON de um ou mais itens dos packs do Foundry. */
-function ImportSheet({ onClose }) {
+function ImportPanel({ onClose }) {
   const { dispatch } = useStore()
   const [text, setText] = useState('')
   const [result, setResult] = useState(null)
 
-  const preview = () => setResult(importFoundryJson(text))
-
-  const confirm = () => {
-    if (!result?.items.length) return
-    dispatch({ type: 'ADD_CAMPAIGN_ITEMS', items: result.items })
-    onClose()
-  }
-
   return (
-    <Modal title="Importar JSON do Foundry" onClose={onClose}>
-      <div className="stack">
-        <p className="card__sub">
-          Cole o conteúdo de um arquivo de <code>packs/pf2e/equipment</code>. Aceita um item, uma
-          lista de itens, ou um item por linha.
-        </p>
+    <>
+      <p style={{ fontSize: 12.5, color: 'var(--text-soft)', marginBottom: 8, lineHeight: 1.4 }}>
+        Cole o conteúdo de um arquivo de <code>packs/pf2e/equipment</code>. Aceita um item, uma
+        lista, ou um item por linha.
+      </p>
 
-        <textarea
-          className="textarea"
-          style={{ minHeight: 160, fontFamily: 'ui-monospace, monospace', fontSize: 'var(--fs-xs)' }}
-          placeholder='{ "name": "Steel Shield", "type": "shield", "system": { … } }'
-          value={text}
-          onChange={(event) => {
-            setText(event.target.value)
-            setResult(null)
-          }}
-        />
+      <textarea
+        className="textarea"
+        style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12, marginBottom: 10 }}
+        placeholder='{ "name": "Steel Shield", "type": "shield", "system": { … } }'
+        value={text}
+        onChange={(event) => {
+          setText(event.target.value)
+          setResult(null)
+        }}
+        aria-label="JSON do item"
+      />
 
-        <button type="button" className="btn btn--block" onClick={preview}>
-          Conferir
-        </button>
+      <button
+        type="button"
+        className="btn btn--neutral btn--block"
+        onClick={() => setResult(importFoundryJson(text))}
+      >
+        Conferir
+      </button>
 
-        {result ? (
-          <div className="stack">
-            {result.errors.map((error, index) => (
-              <div key={index} className="notice notice--error">
-                {error}
+      {result ? (
+        <div style={{ marginTop: 10 }}>
+          {result.errors.map((error, index) => (
+            <div key={index} style={{ fontSize: 12.5, color: 'var(--danger)', marginBottom: 6 }}>
+              {error}
+            </div>
+          ))}
+
+          {result.items.length ? (
+            <>
+              <div style={{ fontSize: 12.5, color: 'var(--text-soft)', marginBottom: 8 }}>
+                {plural(result.items.length, 'item pronto', 'itens prontos')} para entrar na
+                biblioteca:
               </div>
-            ))}
-
-            {result.items.length ? (
-              <>
-                <div className="notice notice--ok">
-                  {plural(result.items.length, 'item pronto', 'itens prontos')} para entrar na
-                  biblioteca.
+              {result.items.map((item) => (
+                <div className="gm__row" key={item.id}>
+                  <span className="gm__row-name">{item.name}</span>
+                  <span className="item__level">Nv {item.level}</span>
                 </div>
-                {result.items.map((item) => (
-                  <ItemCard key={item.id} item={item} />
-                ))}
-                <button type="button" className="btn btn--primary btn--block" onClick={confirm}>
-                  Importar {plural(result.items.length, 'item', 'itens')}
-                </button>
-              </>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-    </Modal>
+              ))}
+              <SheetActions
+                onCancel={onClose}
+                onConfirm={() => {
+                  dispatch({ type: 'ADD_CAMPAIGN_ITEMS', items: result.items })
+                  onClose()
+                }}
+                confirmLabel={`Importar ${plural(result.items.length, 'item', 'itens')}`}
+              />
+            </>
+          ) : null}
+        </div>
+      ) : null}
+    </>
   )
 }

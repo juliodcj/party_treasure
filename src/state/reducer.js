@@ -1,4 +1,4 @@
-import { addCoins, fromCopper, simplifyWallet, spendCopper, toCopper } from '../lib/money.js'
+import { addCoins, simplifyWallet, spendCopper, toCopper, withWalletCopper } from '../lib/money.js'
 import { makeId, normalizeItem, resolveItem } from '../lib/items.js'
 import { SELL_RATE } from '../config.js'
 
@@ -19,65 +19,41 @@ function withItemDelta(items, itemId, delta) {
 export function reducer(state, action) {
   switch (action.type) {
     case 'SELECT_PLAYER':
-      return { ...state, activePlayerId: action.playerId }
+      // Trocar de personagem esvazia o carrinho: ele era da compra do anterior.
+      return { ...state, activePlayerId: action.playerId, cart: {} }
+
+    case 'SELECT_SHOP':
+      return { ...state, activeShopId: action.shopId, cart: {} }
 
     // ---------------------------------------------------------------- jogadores
 
-    case 'ADD_PLAYER': {
-      const player = {
-        id: makeId('p'),
-        name: action.name.trim() || 'Novo personagem',
-        gold: 0,
-        silver: 0,
-        copper: 0,
-        items: {},
-        customItems: [],
+    case 'ADD_PLAYER':
+      return {
+        ...state,
+        players: [
+          ...state.players,
+          {
+            id: makeId('p'),
+            name: action.name?.trim() || 'Novo jogador',
+            gold: 0,
+            silver: 0,
+            copper: 0,
+            items: {},
+            customItems: [],
+          },
+        ],
       }
-      return { ...state, players: [...state.players, player] }
-    }
 
     case 'RENAME_PLAYER':
       return {
         ...state,
         players: mapPlayer(state.players, action.playerId, (player) => ({
           ...player,
-          name: action.name.trim() || player.name,
+          name: action.name,
         })),
       }
-
-    case 'REMOVE_PLAYER': {
-      // A mesa precisa de pelo menos um personagem para a tela ter o que mostrar.
-      if (state.players.length <= 1) return state
-      const players = state.players.filter((player) => player.id !== action.playerId)
-      return {
-        ...state,
-        players,
-        activePlayerId:
-          state.activePlayerId === action.playerId ? players[0].id : state.activePlayerId,
-      }
-    }
 
     // ----------------------------------------------------------------- dinheiro
-
-    case 'ADJUST_COINS':
-      return {
-        ...state,
-        players: mapPlayer(state.players, action.playerId, (player) => ({
-          ...player,
-          ...addCoins(player, action.coins),
-        })),
-      }
-
-    case 'SET_COINS':
-      return {
-        ...state,
-        players: mapPlayer(state.players, action.playerId, (player) => ({
-          ...player,
-          gold: Math.max(0, Math.round(action.coins.gold ?? player.gold)),
-          silver: Math.max(0, Math.round(action.coins.silver ?? player.silver)),
-          copper: Math.max(0, Math.round(action.coins.copper ?? player.copper)),
-        })),
-      }
 
     case 'SIMPLIFY_COINS':
       return {
@@ -93,31 +69,48 @@ export function reducer(state, action) {
       if (!from) return state
       const remaining = spendCopper(from, action.amountCp)
       if (!remaining) return state // saldo insuficiente: a tela já avisa antes
-      const gained = fromCopper(action.amountCp)
       return {
         ...state,
         players: state.players.map((player) => {
           if (player.id === action.fromId) return { ...player, ...remaining }
-          if (player.id === action.toId) return { ...player, ...addCoins(player, gained) }
+          if (player.id === action.toId) {
+            return { ...player, ...withWalletCopper(player, toCopper(player) + action.amountCp) }
+          }
           return player
         }),
       }
     }
 
-    case 'GIVE_COINS': {
-      // Mestre criando dinheiro do nada, para um jogador ou para o grupo todo.
-      const targets = action.playerIds ?? state.players.map((player) => player.id)
+    case 'GIVE_COINS':
+      // Mestre criando dinheiro do nada, para um jogador específico.
       return {
         ...state,
-        players: state.players.map((player) =>
-          targets.includes(player.id) ? { ...player, ...addCoins(player, action.coins) } : player,
-        ),
+        players: mapPlayer(state.players, action.playerId, (player) => ({
+          ...player,
+          ...addCoins(player, action.coins),
+        })),
+      }
+
+    case 'SPLIT_COINS': {
+      // "Distribuir": a quantia é dividida igualmente, cada um leva sua parte.
+      const count = state.players.length
+      if (!count) return state
+      const share = {
+        gold: Math.floor((action.coins.gold ?? 0) / count),
+        silver: Math.floor((action.coins.silver ?? 0) / count),
+        copper: Math.floor((action.coins.copper ?? 0) / count),
+      }
+      if (!share.gold && !share.silver && !share.copper) return state
+      return {
+        ...state,
+        players: state.players.map((player) => ({ ...player, ...addCoins(player, share) })),
       }
     }
 
     // -------------------------------------------------------------- inventário
 
     case 'GIVE_ITEM':
+      // Mestre entregando: entra na mochila sem custo.
       return {
         ...state,
         players: mapPlayer(state.players, action.playerId, (player) => ({
@@ -126,7 +119,42 @@ export function reducer(state, action) {
         })),
       }
 
-    case 'CHANGE_ITEM_QTY':
+    case 'BUY_ONE': {
+      // O "+" do inventário compra mais uma unidade e debita o preço cheio.
+      const item = resolveItem(state, action.itemId, action.playerId)
+      const player = state.players.find((current) => current.id === action.playerId)
+      if (!item || !player) return state
+      const wallet = spendCopper(player, item.priceCp)
+      if (!wallet) return state // sem saldo: o botão já aparece apagado
+      return {
+        ...state,
+        players: mapPlayer(state.players, action.playerId, (current) => ({
+          ...current,
+          ...wallet,
+          items: withItemDelta(current.items, action.itemId, 1),
+        })),
+      }
+    }
+
+    case 'REFUND_ONE': {
+      // O "−" devolve uma unidade e reembolsa o preço cheio.
+      const item = resolveItem(state, action.itemId, action.playerId)
+      if (!item) return state
+      return {
+        ...state,
+        players: mapPlayer(state.players, action.playerId, (player) => {
+          if ((player.items[action.itemId] ?? 0) <= 0) return player
+          return {
+            ...player,
+            ...withWalletCopper(player, toCopper(player) + item.priceCp),
+            items: withItemDelta(player.items, action.itemId, -1),
+          }
+        }),
+      }
+    }
+
+    case 'CHANGE_CUSTOM_QTY':
+      // Item avulso não tem preço de mercado: o passo só mexe na quantidade.
       return {
         ...state,
         players: mapPlayer(state.players, action.playerId, (player) => ({
@@ -135,46 +163,34 @@ export function reducer(state, action) {
         })),
       }
 
-    case 'DROP_ITEM': {
-      // Excluir do inventário. Com `refund`, o valor volta para a carteira.
-      const item = resolveItem(state, action.itemId, action.playerId)
-      const qty = action.qty ?? Number.POSITIVE_INFINITY
+    case 'DROP_ITEM':
+      // Excluir tira o item da mochila inteiro. Não devolve dinheiro.
       return {
         ...state,
         players: mapPlayer(state.players, action.playerId, (player) => {
-          const owned = player.items[action.itemId] ?? 0
-          const removed = Math.min(owned, qty)
-          if (removed <= 0) return player
-          const refundCp = action.refund && item ? item.priceCp * removed : 0
-          const wallet = refundCp ? addCoins(player, fromCopper(refundCp)) : player
+          const items = { ...player.items }
+          delete items[action.itemId]
           return {
             ...player,
-            ...wallet,
-            items: withItemDelta(player.items, action.itemId, -removed),
-            // Item avulso que saiu inteiro do inventário some junto da ficha.
-            customItems:
-              removed >= owned
-                ? player.customItems.filter((custom) => custom.id !== action.itemId)
-                : player.customItems,
+            items,
+            customItems: player.customItems.filter((custom) => custom.id !== action.itemId),
           }
         }),
       }
-    }
 
     case 'SELL_ITEM': {
       const item = resolveItem(state, action.itemId, action.playerId)
       if (!item) return state
-      const qty = action.qty ?? 1
       return {
         ...state,
         players: mapPlayer(state.players, action.playerId, (player) => {
           const owned = player.items[action.itemId] ?? 0
-          const sold = Math.min(owned, qty)
+          const sold = Math.min(owned, action.qty ?? 1)
           if (sold <= 0) return player
-          const earnedCp = Math.floor(item.priceCp * sold * SELL_RATE)
+          const earnedCp = Math.floor(item.priceCp * SELL_RATE) * sold
           return {
             ...player,
-            ...addCoins(player, fromCopper(earnedCp)),
+            ...withWalletCopper(player, toCopper(player) + earnedCp),
             items: withItemDelta(player.items, action.itemId, -sold),
             customItems:
               sold >= owned
@@ -250,26 +266,33 @@ export function reducer(state, action) {
 
     // ------------------------------------------------------------------- lojas
 
-    case 'BUY': {
-      // `entries` é o carrinho: [{ itemId, qty }].
-      const player = state.players.find((p) => p.id === action.playerId)
+    case 'CART_SET': {
+      const cart = { ...state.cart }
+      if (action.qty > 0) cart[action.itemId] = action.qty
+      else delete cart[action.itemId]
+      return { ...state, cart }
+    }
+
+    case 'BUY_CART': {
+      const player = state.players.find((current) => current.id === state.activePlayerId)
       if (!player) return state
 
-      const lines = action.entries
-        .map((entry) => ({ ...entry, item: resolveItem(state, entry.itemId) }))
+      const lines = Object.entries(state.cart)
+        .map(([itemId, qty]) => ({ itemId, qty, item: resolveItem(state, itemId) }))
         .filter((line) => line.item && line.qty > 0)
       if (!lines.length) return state
 
       const totalCp = lines.reduce((sum, line) => sum + line.item.priceCp * line.qty, 0)
       const wallet = spendCopper(player, totalCp)
-      if (!wallet) return state // saldo insuficiente: a tela bloqueia antes de chegar aqui
+      if (!wallet) return state // a tela apaga o botão antes de chegar aqui
 
       let items = player.items
       for (const line of lines) items = withItemDelta(items, line.itemId, line.qty)
 
       return {
         ...state,
-        players: mapPlayer(state.players, action.playerId, (current) => ({
+        cart: {},
+        players: mapPlayer(state.players, player.id, (current) => ({
           ...current,
           ...wallet,
           items,
@@ -277,52 +300,41 @@ export function reducer(state, action) {
       }
     }
 
-    case 'ADD_SHOP':
-      return {
-        ...state,
-        shops: [
-          ...state.shops,
-          { id: makeId('shop'), name: action.name.trim() || 'Nova loja', itemIds: [] },
-        ],
-      }
+    case 'ADD_SHOP': {
+      const shop = { id: makeId('shop'), name: 'Nova loja', itemIds: [] }
+      return { ...state, shops: [...state.shops, shop] }
+    }
 
     case 'RENAME_SHOP':
       return {
         ...state,
         shops: state.shops.map((shop) =>
-          shop.id === action.shopId ? { ...shop, name: action.name.trim() || shop.name } : shop,
+          shop.id === action.shopId ? { ...shop, name: action.name } : shop,
         ),
       }
 
-    case 'REMOVE_SHOP':
-      return { ...state, shops: state.shops.filter((shop) => shop.id !== action.shopId) }
-
-    case 'SHOP_ADD_ITEM':
+    case 'TOGGLE_SHOP_ITEM':
       return {
         ...state,
-        shops: state.shops.map((shop) =>
-          shop.id === action.shopId && !shop.itemIds.includes(action.itemId)
-            ? { ...shop, itemIds: [...shop.itemIds, action.itemId] }
-            : shop,
-        ),
-      }
-
-    case 'SHOP_REMOVE_ITEM':
-      return {
-        ...state,
-        shops: state.shops.map((shop) =>
-          shop.id === action.shopId
-            ? { ...shop, itemIds: shop.itemIds.filter((id) => id !== action.itemId) }
-            : shop,
-        ),
+        shops: state.shops.map((shop) => {
+          if (shop.id !== action.shopId) return shop
+          const has = shop.itemIds.includes(action.itemId)
+          return {
+            ...shop,
+            itemIds: has
+              ? shop.itemIds.filter((id) => id !== action.itemId)
+              : [...shop.itemIds, action.itemId],
+          }
+        }),
       }
 
     // ------------------------------------------------------------- biblioteca
 
-    case 'ADD_CAMPAIGN_ITEMS': {
-      const items = action.items.map((item) => normalizeItem(item))
-      return { ...state, campaignItems: [...state.campaignItems, ...items] }
-    }
+    case 'ADD_CAMPAIGN_ITEMS':
+      return {
+        ...state,
+        campaignItems: [...state.campaignItems, ...action.items.map((item) => normalizeItem(item))],
+      }
 
     case 'UPDATE_CAMPAIGN_ITEM':
       return {
@@ -349,14 +361,6 @@ export function reducer(state, action) {
     default:
       return state
   }
-}
-
-/** Quanto custa um carrinho, e se o jogador pode pagar. */
-export function cartTotal(state, entries) {
-  return entries.reduce((sum, entry) => {
-    const item = resolveItem(state, entry.itemId)
-    return item ? sum + item.priceCp * entry.qty : sum
-  }, 0)
 }
 
 export function canAfford(player, totalCp) {

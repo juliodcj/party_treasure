@@ -75,43 +75,22 @@ export function addCoins(wallet, { gold = 0, silver = 0, copper = 0 } = {}) {
 }
 
 /**
- * Paga `amountCp` quebrando o mínimo de moedas grandes possível, como se fosse
- * na mesa. Devolve a carteira nova, ou `null` se o saldo não cobrir o valor.
- * De propósito não simplifica o resto: isso é papel do botão "Simplificar".
+ * Reescreve a carteira a partir de um total em cobre. Toda transação passa por
+ * aqui, então o troco sai sempre já convertido — é o que o protótipo faz.
+ */
+export function withWalletCopper(wallet, totalCp) {
+  return { ...wallet, ...fromCopper(totalCp) }
+}
+
+/**
+ * Paga `amountCp`. Devolve a carteira nova, ou `null` se o saldo não cobrir.
+ * A tela sempre valida antes; isto é a última linha de defesa.
  */
 export function spendCopper(wallet, amountCp) {
-  const owedInput = Math.max(0, Math.round(amountCp || 0))
-  if (owedInput === 0) return { ...wallet }
-  if (owedInput > toCopper(wallet)) return null
-
-  let { gold, silver, copper } = wallet
-  let owed = owedInput
-
-  // Paga com o que já está trocado, da menor denominação para a maior.
-  const payCopper = Math.min(copper, owed)
-  copper -= payCopper
-  owed -= payCopper
-
-  const paySilver = Math.min(silver, Math.floor(owed / CP_PER_SP))
-  silver -= paySilver
-  owed -= paySilver * CP_PER_SP
-
-  const payGold = Math.min(gold, Math.floor(owed / CP_PER_GP))
-  gold -= payGold
-  owed -= payGold * CP_PER_GP
-
-  if (owed === 0) return { gold, silver, copper }
-
-  // Sobrou troco a fazer: quebra uma única moeda maior e tenta de novo.
-  if (silver > 0) {
-    silver -= 1
-    copper += CP_PER_SP
-  } else {
-    gold -= 1
-    silver += 9
-    copper += CP_PER_SP
-  }
-  return spendCopper({ gold, silver, copper }, owed)
+  const owed = Math.max(0, Math.round(amountCp || 0))
+  const total = toCopper(wallet)
+  if (owed > total) return null
+  return withWalletCopper(wallet, total - owed)
 }
 
 /** Junta tudo e redistribui na menor quantidade de moedas. */

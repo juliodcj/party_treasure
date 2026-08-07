@@ -1,0 +1,62 @@
+import { useEffect } from 'react'
+
+/**
+ * Cartão flutuante sobre um véu escuro, como no protótipo.
+ * `center` é o diálogo curto (traço, excluir, vender); o padrão fica ancorado
+ * logo acima da barra de abas.
+ */
+export default function Sheet({ title, onClose, center = false, children }) {
+  useEffect(() => {
+    const onKey = (event) => {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = previous
+    }
+  }, [onClose])
+
+  return (
+    <>
+      <div className="overlay" onClick={onClose} />
+      <div
+        className={`sheet${center ? ' sheet--center' : ' sheet--bottom'}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+      >
+        {title ? <div className="sheet__title">{title}</div> : null}
+        {children}
+      </div>
+    </>
+  )
+}
+
+/** Par Cancelar / confirmar, o rodapé padrão dos diálogos. */
+export function SheetActions({
+  onCancel,
+  onConfirm,
+  cancelLabel = 'Cancelar',
+  confirmLabel = 'Confirmar',
+  confirmVariant = 'solid',
+  disabled = false,
+}) {
+  return (
+    <div className="sheet__actions">
+      <button type="button" className="btn btn--neutral btn--wide" onClick={onCancel}>
+        {cancelLabel}
+      </button>
+      <button
+        type="button"
+        className={`btn btn--${confirmVariant} btn--wide`}
+        onClick={onConfirm}
+        disabled={disabled}
+      >
+        {confirmLabel}
+      </button>
+    </div>
+  )
+}
