@@ -8,3 +8,9 @@ dist/
 .DS_Store
 *.log
 .vite/
+
+# Handoff do Claude Design (prototipo de referencia, nao faz parte do app)
+/claude design/
+
+# Configuracao local do Claude Code
+/.claude/

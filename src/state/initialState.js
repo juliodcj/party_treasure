@@ -47,7 +47,7 @@ export function createInitialState() {
         items: {
           'cat-dagger': 1,
           'cat-shortbow': 1,
-          'cat-bag-of-holding': 1,
+          'cat-spacious-pouch-type-i': 1,
           'cat-healing-potion-minor': 1,
         },
         customItems: [],
@@ -80,12 +80,12 @@ export function createInitialState() {
       {
         id: 'shop-arcane',
         name: 'Empório Arcano',
-        itemIds: ['cat-bag-of-holding'],
+        itemIds: ['cat-spacious-pouch-type-i'],
       },
       {
         id: 'shop-general',
         name: 'Mercado Geral',
-        itemIds: ['cat-rope', 'cat-adventurers-pack', 'cat-thieves-tools', 'cat-shortbow'],
+        itemIds: ['cat-rope', 'cat-adventurers-pack', 'cat-thieves-toolkit', 'cat-shortbow'],
       },
     ],
   }

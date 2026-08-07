@@ -53,6 +53,15 @@ export function reducer(state, action) {
         })),
       }
 
+    case 'REMOVE_PLAYER': {
+      // Sempre precisa sobrar pelo menos um personagem na mesa.
+      if (state.players.length <= 1) return state
+      const players = state.players.filter((player) => player.id !== action.playerId)
+      const activePlayerId =
+        state.activePlayerId === action.playerId ? players[0].id : state.activePlayerId
+      return { ...state, players, activePlayerId }
+    }
+
     // ----------------------------------------------------------------- dinheiro
 
     case 'SIMPLIFY_COINS':
@@ -80,6 +89,16 @@ export function reducer(state, action) {
         }),
       }
     }
+
+    case 'ADJUST_COINS':
+      // Botão "±" do jogador: soma/subtrai um total em cobre (não por
+      // denominação), como no croqui. Nunca deixa o saldo ficar negativo.
+      return {
+        ...state,
+        players: mapPlayer(state.players, action.playerId, (player) =>
+          withWalletCopper(player, Math.max(0, toCopper(player) + action.deltaCp)),
+        ),
+      }
 
     case 'GIVE_COINS':
       // Mestre criando dinheiro do nada, para um jogador específico.
@@ -312,6 +331,13 @@ export function reducer(state, action) {
           shop.id === action.shopId ? { ...shop, name: action.name } : shop,
         ),
       }
+
+    case 'REMOVE_SHOP': {
+      const shops = state.shops.filter((shop) => shop.id !== action.shopId)
+      const activeShopId =
+        state.activeShopId === action.shopId ? (shops[0]?.id ?? null) : state.activeShopId
+      return { ...state, shops, activeShopId }
+    }
 
     case 'TOGGLE_SHOP_ITEM':
       return {

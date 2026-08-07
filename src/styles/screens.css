@@ -18,6 +18,29 @@
   letter-spacing: -0.5px;
 }
 
+/* Botões redondos de dinheiro (ajustar / enviar), ao lado da pílula */
+.header-coins {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-pill);
+  flex-shrink: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent-ink);
+}
+
 /* Pílula branca com as três moedas do personagem em foco */
 .gold-pill {
   display: flex;
@@ -239,6 +262,16 @@
   color: var(--text-inactive);
 }
 
+/* Campos especiais de arma/armadura/escudo (dano, mãos, CA, dureza...): mesmo
+   destaque da descrição, não o cinza apagado do meta-label. */
+.item__stats {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text);
+  margin-top: 8px;
+}
+
 .item__desc {
   font-size: 13.5px;
   line-height: 1.5;
@@ -248,6 +281,18 @@
 
 .item__desc p {
   margin: 0 0 8px;
+}
+
+/* Ícone real de "Ativar 1/2/3 ações", reação e ação livre — vem como uma
+   letra crua (A, F, R...) no HTML importado; esta fonte a transforma no
+   glifo oficial do PF2e. */
+.item__desc .action-glyph {
+  font-family: 'Pathfinder2eActions', sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1;
+  vertical-align: -2px;
+  margin: 0 1px;
 }
 
 .item__desc table {
@@ -304,6 +349,11 @@
 
 .icon-btn--accent {
   background: var(--accent-tint);
+}
+
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .item__warn {

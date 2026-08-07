@@ -4,7 +4,7 @@ import Sheet, { SheetActions } from '../components/Sheet.jsx'
 import ItemForm from '../components/ItemForm.jsx'
 import { ChevronRight, EditIcon, PlusIcon, TrashIcon } from '../components/Icons.jsx'
 import { useStore } from '../state/store.jsx'
-import { CATALOG, GROUPS, groupOf } from '../data/catalog.js'
+import { CATALOG, CATEGORY_ORDER, categoryLabel } from '../data/catalog.js'
 import { importFoundryJson } from '../lib/foundryImport.js'
 import { plural } from '../lib/text.js'
 
@@ -22,11 +22,10 @@ export default function LibraryScreen({ search, openId, onToggle }) {
   const campaign = state.campaignItems.filter(keep)
   const folders = useMemo(() => {
     const official = CATALOG.filter(keep)
-    return GROUPS.map((group) => ({
-      ...group,
-      items: official
-        .filter((item) => groupOf(item.category) === group.id)
-        .sort((a, b) => a.name.localeCompare(b.name)),
+    return CATEGORY_ORDER.map((id) => ({
+      id,
+      label: categoryLabel(id),
+      items: official.filter((item) => item.category === id).sort((a, b) => a.name.localeCompare(b.name)),
     })).filter((folder) => folder.items.length > 0)
   }, [term])
 

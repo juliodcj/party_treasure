@@ -105,6 +105,22 @@ export function SendIcon() {
   )
 }
 
+/** Avião de papel — botão "Enviar dinheiro" do cabeçalho. */
+export function PaperPlaneIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        d="M2 10l16-7-6 16-2.5-6.5L2 10z"
+        fill="none"
+        stroke="oklch(50% 0.14 258)"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
 export function EditIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">

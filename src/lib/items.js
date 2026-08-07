@@ -1,4 +1,4 @@
-import { CATALOG, groupOf } from '../data/catalog.js'
+import { CATALOG, CATEGORY_ORDER } from '../data/catalog.js'
 import { parseBulk } from './bulk.js'
 
 let counter = 0
@@ -56,10 +56,14 @@ export function matchesFilters(item, { category = 'all', level = 'all' } = {}) {
   return true
 }
 
-/** Agrupa em Equipamentos / Consumíveis / Outros preservando a ordem alfabética. */
+/** Agrupa pela categoria real do item (arma, armadura...), ordem alfabética dentro de cada uma. */
 export function groupInventory(entries) {
-  const buckets = { equipment: [], consumable: [], other: [] }
-  for (const entry of entries) buckets[groupOf(entry.item.category)].push(entry)
+  const buckets = {}
+  for (const id of CATEGORY_ORDER) buckets[id] = []
+  for (const entry of entries) {
+    const bucket = buckets[entry.item.category] ?? (buckets[entry.item.category] = [])
+    bucket.push(entry)
+  }
   for (const list of Object.values(buckets)) {
     list.sort((a, b) => a.item.name.localeCompare(b.item.name))
   }
@@ -91,6 +95,9 @@ export function normalizeItem(partial) {
     ...(partial.descriptionHtml ? { descriptionHtml: partial.descriptionHtml } : {}),
     ...(partial.rarity ? { rarity: partial.rarity } : {}),
     ...(partial.shield ? { shield: partial.shield } : {}),
+    ...(partial.weapon ? { weapon: partial.weapon } : {}),
+    ...(partial.armor ? { armor: partial.armor } : {}),
+    ...(partial.subcategory ? { subcategory: partial.subcategory } : {}),
     ...(partial.source ? { source: partial.source } : {}),
     ...(partial.raw ? { raw: partial.raw } : {}),
   }

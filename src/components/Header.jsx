@@ -1,23 +1,56 @@
+import { PaperPlaneIcon } from './Icons.jsx'
+
 /** Título grande da tela e, nas telas de personagem, a pílula com a carteira. */
-export default function Header({ title, player = null, onWallet }) {
+export default function Header({
+  title,
+  player = null,
+  showAdjust = false,
+  showSend = false,
+  onAdjust,
+  onSend,
+}) {
   return (
     <header className="header">
       <div className="header__title">{title}</div>
       {player ? (
-        <button type="button" className="gold-pill" onClick={onWallet} aria-label="Abrir carteira">
-          <span className="gold-pill__coin">
-            <span className="gold-pill__value gold-pill__value--gold">{player.gold}</span>
-            <span className="coin-dot coin-dot--gold" />
-          </span>
-          <span className="gold-pill__coin">
-            <span className="gold-pill__value gold-pill__value--silver">{player.silver}</span>
-            <span className="coin-dot coin-dot--silver" />
-          </span>
-          <span className="gold-pill__coin">
-            <span className="gold-pill__value gold-pill__value--copper">{player.copper}</span>
-            <span className="coin-dot coin-dot--copper" />
-          </span>
-        </button>
+        <div className="header-coins">
+          {showAdjust ? (
+            <button
+              type="button"
+              className="header-icon-btn"
+              title="Ajustar moedas"
+              aria-label="Ajustar moedas"
+              onClick={onAdjust}
+            >
+              ±
+            </button>
+          ) : null}
+          {showSend ? (
+            <button
+              type="button"
+              className="header-icon-btn"
+              title="Enviar dinheiro"
+              aria-label="Enviar dinheiro"
+              onClick={onSend}
+            >
+              <PaperPlaneIcon />
+            </button>
+          ) : null}
+          <div className="gold-pill">
+            <span className="gold-pill__coin">
+              <span className="gold-pill__value gold-pill__value--gold">{player.gold}</span>
+              <span className="coin-dot coin-dot--gold" />
+            </span>
+            <span className="gold-pill__coin">
+              <span className="gold-pill__value gold-pill__value--silver">{player.silver}</span>
+              <span className="coin-dot coin-dot--silver" />
+            </span>
+            <span className="gold-pill__coin">
+              <span className="gold-pill__value gold-pill__value--copper">{player.copper}</span>
+              <span className="coin-dot coin-dot--copper" />
+            </span>
+          </div>
+        </div>
       ) : null}
     </header>
   )

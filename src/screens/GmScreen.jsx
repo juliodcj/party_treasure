@@ -1,25 +1,59 @@
 import { useMemo, useState } from 'react'
+import Sheet, { SheetActions } from '../components/Sheet.jsx'
 import Stepper from '../components/Stepper.jsx'
 import { CoinInputs } from '../components/ItemForm.jsx'
 import { SearchBox, FilterSelects, EMPTY_FILTERS } from '../components/ItemFilters.jsx'
-import { CheckIcon, ChevronRight } from '../components/Icons.jsx'
+import { CheckIcon, ChevronRight, TrashIcon } from '../components/Icons.jsx'
 import { useStore } from '../state/store.jsx'
 import { availableLevels, libraryItems, matchesFilters, matchesSearch } from '../lib/items.js'
 import { formatCopper } from '../lib/money.js'
 import { plural } from '../lib/text.js'
 
 export default function GmScreen() {
+  // Uma única confirmação por vez, compartilhada entre jogadores e lojas.
+  const [deleting, setDeleting] = useState(null) // { type: 'player' | 'shop', id, name }
+
   return (
     <div className="gm">
-      <PlayersSection />
-      <ShopsSection />
+      <PlayersSection onRequestDelete={(id, name) => setDeleting({ type: 'player', id, name })} />
+      <ShopsSection onRequestDelete={(id, name) => setDeleting({ type: 'shop', id, name })} />
+
+      {deleting ? (
+        <DeleteConfirmSheet target={deleting} onClose={() => setDeleting(null)} />
+      ) : null}
     </div>
+  )
+}
+
+function DeleteConfirmSheet({ target, onClose }) {
+  const { dispatch } = useStore()
+  const isPlayer = target.type === 'player'
+
+  return (
+    <Sheet center onClose={onClose}>
+      <div className="sheet__question">
+        Excluir {isPlayer ? 'o jogador' : 'a loja'} {target.name}?
+        {isPlayer ? ' O inventário e o dinheiro dele serão perdidos.' : ''}
+      </div>
+      <SheetActions
+        onCancel={onClose}
+        onConfirm={() => {
+          dispatch({
+            type: isPlayer ? 'REMOVE_PLAYER' : 'REMOVE_SHOP',
+            ...(isPlayer ? { playerId: target.id } : { shopId: target.id }),
+          })
+          onClose()
+        }}
+        confirmLabel="Excluir"
+        confirmVariant="danger"
+      />
+    </Sheet>
   )
 }
 
 /* --------------------------------------------------------------- jogadores */
 
-function PlayersSection() {
+function PlayersSection({ onRequestDelete }) {
   const { state, dispatch } = useStore()
   const [groupOpen, setGroupOpen] = useState(false)
 
@@ -50,7 +84,12 @@ function PlayersSection() {
 
       <div className="gm__list">
         {state.players.map((player) => (
-          <PlayerCard key={player.id} player={player} />
+          <PlayerCard
+            key={player.id}
+            player={player}
+            canDelete={state.players.length > 1}
+            onDelete={() => onRequestDelete(player.id, player.name)}
+          />
         ))}
       </div>
     </section>
@@ -95,7 +134,7 @@ function GroupGivePanel({ onDone }) {
   )
 }
 
-function PlayerCard({ player }) {
+function PlayerCard({ player, canDelete, onDelete }) {
   const { state, dispatch } = useStore()
   const [panel, setPanel] = useState(null) // 'coins' | 'items'
   const [gold, setGold] = useState('')
@@ -145,6 +184,16 @@ function PlayerCard({ player }) {
         </button>
         <button type="button" className="btn btn--tint" onClick={() => openPanel('items')}>
           Dar item
+        </button>
+        <button
+          type="button"
+          className="icon-btn icon-btn--danger"
+          title={canDelete ? 'Excluir jogador' : 'Precisa haver ao menos um jogador'}
+          aria-label={`Excluir ${player.name}`}
+          disabled={!canDelete}
+          onClick={onDelete}
+        >
+          <TrashIcon />
         </button>
       </div>
 
@@ -250,7 +299,7 @@ function PlayerCard({ player }) {
 
 /* ------------------------------------------------------------------- lojas */
 
-function ShopsSection() {
+function ShopsSection({ onRequestDelete }) {
   const { state, dispatch } = useStore()
   const [openId, setOpenId] = useState(null)
 
@@ -270,6 +319,7 @@ function ShopsSection() {
             shop={shop}
             isOpen={openId === shop.id}
             onToggle={() => setOpenId(openId === shop.id ? null : shop.id)}
+            onDelete={() => onRequestDelete(shop.id, shop.name)}
           />
         ))}
       </div>
@@ -277,7 +327,7 @@ function ShopsSection() {
   )
 }
 
-function ShopCard({ shop, isOpen, onToggle }) {
+function ShopCard({ shop, isOpen, onToggle, onDelete }) {
   const { state, dispatch } = useStore()
   const [filters, setFilters] = useState(EMPTY_FILTERS)
 
@@ -302,6 +352,15 @@ function ShopCard({ shop, isOpen, onToggle }) {
             {plural(shop.itemIds.length, 'item cadastrado', 'itens cadastrados')}
           </div>
         </div>
+        <button
+          type="button"
+          className="icon-btn icon-btn--danger"
+          title="Excluir loja"
+          aria-label={`Excluir ${shop.name}`}
+          onClick={onDelete}
+        >
+          <TrashIcon />
+        </button>
         <button
           type="button"
           onClick={onToggle}

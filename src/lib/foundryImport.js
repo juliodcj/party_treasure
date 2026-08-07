@@ -7,6 +7,8 @@
 import { CP_PER_GP, CP_PER_SP } from './money.js'
 import { makeId, normalizeItem } from './items.js'
 
+// Identidade proposital: cada tipo do Foundry é uma categoria real própria,
+// nenhuma é fundida em outra (ammo e kit tinham isso antes — escondia contagem real).
 const TYPE_TO_CATEGORY = {
   weapon: 'weapon',
   armor: 'armor',
@@ -15,8 +17,8 @@ const TYPE_TO_CATEGORY = {
   consumable: 'consumable',
   treasure: 'treasure',
   backpack: 'backpack',
-  ammo: 'consumable',
-  kit: 'equipment',
+  ammo: 'ammo',
+  kit: 'kit',
 }
 
 /** `system.price.value` é um objeto {pp, gp, sp, cp}; qualquer chave pode faltar. */
@@ -106,14 +108,14 @@ function titleFromSlug(slug) {
 }
 
 /** `system.bulk.value` moderno, `system.weight.value` legado ("L", "—"). */
-function readBulk(system) {
+export function readBulk(system) {
   const modern = system?.bulk?.value
   if (modern != null && modern !== '') return modern
   const legacy = system?.weight?.value
   return legacy != null && legacy !== '' ? legacy : 0
 }
 
-function readSource(system) {
+export function readSource(system) {
   const publication = system?.publication ?? system?.source
   if (!publication) return null
   const title = publication.title ?? publication.value
@@ -125,8 +127,12 @@ function readSource(system) {
   }
 }
 
-/** LR não existe no JSON: é derivado de PV máximo. Nunca sai do HTML da descrição. */
-function readShield(system) {
+/**
+ * LR não existe no JSON: é derivado de PV máximo. Nunca sai do HTML da descrição.
+ * `hardness`/`hp` existem em TODO item físico (é o rastreio de sunder do Foundry),
+ * não só em escudos — por isso só lemos isto quando o item É um escudo.
+ */
+export function readShield(system) {
   if (system?.hardness == null && system?.hp == null) return null
   const hpMax = Number(system?.hp?.max) || 0
   return {
@@ -138,13 +144,62 @@ function readShield(system) {
   }
 }
 
+/** `system.usage.value` -> quantas mãos a arma ocupa, para exibir "Hands". */
+const WEAPON_HANDS = {
+  'held-in-one-hand': 1,
+  'held-in-two-hands': 2,
+  'held-in-one-plus-hands': '1+',
+}
+
+/** Dano, grupo, categoria de proficiência e alcance — só existe em armas. */
+export function readWeapon(system) {
+  const damage = system?.damage?.die
+    ? {
+        dice: Number(system.damage.dice) || 1,
+        die: system.damage.die,
+        damageType: system.damage.damageType ?? null,
+      }
+    : null
+  return {
+    category: system?.category ?? null,
+    group: system?.group ?? null,
+    hands: WEAPON_HANDS[system?.usage?.value] ?? null,
+    ranged: system?.range != null,
+    range: system?.range ?? null,
+    reload: system?.reload?.value || null,
+    damage,
+  }
+}
+
+/** CA, limite de Destreza, penalidades e Força mínima — só existe em armaduras. */
+export function readArmor(system) {
+  return {
+    category: system?.category ?? null,
+    group: system?.group ?? null,
+    acBonus: system?.acBonus ?? null,
+    dexCap: system?.dexCap ?? null,
+    checkPenalty: system?.checkPenalty ?? null,
+    speedPenalty: system?.speedPenalty ?? null,
+    strength: system?.strength ?? null,
+  }
+}
+
+/** Subtipo real (poção, pergaminho, gema...), quando o pack registra `system.category`. */
+export function readSubcategory(system) {
+  return system?.category || null
+}
+
 /** Converte UM objeto de item do Foundry. Devolve o item normalizado. */
 export function convertFoundryItem(raw) {
   const system = raw?.system ?? raw?.data ?? {}
   const html = sanitizeDescription(system?.description?.value ?? '')
   const traits = Array.isArray(system?.traits?.value) ? system.traits.value : []
   const rarity = system?.traits?.rarity ?? null
-  const shield = readShield(system)
+  const shield = raw?.type === 'shield' ? readShield(system) : null
+  const weapon = raw?.type === 'weapon' ? readWeapon(system) : null
+  const armor = raw?.type === 'armor' ? readArmor(system) : null
+  const subcategory =
+    raw?.type === 'consumable' || raw?.type === 'treasure' ? readSubcategory(system) : null
 
   return normalizeItem({
     id: makeId('camp'),
@@ -159,6 +214,9 @@ export function convertFoundryItem(raw) {
     descriptionHtml: html,
     ...(rarity ? { rarity } : {}),
     ...(shield ? { shield } : {}),
+    ...(weapon ? { weapon } : {}),
+    ...(armor ? { armor } : {}),
+    ...(subcategory ? { subcategory } : {}),
     ...(readSource(system) ? { source: readSource(system) } : {}),
     // `system.rules` é o motor de automação do Foundry: fica guardado, sem interpretação.
     raw: system,

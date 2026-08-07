@@ -6,7 +6,7 @@ import ItemForm from '../components/ItemForm.jsx'
 import { SearchBox } from '../components/ItemFilters.jsx'
 import { EditIcon, PlusIcon, SellIcon, SendIcon, TrashIcon } from '../components/Icons.jsx'
 import { useStore } from '../state/store.jsx'
-import { GROUPS } from '../data/catalog.js'
+import { CATEGORY_ORDER, categoryLabel } from '../data/catalog.js'
 import {
   groupInventory,
   libraryItems,
@@ -46,11 +46,11 @@ export default function InventoryScreen({ player, filters, openId, onToggle }) {
         </div>
       ) : null}
 
-      {GROUPS.map((group) =>
-        grouped[group.id].length ? (
-          <section key={group.id} style={{ display: 'contents' }}>
-            <h2 className="group-title">{group.label}</h2>
-            {grouped[group.id].map(({ item, qty }) => {
+      {CATEGORY_ORDER.map((id) =>
+        grouped[id].length ? (
+          <section key={id} style={{ display: 'contents' }}>
+            <h2 className="group-title">{categoryLabel(id)}</h2>
+            {grouped[id].map(({ item, qty }) => {
               const custom = isCustom(item.id)
               const canBuyMore = custom || walletCp >= item.priceCp
               return (

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import Header from './components/Header.jsx'
-import WalletSheet from './components/WalletSheet.jsx'
+import SendMoneySheet from './components/SendMoneySheet.jsx'
+import AdjustCoinsSheet from './components/AdjustCoinsSheet.jsx'
 import { SearchBox, FilterSelects, EMPTY_FILTERS } from './components/ItemFilters.jsx'
 import { BagIcon, BookIcon, ChevronDown, CrownIcon, ShopIcon } from './components/Icons.jsx'
 import InventoryScreen from './screens/InventoryScreen.jsx'
@@ -27,7 +28,8 @@ export default function App() {
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   // Como no protótipo, só um item fica aberto de cada vez.
   const [openId, setOpenId] = useState(null)
-  const [walletOpen, setWalletOpen] = useState(false)
+  const [sendMoneyOpen, setSendMoneyOpen] = useState(false)
+  const [adjustCoinsOpen, setAdjustCoinsOpen] = useState(false)
   const [shopPickerOpen, setShopPickerOpen] = useState(false)
 
   const isInventory = tab === 'inventory'
@@ -66,7 +68,10 @@ export default function App() {
       <Header
         title={TABS.find((current) => current.id === tab).label}
         player={isCharacterTab ? player : null}
-        onWallet={() => setWalletOpen(true)}
+        showAdjust={isInventory}
+        showSend={isInventory && state.players.length > 1}
+        onAdjust={() => setAdjustCoinsOpen(true)}
+        onSend={() => setSendMoneyOpen(true)}
       />
 
       {isShop && shop ? (
@@ -190,7 +195,12 @@ export default function App() {
         ))}
       </nav>
 
-      {walletOpen ? <WalletSheet player={player} onClose={() => setWalletOpen(false)} /> : null}
+      {sendMoneyOpen ? (
+        <SendMoneySheet player={player} onClose={() => setSendMoneyOpen(false)} />
+      ) : null}
+      {adjustCoinsOpen ? (
+        <AdjustCoinsSheet player={player} onClose={() => setAdjustCoinsOpen(false)} />
+      ) : null}
     </div>
   )
 }

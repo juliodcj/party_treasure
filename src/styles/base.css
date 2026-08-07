@@ -1,3 +1,12 @@
+/* Fonte oficial de ícones de ação do próprio foundryvtt/pf2e (Apache-2.0):
+   é o que desenha "Ativar" com 1/2/3 ações, reação e ação livre no texto
+   descritivo, em vez da letra crua que vem no HTML importado. */
+@font-face {
+  font-family: 'Pathfinder2eActions';
+  src: url('/fonts/pathfinder-2e-actions.woff2') format('woff2');
+  font-display: swap;
+}
+
 *,
 *::before,
 *::after {

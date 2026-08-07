@@ -136,6 +136,33 @@
   border-color: var(--accent);
 }
 
+/* Lista vertical de personagens clicáveis, para escolher o destino de um envio */
+.target-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.target-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line-input);
+}
+
+.target-row--on {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
 .chips {
   display: flex;
   gap: 8px;

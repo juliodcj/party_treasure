@@ -3,7 +3,7 @@ import ItemRow from '../components/ItemRow.jsx'
 import Stepper from '../components/Stepper.jsx'
 import { CartIcon } from '../components/Icons.jsx'
 import { useStore } from '../state/store.jsx'
-import { GROUPS } from '../data/catalog.js'
+import { CATEGORY_ORDER, categoryLabel } from '../data/catalog.js'
 import { groupInventory, matchesFilters, matchesSearch, resolveItem } from '../lib/items.js'
 import { formatCopper, toCopper } from '../lib/money.js'
 
@@ -42,11 +42,11 @@ export default function ShopScreen({ player, shop, filters, openId, onToggle }) 
         </div>
       ) : null}
 
-      {GROUPS.map((group) =>
-        grouped[group.id].length ? (
-          <section key={group.id} style={{ display: 'contents' }}>
-            <h2 className="group-title">{group.label}</h2>
-            {grouped[group.id].map(({ item }) => {
+      {CATEGORY_ORDER.map((id) =>
+        grouped[id].length ? (
+          <section key={id} style={{ display: 'contents' }}>
+            <h2 className="group-title">{categoryLabel(id)}</h2>
+            {grouped[id].map(({ item }) => {
               const qty = state.cart[item.id] ?? 0
               return (
                 <ItemRow

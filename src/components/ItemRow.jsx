@@ -3,6 +3,43 @@ import TraitList from './TraitList.jsx'
 import { ChevronRight } from './Icons.jsx'
 import { categoryLabel } from '../data/catalog.js'
 import { formatBulk, parseBulk } from '../lib/bulk.js'
+import { titleCase } from '../lib/text.js'
+
+const PHYSICAL_DAMAGE_ABBR = { bludgeoning: 'B', piercing: 'P', slashing: 'S' }
+
+/** "1d12" + "slashing" -> "1d12 S" (abreviação padrão do PF2e para dano físico). */
+function formatDamage(damage) {
+  if (!damage) return null
+  const abbr = PHYSICAL_DAMAGE_ABBR[damage.damageType] ?? titleCase(damage.damageType)
+  return `${damage.dice}${damage.die}${abbr ? ` ${abbr}` : ''}`
+}
+
+/** Linha de stats real da arma: dano, mãos, alcance e grupo — vêm direto do pack do Foundry. */
+function weaponSummary(weapon) {
+  if (!weapon) return null
+  const parts = []
+  const damage = formatDamage(weapon.damage)
+  if (damage) parts.push(`Damage ${damage}`)
+  if (weapon.hands) parts.push(`Hands ${weapon.hands}`)
+  parts.push(`Type ${weapon.ranged ? 'Ranged' : 'Melee'}`)
+  if (weapon.group) parts.push(`Group ${titleCase(weapon.group)}`)
+  if (weapon.ranged && weapon.range) parts.push(`Range ${weapon.range} ft`)
+  if (weapon.ranged && weapon.reload) parts.push(`Reload ${weapon.reload}`)
+  return parts.join(' · ')
+}
+
+/** Linha de stats real da armadura: CA, limite de Destreza, penalidades e Força mínima. */
+function armorSummary(armor) {
+  if (!armor) return null
+  const parts = []
+  if (armor.acBonus != null) parts.push(`AC +${armor.acBonus}`)
+  if (armor.dexCap != null) parts.push(`Dex Cap +${armor.dexCap}`)
+  if (armor.checkPenalty) parts.push(`Check ${armor.checkPenalty}`)
+  if (armor.speedPenalty) parts.push(`Speed ${armor.speedPenalty} ft`)
+  if (armor.strength != null) parts.push(`Str ${armor.strength}`)
+  if (armor.group) parts.push(titleCase(armor.group))
+  return parts.join(' · ')
+}
 
 /**
  * A linha de item do protótipo, usada pelo Inventário, pela Loja e pela
@@ -19,6 +56,9 @@ export default function ItemRow({
   nested = false,
   children,
 }) {
+  const weaponStats = weaponSummary(item.weapon)
+  const armorStats = armorSummary(item.armor)
+
   return (
     <div className={nested ? 'subitem' : 'card'}>
       <div className="item__head">
@@ -42,7 +82,9 @@ export default function ItemRow({
         <div className="item__body">
           <div className="item__meta">
             <span className="item__meta-label">
-              {categoryLabel(item.category)} · Bulk {formatBulk(parseBulk(item.bulk))}
+              {categoryLabel(item.category)}
+              {item.subcategory ? ` · ${titleCase(item.subcategory)}` : ''} · Bulk{' '}
+              {formatBulk(parseBulk(item.bulk))}
             </span>
             {priceInBody ? (
               <span className="coin-badges">
@@ -54,9 +96,13 @@ export default function ItemRow({
 
           <TraitList traits={item.traits} />
 
+          {weaponStats ? <div className="item__stats">{weaponStats}</div> : null}
+
+          {armorStats ? <div className="item__stats">{armorStats}</div> : null}
+
           {item.shield ? (
-            <div className="item__meta-label" style={{ marginTop: 8 }}>
-              Dureza {item.shield.hardness} · PV {item.shield.hpMax} · LR {item.shield.bt}
+            <div className="item__stats">
+              Hardness {item.shield.hardness} · HP {item.shield.hpMax} · BT {item.shield.bt}
             </div>
           ) : null}
 
@@ -72,13 +118,7 @@ export default function ItemRow({
             </p>
           )}
 
-          {item.source ? (
-            <div className="item__source">
-              {item.source.title}
-              {item.source.license ? ` · ${item.source.license}` : ''}
-              {item.source.remaster ? ' · remaster' : ''}
-            </div>
-          ) : null}
+          {item.source ? <div className="item__source">{item.source.title}</div> : null}
 
           {children}
         </div>
