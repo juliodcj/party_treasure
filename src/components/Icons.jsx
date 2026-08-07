@@ -75,17 +75,19 @@ export function TrashIcon() {
   )
 }
 
+/** Etiqueta de preço — "Vender", para não se confundir com a seta de "Enviar". */
 export function SellIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
       <path
-        d="M17 7L7 17M7 7h10v10"
+        d="M20.6 13.4L13.4 20.6a2 2 0 01-2.8 0L3 13V3h10l7.6 7.6a2 2 0 010 2.8z"
         fill="none"
         stroke="oklch(50% 0.14 258)"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+      <circle cx="7.5" cy="7.5" r="1.2" fill="oklch(50% 0.14 258)" />
     </svg>
   )
 }
@@ -162,6 +164,35 @@ export function StepperMinus({ width }) {
   )
 }
 
+/** Três controles deslizantes — botão "Conteúdo" (livros/remaster). */
+export function TuneIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 20 20" aria-hidden="true">
+      <line x1="3" y1="5" x2="17" y2="5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <line x1="3" y1="15" x2="17" y2="15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="7" cy="5" r="2" fill="var(--surface)" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="13" cy="10" r="2" fill="var(--surface)" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="9" cy="15" r="2" fill="var(--surface)" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  )
+}
+
+/** Engrenagem — botão "Configurações", na aba Mestre. */
+export function GearIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 20 20" aria-hidden="true">
+      <circle cx="10" cy="10" r="3" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path
+        d="M10 2v2.2M10 15.8V18M18 10h-2.2M4.2 10H2M15.5 4.5l-1.5 1.5M6 12.5l-1.5 1.5M15.5 15.5l-1.5-1.5M6 7.5l-1.5-1.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
 export function CheckIcon() {
   return (
     <svg width="10" height="8" viewBox="0 0 10 8" aria-hidden="true">
@@ -177,22 +208,20 @@ export function CheckIcon() {
   )
 }
 
+/** Carrinho de compras — "Comprar tudo", para não repetir o ícone da aba Loja. */
 export function CartIcon({ size = 18 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
       <path
-        d="M3 9l1.5-5h15L21 9"
+        d="M2.5 3h2.4l1.1 3M6 6h15.5l-1.9 8.6a1.5 1.5 0 01-1.5 1.2H9a1.5 1.5 0 01-1.5-1.2L6 6z"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.8"
+        strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <path
-        d="M3 9v10a1 1 0 001 1h16a1 1 0 001-1V9"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      />
+      <circle cx="10" cy="20.5" r="1.3" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="18" cy="20.5" r="1.3" fill="none" stroke="currentColor" strokeWidth="1.6" />
     </svg>
   )
 }

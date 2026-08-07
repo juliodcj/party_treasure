@@ -3,25 +3,149 @@ import Sheet, { SheetActions } from '../components/Sheet.jsx'
 import Stepper from '../components/Stepper.jsx'
 import { CoinInputs } from '../components/ItemForm.jsx'
 import { SearchBox, FilterSelects, EMPTY_FILTERS } from '../components/ItemFilters.jsx'
-import { CheckIcon, ChevronRight, TrashIcon } from '../components/Icons.jsx'
+import { ChevronRight, EditIcon, TrashIcon } from '../components/Icons.jsx'
+import EditWalletSheet from '../components/EditWalletSheet.jsx'
+import ShopEditScreen from './ShopEditScreen.jsx'
 import { useStore } from '../state/store.jsx'
-import { availableLevels, libraryItems, matchesFilters, matchesSearch } from '../lib/items.js'
+import {
+  availableLevels,
+  libraryItems,
+  matchesContent,
+  matchesFilters,
+  matchesSearch,
+  resolveItem,
+} from '../lib/items.js'
 import { formatCopper } from '../lib/money.js'
 import { plural } from '../lib/text.js'
 
 export default function GmScreen() {
   // Uma única confirmação por vez, compartilhada entre jogadores e lojas.
   const [deleting, setDeleting] = useState(null) // { type: 'player' | 'shop', id, name }
+  // undefined = fechada; null = criando loja nova; objeto = editando essa loja.
+  const [shopEditor, setShopEditor] = useState(undefined)
 
   return (
     <div className="gm">
       <PlayersSection onRequestDelete={(id, name) => setDeleting({ type: 'player', id, name })} />
-      <ShopsSection onRequestDelete={(id, name) => setDeleting({ type: 'shop', id, name })} />
+      <ShopsSection
+        onRequestDelete={(id, name) => setDeleting({ type: 'shop', id, name })}
+        onCreateShop={() => setShopEditor(null)}
+        onEditShop={(shop) => setShopEditor(shop)}
+      />
+      <HistorySection />
 
       {deleting ? (
         <DeleteConfirmSheet target={deleting} onClose={() => setDeleting(null)} />
       ) : null}
+
+      {shopEditor !== undefined ? (
+        <ShopEditScreen shop={shopEditor} onClose={() => setShopEditor(undefined)} />
+      ) : null}
     </div>
+  )
+}
+
+/* -------------------------------------------------------------- histórico */
+
+function formatHistoryTime(at) {
+  return new Date(at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+}
+
+function HistorySection() {
+  const { state, dispatch } = useStore()
+  const [confirming, setConfirming] = useState(null) // { entryId, label, count }
+  const [clearing, setClearing] = useState(false)
+
+  const total = state.history.length
+  const entries = [...state.history].reverse() // mais recente primeiro
+
+  return (
+    <section>
+      <div className="gm__section-head">
+        <h2 className="gm__section-title">Histórico</h2>
+        {total ? (
+          <button type="button" className="link link--muted" onClick={() => setClearing(true)}>
+            Limpar
+          </button>
+        ) : null}
+      </div>
+
+      <div className="card card--folder">
+        {entries.length === 0 ? (
+          <div className="empty" style={{ padding: '24px 16px' }}>
+            Nenhuma alteração recente.
+          </div>
+        ) : (
+          <div className="gm__list" style={{ gap: 0, padding: '4px 14px' }}>
+            {entries.map((entry, position) => {
+              const originalIndex = total - 1 - position
+              const count = total - originalIndex
+              return (
+                <div
+                  className="gm__row"
+                  key={entry.id}
+                  style={{
+                    padding: '10px 0',
+                    borderTop: position > 0 ? '1px solid var(--line)' : 'none',
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13.5, color: 'var(--text)' }}>{entry.label}</div>
+                    <div style={{ fontSize: 11.5, color: 'var(--text-faint)', marginTop: 1 }}>
+                      {formatHistoryTime(entry.at)}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn--neutral"
+                    style={{ fontSize: 12, padding: '6px 12px', flexShrink: 0 }}
+                    onClick={() => setConfirming({ entryId: entry.id, label: entry.label, count })}
+                  >
+                    Reverter
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {confirming ? (
+        <Sheet center onClose={() => setConfirming(null)}>
+          <div className="sheet__question">
+            {confirming.count === 1
+              ? `Reverter "${confirming.label}"?`
+              : `Reverter até "${confirming.label}"? Isso também desfaz as ${confirming.count - 1} alterações mais recentes depois dela.`}
+          </div>
+          <SheetActions
+            onCancel={() => setConfirming(null)}
+            onConfirm={() => {
+              dispatch({ type: 'UNDO_TO', entryId: confirming.entryId })
+              setConfirming(null)
+            }}
+            confirmLabel="Reverter"
+            confirmVariant="danger"
+          />
+        </Sheet>
+      ) : null}
+
+      {clearing ? (
+        <Sheet center onClose={() => setClearing(false)}>
+          <div className="sheet__question">
+            Limpar o histórico? Isso só apaga a lista — não desfaz nada que já foi feito.
+          </div>
+          <SheetActions
+            onCancel={() => setClearing(false)}
+            onConfirm={() => {
+              dispatch({ type: 'CLEAR_HISTORY' })
+              setClearing(false)
+            }}
+            confirmLabel="Limpar"
+            confirmVariant="danger"
+          />
+        </Sheet>
+      ) : null}
+    </section>
   )
 }
 
@@ -142,6 +266,7 @@ function PlayerCard({ player, canDelete, onDelete }) {
   const [copper, setCopper] = useState('')
   const [search, setSearch] = useState('')
   const [drafts, setDrafts] = useState({})
+  const [editingWallet, setEditingWallet] = useState(false)
 
   const catalog = useMemo(() => libraryItems(state), [state])
   const term = search.trim().toLowerCase()
@@ -166,7 +291,12 @@ function PlayerCard({ player, canDelete, onDelete }) {
             }
             aria-label="Nome do personagem"
           />
-          <div className="gm__coins">
+          <button
+            type="button"
+            className="gm__coins"
+            onClick={() => setEditingWallet(true)}
+            aria-label={`Editar moedas de ${player.name}`}
+          >
             {[
               ['gold', player.gold],
               ['silver', player.silver],
@@ -177,7 +307,7 @@ function PlayerCard({ player, canDelete, onDelete }) {
                 <span className={`coin-dot coin-dot--${coin}`} />
               </span>
             ))}
-          </div>
+          </button>
         </div>
         <button type="button" className="btn btn--solid" onClick={() => openPanel('coins')}>
           Dar moedas
@@ -293,21 +423,25 @@ function PlayerCard({ player, canDelete, onDelete }) {
           </div>
         </div>
       ) : null}
+
+      {editingWallet ? (
+        <EditWalletSheet player={player} onClose={() => setEditingWallet(false)} />
+      ) : null}
     </div>
   )
 }
 
 /* ------------------------------------------------------------------- lojas */
 
-function ShopsSection({ onRequestDelete }) {
-  const { state, dispatch } = useStore()
+function ShopsSection({ onRequestDelete, onCreateShop, onEditShop }) {
+  const { state } = useStore()
   const [openId, setOpenId] = useState(null)
 
   return (
     <section>
       <div className="gm__section-head">
         <h2 className="gm__section-title">Lojas</h2>
-        <button type="button" className="link" onClick={() => dispatch({ type: 'ADD_SHOP' })}>
+        <button type="button" className="link" onClick={onCreateShop}>
           + Nova loja
         </button>
       </div>
@@ -320,6 +454,7 @@ function ShopsSection({ onRequestDelete }) {
             isOpen={openId === shop.id}
             onToggle={() => setOpenId(openId === shop.id ? null : shop.id)}
             onDelete={() => onRequestDelete(shop.id, shop.name)}
+            onEdit={() => onEditShop(shop)}
           />
         ))}
       </div>
@@ -327,13 +462,21 @@ function ShopsSection({ onRequestDelete }) {
   )
 }
 
-function ShopCard({ shop, isOpen, onToggle, onDelete }) {
+function ShopCard({ shop, isOpen, onToggle, onDelete, onEdit }) {
   const { state, dispatch } = useStore()
   const [filters, setFilters] = useState(EMPTY_FILTERS)
 
-  const catalog = useMemo(() => libraryItems(state), [state])
-  const rows = catalog.filter(
-    (item) => matchesSearch(item, filters.search) && matchesFilters(item, filters),
+  // Aqui dentro só interessa o que já está na prateleira — o catálogo
+  // inteiro para marcar/desmarcar vive na tela cheia de edição.
+  const stocked = useMemo(
+    () => shop.itemIds.map((itemId) => resolveItem(state, itemId)).filter(Boolean),
+    [state, shop.itemIds],
+  )
+  const rows = stocked.filter(
+    (item) =>
+      matchesSearch(item, filters.search) &&
+      matchesFilters(item, filters) &&
+      matchesContent(item, state.settings),
   )
 
   return (
@@ -352,6 +495,15 @@ function ShopCard({ shop, isOpen, onToggle, onDelete }) {
             {plural(shop.itemIds.length, 'item cadastrado', 'itens cadastrados')}
           </div>
         </div>
+        <button
+          type="button"
+          className="icon-btn icon-btn--accent"
+          title="Editar loja"
+          aria-label={`Editar ${shop.name}`}
+          onClick={onEdit}
+        >
+          <EditIcon />
+        </button>
         <button
           type="button"
           className="icon-btn icon-btn--danger"
@@ -383,32 +535,36 @@ function ShopCard({ shop, isOpen, onToggle, onDelete }) {
             small
             value={filters}
             onChange={setFilters}
-            levels={availableLevels(catalog)}
+            levels={availableLevels(stocked)}
           />
           <div className="gm__scroll" style={{ maxHeight: 260, gap: 2 }}>
-            {rows.map((item) => {
-              const checked = shop.itemIds.includes(item.id)
-              return (
+            {rows.map((item) => (
+              <div className="gm__row" key={item.id}>
+                <span className="gm__row-name">{item.name}</span>
+                <span className="item__level">Nv {item.level}</span>
+                <span className="gm__check-price">{formatCopper(item.priceCp)}</span>
                 <button
                   type="button"
-                  className="gm__check-row"
-                  key={item.id}
+                  className="icon-btn icon-btn--danger"
+                  style={{ width: 24, height: 24 }}
+                  title="Remover da loja"
+                  aria-label={`Remover ${item.name} da loja`}
                   onClick={() =>
                     dispatch({ type: 'TOGGLE_SHOP_ITEM', shopId: shop.id, itemId: item.id })
                   }
-                  aria-pressed={checked}
                 >
-                  <span className={`checkbox${checked ? ' checkbox--on' : ''}`}>
-                    {checked ? <CheckIcon /> : null}
-                  </span>
-                  <span className="gm__check-name">{item.name}</span>
-                  <span className="gm__check-price">{formatCopper(item.priceCp)}</span>
+                  <TrashIcon />
                 </button>
-              )
-            })}
+              </div>
+            ))}
+            {rows.length === 0 ? (
+              <div className="empty">
+                {stocked.length === 0 ? 'Nenhum item cadastrado.' : 'Nenhum item encontrado.'}
+              </div>
+            ) : null}
           </div>
-          <button type="button" className="btn btn--solid btn--block" onClick={onToggle}>
-            Inserir
+          <button type="button" className="btn btn--solid btn--block" onClick={onEdit}>
+            Editar loja
           </button>
         </div>
       ) : null}

@@ -9,7 +9,7 @@ import { makeId, normalizeItem } from './items.js'
 
 // Identidade proposital: cada tipo do Foundry é uma categoria real própria,
 // nenhuma é fundida em outra (ammo e kit tinham isso antes — escondia contagem real).
-const TYPE_TO_CATEGORY = {
+export const TYPE_TO_CATEGORY = {
   weapon: 'weapon',
   armor: 'armor',
   shield: 'shield',
@@ -19,6 +19,20 @@ const TYPE_TO_CATEGORY = {
   backpack: 'backpack',
   ammo: 'ammo',
   kit: 'kit',
+}
+
+/**
+ * Runa não é um `type` próprio do Foundry — é `type: "equipment"` com
+ * `system.usage.value` começando em "etched-onto" (etched-onto-a-weapon,
+ * etched-onto-armor, etched-onto-a-shield...). Confirmado nos dados reais:
+ * 176 itens, todos runas de verdade (Striking, Armor Potency, Ghost Touch,
+ * Reinforcing Rune...). Um talismã fica em "affixed-to-armor-or-a-weapon" —
+ * usage diferente, não cai aqui.
+ */
+export function readCategory(type, system) {
+  const base = TYPE_TO_CATEGORY[type]
+  if (base === 'equipment' && /^etched-onto/.test(system?.usage?.value ?? '')) return 'rune'
+  return base
 }
 
 /** `system.price.value` é um objeto {pp, gp, sp, cp}; qualquer chave pode faltar. */
@@ -205,7 +219,7 @@ export function convertFoundryItem(raw) {
     id: makeId('camp'),
     name: raw?.name ?? 'Item importado',
     level: Number(system?.level?.value ?? 0),
-    category: TYPE_TO_CATEGORY[raw?.type] ?? 'equipment',
+    category: readCategory(raw?.type, system) ?? 'equipment',
     priceCp: priceToCopper(system?.price),
     bulk: readBulk(system),
     // A raridade não é um traço no JSON, mas na mesa se lê como um.
@@ -218,6 +232,8 @@ export function convertFoundryItem(raw) {
     ...(armor ? { armor } : {}),
     ...(subcategory ? { subcategory } : {}),
     ...(readSource(system) ? { source: readSource(system) } : {}),
+    ...(system?.usage?.value ? { usage: system.usage.value } : {}),
+    ...(raw?.img ? { img: raw.img } : {}),
     // `system.rules` é o motor de automação do Foundry: fica guardado, sem interpretação.
     raw: system,
   })

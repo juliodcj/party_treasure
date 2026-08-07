@@ -16,6 +16,14 @@ function withItemDelta(items, itemId, delta) {
   return next
 }
 
+/** Tira a observação de um item — usado sempre que ele sai todo da mochila. */
+function withoutNote(itemNotes, itemId) {
+  if (!itemNotes[itemId]) return itemNotes
+  const next = { ...itemNotes }
+  delete next[itemId]
+  return next
+}
+
 export function reducer(state, action) {
   switch (action.type) {
     case 'SELECT_PLAYER':
@@ -24,6 +32,10 @@ export function reducer(state, action) {
 
     case 'SELECT_SHOP':
       return { ...state, activeShopId: action.shopId, cart: {} }
+
+    case 'SET_SETTINGS':
+      // Config da mesa (livros possuídos, remaster/legado): mescla, não substitui.
+      return { ...state, settings: { ...state.settings, ...action.settings } }
 
     // ---------------------------------------------------------------- jogadores
 
@@ -40,6 +52,7 @@ export function reducer(state, action) {
             copper: 0,
             items: {},
             customItems: [],
+            itemNotes: {},
           },
         ],
       }
@@ -100,6 +113,18 @@ export function reducer(state, action) {
         ),
       }
 
+    case 'SET_COINS':
+      // Clicar no dinheiro e definir o valor exato — diferente do "±", que soma/subtrai.
+      return {
+        ...state,
+        players: mapPlayer(state.players, action.playerId, (player) => ({
+          ...player,
+          gold: Math.max(0, Math.round(action.coins.gold ?? 0)),
+          silver: Math.max(0, Math.round(action.coins.silver ?? 0)),
+          copper: Math.max(0, Math.round(action.coins.copper ?? 0)),
+        })),
+      }
+
     case 'GIVE_COINS':
       // Mestre criando dinheiro do nada, para um jogador específico.
       return {
@@ -138,42 +163,9 @@ export function reducer(state, action) {
         })),
       }
 
-    case 'BUY_ONE': {
-      // O "+" do inventário compra mais uma unidade e debita o preço cheio.
-      const item = resolveItem(state, action.itemId, action.playerId)
-      const player = state.players.find((current) => current.id === action.playerId)
-      if (!item || !player) return state
-      const wallet = spendCopper(player, item.priceCp)
-      if (!wallet) return state // sem saldo: o botão já aparece apagado
-      return {
-        ...state,
-        players: mapPlayer(state.players, action.playerId, (current) => ({
-          ...current,
-          ...wallet,
-          items: withItemDelta(current.items, action.itemId, 1),
-        })),
-      }
-    }
-
-    case 'REFUND_ONE': {
-      // O "−" devolve uma unidade e reembolsa o preço cheio.
-      const item = resolveItem(state, action.itemId, action.playerId)
-      if (!item) return state
-      return {
-        ...state,
-        players: mapPlayer(state.players, action.playerId, (player) => {
-          if ((player.items[action.itemId] ?? 0) <= 0) return player
-          return {
-            ...player,
-            ...withWalletCopper(player, toCopper(player) + item.priceCp),
-            items: withItemDelta(player.items, action.itemId, -1),
-          }
-        }),
-      }
-    }
-
-    case 'CHANGE_CUSTOM_QTY':
-      // Item avulso não tem preço de mercado: o passo só mexe na quantidade.
+    case 'CHANGE_ITEM_QTY':
+      // A quantidade no inventário é livre: só ajusta a mochila, nunca mexe
+      // na carteira. Comprar é na Loja; vender é o botão "Vender".
       return {
         ...state,
         players: mapPlayer(state.players, action.playerId, (player) => ({
@@ -181,6 +173,19 @@ export function reducer(state, action) {
           items: withItemDelta(player.items, action.itemId, action.delta),
         })),
       }
+
+    case 'SET_ITEM_NOTE': {
+      const note = action.note.trim()
+      return {
+        ...state,
+        players: mapPlayer(state.players, action.playerId, (player) => ({
+          ...player,
+          itemNotes: note
+            ? { ...player.itemNotes, [action.itemId]: note }
+            : withoutNote(player.itemNotes, action.itemId),
+        })),
+      }
+    }
 
     case 'DROP_ITEM':
       // Excluir tira o item da mochila inteiro. Não devolve dinheiro.
@@ -193,6 +198,7 @@ export function reducer(state, action) {
             ...player,
             items,
             customItems: player.customItems.filter((custom) => custom.id !== action.itemId),
+            itemNotes: withoutNote(player.itemNotes, action.itemId),
           }
         }),
       }
@@ -215,6 +221,7 @@ export function reducer(state, action) {
               sold >= owned
                 ? player.customItems.filter((custom) => custom.id !== action.itemId)
                 : player.customItems,
+            itemNotes: sold >= owned ? withoutNote(player.itemNotes, action.itemId) : player.itemNotes,
           }
         }),
       }
@@ -242,6 +249,8 @@ export function reducer(state, action) {
                 isCustom && leftBehind <= 0
                   ? player.customItems.filter((custom) => custom.id !== action.itemId)
                   : player.customItems,
+              // A observação é anotação de quem escreveu, não viaja com o item.
+              itemNotes: leftBehind <= 0 ? withoutNote(player.itemNotes, action.itemId) : player.itemNotes,
             }
           }
           if (player.id === action.toId) {
@@ -320,9 +329,24 @@ export function reducer(state, action) {
     }
 
     case 'ADD_SHOP': {
-      const shop = { id: makeId('shop'), name: 'Nova loja', itemIds: [] }
+      const shop = {
+        id: makeId('shop'),
+        name: action.name?.trim() || 'Nova loja',
+        itemIds: action.itemIds ?? [],
+      }
       return { ...state, shops: [...state.shops, shop] }
     }
+
+    case 'UPDATE_SHOP':
+      // Salva de uma vez o nome e a composição inteira, vindos da tela de edição.
+      return {
+        ...state,
+        shops: state.shops.map((shop) =>
+          shop.id === action.shopId
+            ? { ...shop, name: action.name?.trim() || shop.name, itemIds: action.itemIds }
+            : shop,
+        ),
+      }
 
     case 'RENAME_SHOP':
       return {

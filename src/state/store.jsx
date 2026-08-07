@@ -1,7 +1,11 @@
 import { createContext, useContext, useEffect, useMemo, useReducer } from 'react'
 import { reducer } from './reducer.js'
+import { withHistory } from './history.js'
 import { createInitialState } from './initialState.js'
+import { migrate } from './migrations.js'
 import { STORAGE_KEY } from '../config.js'
+
+const reducerWithHistory = withHistory(reducer)
 
 const StoreContext = createContext(null)
 
@@ -15,10 +19,15 @@ function loadState() {
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY)
     if (!stored) return fallback
-    const parsed = JSON.parse(stored)
-    if (!parsed || parsed.version !== fallback.version || !Array.isArray(parsed.players)) {
+    let parsed = JSON.parse(stored)
+    if (!parsed || !Array.isArray(parsed.players) || !Number.isFinite(parsed.version)) {
       return fallback
     }
+    // Versão do futuro (estado de um aparelho mais atualizado) ou schema
+    // corrompido: não dá pra confiar, volta pro padrão. Versão antiga migra.
+    if (parsed.version > fallback.version) return fallback
+    if (parsed.version < fallback.version) parsed = migrate(parsed, fallback.version)
+
     // O jogador ou a loja em foco podem ter sido apagados noutro aparelho.
     const playerExists = parsed.players.some((player) => player.id === parsed.activePlayerId)
     const shopExists = parsed.shops?.some((shop) => shop.id === parsed.activeShopId)
@@ -26,6 +35,8 @@ function loadState() {
       ...fallback,
       ...parsed,
       cart: {},
+      settings: { ...fallback.settings, ...parsed.settings },
+      history: parsed.history ?? fallback.history,
       activePlayerId: playerExists ? parsed.activePlayerId : parsed.players[0]?.id,
       activeShopId: shopExists ? parsed.activeShopId : parsed.shops?.[0]?.id,
     }
@@ -35,7 +46,7 @@ function loadState() {
 }
 
 export function StoreProvider({ children }) {
-  const [state, dispatch] = useReducer(reducer, null, loadState)
+  const [state, dispatch] = useReducer(reducerWithHistory, null, loadState)
 
   useEffect(() => {
     try {

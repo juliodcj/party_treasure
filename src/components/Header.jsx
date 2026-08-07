@@ -1,4 +1,4 @@
-import { PaperPlaneIcon } from './Icons.jsx'
+import { GearIcon, PaperPlaneIcon } from './Icons.jsx'
 
 /** Título grande da tela e, nas telas de personagem, a pílula com a carteira. */
 export default function Header({
@@ -6,12 +6,26 @@ export default function Header({
   player = null,
   showAdjust = false,
   showSend = false,
+  showSettings = false,
   onAdjust,
   onSend,
+  onSettings,
+  onEditWallet,
 }) {
   return (
     <header className="header">
       <div className="header__title">{title}</div>
+      {showSettings ? (
+        <button
+          type="button"
+          className="header-icon-btn"
+          title="Configurações"
+          aria-label="Configurações"
+          onClick={onSettings}
+        >
+          <GearIcon />
+        </button>
+      ) : null}
       {player ? (
         <div className="header-coins">
           {showAdjust ? (
@@ -36,7 +50,12 @@ export default function Header({
               <PaperPlaneIcon />
             </button>
           ) : null}
-          <div className="gold-pill">
+          <button
+            type="button"
+            className="gold-pill"
+            onClick={onEditWallet}
+            aria-label={`Editar moedas de ${player.name}`}
+          >
             <span className="gold-pill__coin">
               <span className="gold-pill__value gold-pill__value--gold">{player.gold}</span>
               <span className="coin-dot coin-dot--gold" />
@@ -49,7 +68,7 @@ export default function Header({
               <span className="gold-pill__value gold-pill__value--copper">{player.copper}</span>
               <span className="coin-dot coin-dot--copper" />
             </span>
-          </div>
+          </button>
         </div>
       ) : null}
     </header>

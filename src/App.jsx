@@ -2,7 +2,9 @@ import { useMemo, useState } from 'react'
 import Header from './components/Header.jsx'
 import SendMoneySheet from './components/SendMoneySheet.jsx'
 import AdjustCoinsSheet from './components/AdjustCoinsSheet.jsx'
-import { SearchBox, FilterSelects, EMPTY_FILTERS } from './components/ItemFilters.jsx'
+import EditWalletSheet from './components/EditWalletSheet.jsx'
+import { SearchBox, FilterSelects, LevelPicker, EMPTY_FILTERS } from './components/ItemFilters.jsx'
+import SettingsSheet from './components/SettingsSheet.jsx'
 import { BagIcon, BookIcon, ChevronDown, CrownIcon, ShopIcon } from './components/Icons.jsx'
 import InventoryScreen from './screens/InventoryScreen.jsx'
 import ShopScreen from './screens/ShopScreen.jsx'
@@ -10,7 +12,7 @@ import LibraryScreen from './screens/LibraryScreen.jsx'
 import GmScreen from './screens/GmScreen.jsx'
 import { useActivePlayer, useStore } from './state/store.jsx'
 import { CATALOG } from './data/catalog.js'
-import { availableLevels } from './lib/items.js'
+import { availableLevels, playerInventory, resolveItem } from './lib/items.js'
 import { plural } from './lib/text.js'
 
 const TABS = [
@@ -31,6 +33,8 @@ export default function App() {
   const [sendMoneyOpen, setSendMoneyOpen] = useState(false)
   const [adjustCoinsOpen, setAdjustCoinsOpen] = useState(false)
   const [shopPickerOpen, setShopPickerOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [editWalletOpen, setEditWalletOpen] = useState(false)
 
   const isInventory = tab === 'inventory'
   const isShop = tab === 'shop'
@@ -38,10 +42,23 @@ export default function App() {
   const isCharacterTab = isInventory || isShop
 
   const shop = state.shops.find((current) => current.id === state.activeShopId) ?? state.shops[0]
-  const levels = useMemo(
+
+  // O filtro de nível só mostra os níveis presentes na lista de cada aba —
+  // uma loja com 6 itens não precisa dos 29 níveis do catálogo inteiro.
+  const shopStock = useMemo(() => {
+    if (!shop) return []
+    return shop.itemIds.map((itemId) => resolveItem(state, itemId)).filter(Boolean)
+  }, [state, shop])
+  const inventoryEntries = useMemo(() => playerInventory(state, player), [state, player])
+  const libraryLevels = useMemo(
     () => availableLevels([...state.campaignItems, ...CATALOG]),
     [state.campaignItems],
   )
+  const levels = isShop
+    ? availableLevels(shopStock)
+    : isInventory
+      ? availableLevels(inventoryEntries.map((entry) => entry.item))
+      : libraryLevels
 
   const goTo = (next) => {
     setTab(next)
@@ -70,8 +87,11 @@ export default function App() {
         player={isCharacterTab ? player : null}
         showAdjust={isInventory}
         showSend={isInventory && state.players.length > 1}
+        showSettings={tab === 'gm'}
         onAdjust={() => setAdjustCoinsOpen(true)}
         onSend={() => setSendMoneyOpen(true)}
+        onSettings={() => setSettingsOpen(true)}
+        onEditWallet={() => setEditWalletOpen(true)}
       />
 
       {isShop && shop ? (
@@ -158,6 +178,13 @@ export default function App() {
             value={filters.search}
             onChange={(search) => setFilters({ ...filters, search })}
           />
+          <div className="filters__row">
+            <LevelPicker
+              levels={libraryLevels}
+              value={filters.levels}
+              onChange={(levels) => setFilters({ ...filters, levels })}
+            />
+          </div>
         </div>
       ) : null}
 
@@ -175,7 +202,7 @@ export default function App() {
           />
         ) : null}
         {isLibrary ? (
-          <LibraryScreen search={filters.search} openId={openId} onToggle={toggleItem} />
+          <LibraryScreen filters={filters} openId={openId} onToggle={toggleItem} />
         ) : null}
         {tab === 'gm' ? <GmScreen /> : null}
       </main>
@@ -200,6 +227,10 @@ export default function App() {
       ) : null}
       {adjustCoinsOpen ? (
         <AdjustCoinsSheet player={player} onClose={() => setAdjustCoinsOpen(false)} />
+      ) : null}
+      {settingsOpen ? <SettingsSheet onClose={() => setSettingsOpen(false)} /> : null}
+      {editWalletOpen ? (
+        <EditWalletSheet player={player} onClose={() => setEditWalletOpen(false)} />
       ) : null}
     </div>
   )
