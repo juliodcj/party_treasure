@@ -226,6 +226,34 @@ export function CartIcon({ size = 18 }) {
   )
 }
 
+/** Funil — botão "Filtros" da Loja, que revela tipo/nível ao alternar. */
+export function FilterIcon({ color = 'currentColor' }) {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
+      <line x1="2" y1="4.5" x2="14" y2="4.5" stroke={color} strokeWidth="1.7" strokeLinecap="round" />
+      <line x1="2" y1="11.5" x2="14" y2="11.5" stroke={color} strokeWidth="1.7" strokeLinecap="round" />
+      <circle cx="10" cy="4.5" r="2.4" fill="var(--surface)" stroke={color} strokeWidth="1.7" />
+      <circle cx="5.5" cy="11.5" r="2.4" fill="var(--surface)" stroke={color} strokeWidth="1.7" />
+    </svg>
+  )
+}
+
+/** Seta "carteira agora → depois da compra", no resumo flutuante da Loja. */
+export function ArrowRightIcon() {
+  return (
+    <svg width="16" height="12" viewBox="0 0 16 12" aria-hidden="true">
+      <path
+        d="M1 6h12M9 2l4 4-4 4"
+        stroke="rgba(60,60,67,0.3)"
+        strokeWidth="1.6"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 /* ------------------------------------------------------------ barra de abas */
 
 export function BagIcon() {

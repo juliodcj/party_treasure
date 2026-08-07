@@ -5,7 +5,7 @@ import AdjustCoinsSheet from './components/AdjustCoinsSheet.jsx'
 import EditWalletSheet from './components/EditWalletSheet.jsx'
 import { SearchBox, FilterSelects, LevelPicker, EMPTY_FILTERS } from './components/ItemFilters.jsx'
 import SettingsSheet from './components/SettingsSheet.jsx'
-import { BagIcon, BookIcon, ChevronDown, CrownIcon, ShopIcon } from './components/Icons.jsx'
+import { BagIcon, BookIcon, ChevronDown, CrownIcon, FilterIcon, ShopIcon } from './components/Icons.jsx'
 import InventoryScreen from './screens/InventoryScreen.jsx'
 import ShopScreen from './screens/ShopScreen.jsx'
 import LibraryScreen from './screens/LibraryScreen.jsx'
@@ -33,6 +33,9 @@ export default function App() {
   const [sendMoneyOpen, setSendMoneyOpen] = useState(false)
   const [adjustCoinsOpen, setAdjustCoinsOpen] = useState(false)
   const [shopPickerOpen, setShopPickerOpen] = useState(false)
+  const [shopFiltersOpen, setShopFiltersOpen] = useState(false)
+  const [inventoryFiltersOpen, setInventoryFiltersOpen] = useState(false)
+  const [libraryFiltersOpen, setLibraryFiltersOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [editWalletOpen, setEditWalletOpen] = useState(false)
 
@@ -65,6 +68,9 @@ export default function App() {
     setOpenId(null)
     setFilters(EMPTY_FILTERS)
     setShopPickerOpen(false)
+    setShopFiltersOpen(false)
+    setInventoryFiltersOpen(false)
+    setLibraryFiltersOpen(false)
   }
 
   const toggleItem = (id) => setOpenId((current) => (current === id ? null : id))
@@ -72,9 +78,7 @@ export default function App() {
   // O botão só aparece quando há moedas soltas o bastante para valer a pena.
   const showSimplify = isInventory && (player.silver >= 10 || player.copper >= 10)
 
-  const subhead = isShop
-    ? `${plural(shop?.itemIds.length ?? 0, 'item disponível', 'itens disponíveis')}`
-    : isLibrary
+  const subhead = isLibrary
       ? `${state.campaignItems.length} da campanha · ${CATALOG.length} oficiais`
       : tab === 'gm'
         ? `${plural(state.players.length, 'jogador', 'jogadores')} · ${plural(state.shops.length, 'loja cadastrada', 'lojas cadastradas')}`
@@ -129,6 +133,12 @@ export default function App() {
         </div>
       ) : null}
 
+      {isInventory ? (
+        <div className="shop-picker">
+          <span className="shop-picker__name">{player.name}</span>
+        </div>
+      ) : null}
+
       <div className="subhead">
         <span className="subhead__label">{subhead}</span>
         {showSimplify ? (
@@ -162,29 +172,79 @@ export default function App() {
         </div>
       ) : null}
 
-      {isCharacterTab ? (
+      {isInventory ? (
         <div className="filters">
-          <SearchBox
-            value={filters.search}
-            onChange={(search) => setFilters({ ...filters, search })}
-          />
-          <FilterSelects value={filters} onChange={setFilters} levels={levels} />
+          <div className="filters__row">
+            <SearchBox
+              value={filters.search}
+              onChange={(search) => setFilters({ ...filters, search })}
+            />
+            <button
+              type="button"
+              className={`filters__toggle${inventoryFiltersOpen ? ' filters__toggle--on' : ''}`}
+              onClick={() => setInventoryFiltersOpen((value) => !value)}
+              aria-expanded={inventoryFiltersOpen}
+              aria-label="Filtros"
+              title="Filtros"
+            >
+              <FilterIcon color={inventoryFiltersOpen ? 'var(--accent-ink)' : 'var(--text-muted)'} />
+            </button>
+          </div>
+          {inventoryFiltersOpen ? (
+            <FilterSelects value={filters} onChange={setFilters} levels={levels} />
+          ) : null}
+        </div>
+      ) : null}
+
+      {isShop ? (
+        <div className="filters">
+          <div className="filters__row">
+            <SearchBox
+              value={filters.search}
+              onChange={(search) => setFilters({ ...filters, search })}
+            />
+            <button
+              type="button"
+              className={`filters__toggle${shopFiltersOpen ? ' filters__toggle--on' : ''}`}
+              onClick={() => setShopFiltersOpen((value) => !value)}
+              aria-expanded={shopFiltersOpen}
+              aria-label="Filtros"
+              title="Filtros"
+            >
+              <FilterIcon color={shopFiltersOpen ? 'var(--accent-ink)' : 'var(--text-muted)'} />
+            </button>
+          </div>
+          {shopFiltersOpen ? <FilterSelects value={filters} onChange={setFilters} levels={levels} /> : null}
         </div>
       ) : null}
 
       {isLibrary ? (
         <div className="filters">
-          <SearchBox
-            value={filters.search}
-            onChange={(search) => setFilters({ ...filters, search })}
-          />
           <div className="filters__row">
-            <LevelPicker
-              levels={libraryLevels}
-              value={filters.levels}
-              onChange={(levels) => setFilters({ ...filters, levels })}
+            <SearchBox
+              value={filters.search}
+              onChange={(search) => setFilters({ ...filters, search })}
             />
+            <button
+              type="button"
+              className={`filters__toggle${libraryFiltersOpen ? ' filters__toggle--on' : ''}`}
+              onClick={() => setLibraryFiltersOpen((value) => !value)}
+              aria-expanded={libraryFiltersOpen}
+              aria-label="Filtros"
+              title="Filtros"
+            >
+              <FilterIcon color={libraryFiltersOpen ? 'var(--accent-ink)' : 'var(--text-muted)'} />
+            </button>
           </div>
+          {libraryFiltersOpen ? (
+            <div className="filters__row">
+              <LevelPicker
+                levels={libraryLevels}
+                value={filters.levels}
+                onChange={(levels) => setFilters({ ...filters, levels })}
+              />
+            </div>
+          ) : null}
         </div>
       ) : null}
 

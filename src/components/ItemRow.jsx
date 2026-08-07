@@ -69,7 +69,7 @@ export default function ItemRow({
           <span className="item__level">Nv {item.level ?? 0}</span>
         </button>
 
-        {qty > 0 ? <span className="item__qty">x{qty}</span> : null}
+        {qty > 0 ? <span className="item__qty">{qty}</span> : null}
 
         {priceInHead ? <PriceBadges totalCp={item.priceCp} /> : null}
 

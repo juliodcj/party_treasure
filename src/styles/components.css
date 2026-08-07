@@ -327,6 +327,7 @@
   width: 100%;
   padding: 0;
   outline: none;
+  text-align: left;
 }
 
 /* Campo de moeda: input com o pontinho da denominação ao lado */

@@ -483,14 +483,9 @@ function ShopCard({ shop, isOpen, onToggle, onDelete, onEdit }) {
     <div className="card card--folder">
       <div className="gm__card-head">
         <div style={{ flex: 1, minWidth: 0 }}>
-          <input
-            className="inline-input"
-            value={shop.name}
-            onChange={(event) =>
-              dispatch({ type: 'RENAME_SHOP', shopId: shop.id, name: event.target.value })
-            }
-            aria-label="Nome da loja"
-          />
+          <button type="button" className="inline-input" onClick={onToggle} aria-expanded={isOpen}>
+            {shop.name}
+          </button>
           <div className="folder__count">
             {plural(shop.itemIds.length, 'item cadastrado', 'itens cadastrados')}
           </div>

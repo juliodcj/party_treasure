@@ -13,6 +13,7 @@ const SLICE_KEYS = {
   SIMPLIFY_COINS: ['players'],
   GIVE_ITEM: ['players'],
   DROP_ITEM: ['players'],
+  CHANGE_ITEM_QTY: ['players'],
   SELL_ITEM: ['players'],
   TRANSFER_ITEM: ['players'],
   BUY_CART: ['players'],
@@ -28,6 +29,17 @@ const SLICE_KEYS = {
   ADD_CAMPAIGN_ITEMS: ['campaignItems'],
   UPDATE_CAMPAIGN_ITEM: ['campaignItems'],
   REMOVE_CAMPAIGN_ITEM: ['campaignItems', 'shops'],
+}
+
+// Ações que só valem histórico numa situação específica. O +/- do inventário
+// é clique rotineiro demais para registrar, mas chegar a zero apaga o item da
+// mochila — isso precisa dar para desfazer, como o "Excluir".
+const RECORD_WHEN = {
+  CHANGE_ITEM_QTY: (state, next, action) => {
+    const before = state.players.find((player) => player.id === action.playerId)?.items[action.itemId] ?? 0
+    const after = next.players.find((player) => player.id === action.playerId)?.items[action.itemId] ?? 0
+    return before > 0 && after === 0
+  },
 }
 
 function playerName(state, id) {
@@ -60,6 +72,7 @@ function describeAction(state, action) {
     case 'GIVE_ITEM':
       return `Deu ${itemName(state, action.itemId, action.playerId)} a ${playerName(state, action.playerId)}`
     case 'DROP_ITEM':
+    case 'CHANGE_ITEM_QTY':
       return `Excluiu ${itemName(state, action.itemId, action.playerId)} da mochila de ${playerName(state, action.playerId)}`
     case 'SELL_ITEM':
       return `${playerName(state, action.playerId)} vendeu ${itemName(state, action.itemId, action.playerId)}`
@@ -124,6 +137,9 @@ export function withHistory(reducer) {
 
     const keys = SLICE_KEYS[action.type]
     if (!keys) return next
+
+    const shouldRecord = RECORD_WHEN[action.type]
+    if (shouldRecord && !shouldRecord(state, next, action)) return next
 
     const slices = { activePlayerId: state.activePlayerId, activeShopId: state.activeShopId }
     for (const key of keys) slices[key] = state[key]
