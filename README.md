@@ -188,6 +188,12 @@ equipment 2342 | consumable 1684 | weapon 991 | ammo 204
 armor 202 | treasure 153 | shield 115 | backpack 46 | kit 2
 ```
 
+**Runa não é um `type` do Foundry** — é `equipment` com `system.usage.value`
+começando em `etched-onto` (`etched-onto-a-weapon`, `etched-onto-armor`,
+`etched-onto-a-shield`...). O app separa isso numa categoria própria (`rune`,
+176 itens) pra não misturar com baú, kit, óculos e o resto que também é
+`equipment`. Ver `readCategory` em `src/lib/foundryImport.js`.
+
 Campos de `system` por tipo (levantamento real):
 
 - **shield**: `acBonus`, `hardness`, `hp{max,value}`, `speedPenalty`, `runes`,

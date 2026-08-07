@@ -117,6 +117,8 @@ export function normalizeItem(partial) {
     ...(partial.armor ? { armor: partial.armor } : {}),
     ...(partial.subcategory ? { subcategory: partial.subcategory } : {}),
     ...(partial.source ? { source: partial.source } : {}),
+    ...(partial.usage ? { usage: partial.usage } : {}),
+    ...(partial.img ? { img: partial.img } : {}),
     ...(partial.raw ? { raw: partial.raw } : {}),
   }
 }

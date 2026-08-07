@@ -16,9 +16,11 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
 import {
+  TYPE_TO_CATEGORY,
   priceToCopper,
   readArmor,
   readBulk,
+  readCategory,
   readShield,
   readSource,
   readSubcategory,
@@ -33,20 +35,6 @@ const srcDir = process.argv[2]
 if (!srcDir) {
   console.error('Uso: node scripts/build-catalog.mjs <pasta com os .json de packs/pf2e/equipment>')
   process.exit(1)
-}
-
-// Identidade proposital: cada tipo do Foundry vira a propria categoria,
-// nenhuma e fundida em outra (ver mesma nota em foundryImport.js).
-const TYPE_TO_CATEGORY = {
-  weapon: 'weapon',
-  armor: 'armor',
-  shield: 'shield',
-  equipment: 'equipment',
-  consumable: 'consumable',
-  treasure: 'treasure',
-  backpack: 'backpack',
-  ammo: 'ammo',
-  kit: 'kit',
 }
 
 function slugFromFile(file) {
@@ -68,13 +56,13 @@ for (const file of files) {
     continue
   }
 
-  const category = TYPE_TO_CATEGORY[raw?.type]
-  if (!category || !raw?.name) {
+  if (!TYPE_TO_CATEGORY[raw?.type] || !raw?.name) {
     skipped += 1
     continue
   }
 
   const system = raw?.system ?? {}
+  const category = readCategory(raw.type, system)
   const html = sanitizeDescription(system?.description?.value ?? '')
   const traits = Array.isArray(system?.traits?.value) ? system.traits.value : []
   const rarity = system?.traits?.rarity ?? null
@@ -109,6 +97,8 @@ for (const file of files) {
     ...(armor ? { armor } : {}),
     ...(subcategory ? { subcategory } : {}),
     ...(source ? { source } : {}),
+    ...(system?.usage?.value ? { usage: system.usage.value } : {}),
+    ...(raw.img ? { img: raw.img } : {}),
   })
 }
 
@@ -117,4 +107,8 @@ items.sort((a, b) => a.name.localeCompare(b.name))
 const outPath = path.join(__dirname, '../src/data/catalog.equipment.json')
 writeFileSync(outPath, JSON.stringify(items), 'utf8')
 
+const counts = {}
+for (const item of items) counts[item.category] = (counts[item.category] ?? 0) + 1
+
 console.log(`Gerados ${items.length} itens (${skipped} ignorados) em ${outPath}`)
+console.log('Por categoria:', counts)

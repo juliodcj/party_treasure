@@ -13,6 +13,10 @@ export const CATEGORIES = {
   weapon: { label: 'Weapon' },
   armor: { label: 'Armor' },
   shield: { label: 'Shield' },
+  // Não é um `type` do Foundry — é "equipment" com system.usage "etched-onto-*"
+  // (ver readCategory em lib/foundryImport.js). Separado pra não misturar com
+  // baú, kit, óculos etc. na mesma categoria "Equipment".
+  rune: { label: 'Rune' },
   ammo: { label: 'Ammunition' },
   consumable: { label: 'Consumable' },
   equipment: { label: 'Equipment' },
