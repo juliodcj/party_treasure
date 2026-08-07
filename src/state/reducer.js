@@ -138,42 +138,9 @@ export function reducer(state, action) {
         })),
       }
 
-    case 'BUY_ONE': {
-      // O "+" do inventário compra mais uma unidade e debita o preço cheio.
-      const item = resolveItem(state, action.itemId, action.playerId)
-      const player = state.players.find((current) => current.id === action.playerId)
-      if (!item || !player) return state
-      const wallet = spendCopper(player, item.priceCp)
-      if (!wallet) return state // sem saldo: o botão já aparece apagado
-      return {
-        ...state,
-        players: mapPlayer(state.players, action.playerId, (current) => ({
-          ...current,
-          ...wallet,
-          items: withItemDelta(current.items, action.itemId, 1),
-        })),
-      }
-    }
-
-    case 'REFUND_ONE': {
-      // O "−" devolve uma unidade e reembolsa o preço cheio.
-      const item = resolveItem(state, action.itemId, action.playerId)
-      if (!item) return state
-      return {
-        ...state,
-        players: mapPlayer(state.players, action.playerId, (player) => {
-          if ((player.items[action.itemId] ?? 0) <= 0) return player
-          return {
-            ...player,
-            ...withWalletCopper(player, toCopper(player) + item.priceCp),
-            items: withItemDelta(player.items, action.itemId, -1),
-          }
-        }),
-      }
-    }
-
-    case 'CHANGE_CUSTOM_QTY':
-      // Item avulso não tem preço de mercado: o passo só mexe na quantidade.
+    case 'CHANGE_ITEM_QTY':
+      // A quantidade no inventário é livre: só ajusta a mochila, nunca mexe
+      // na carteira. Comprar é na Loja; vender é o botão "Vender".
       return {
         ...state,
         players: mapPlayer(state.players, action.playerId, (player) => ({

@@ -70,10 +70,11 @@ mobile-first para **Android**.
 
 **Inventário** — seletor de jogador em chips; lista agrupada em Equipamentos /
 Consumíveis / Outros; busca + filtro por tipo e nível; item expansível com
-traits clicáveis (popup com descrição); +/- quantidade, excluir com reembolso,
-vender, enviar item a outro personagem, editar itens custom; adicionar item
-manual ou do catálogo. Carteira no header com ajuste de moedas, envio de
-dinheiro e "Simplificar moedas".
+traits clicáveis (popup com descrição); +/- quantidade (edição livre, não mexe
+na carteira — comprar é na Loja, vender é o botão dedicado), excluir, vender,
+enviar item a outro personagem, editar itens custom; adicionar item manual ou
+do catálogo. Carteira no header com ajuste de moedas, envio de dinheiro e
+"Simplificar moedas".
 
 **Loja** — dropdown de loja; lista de itens registrados com stepper de carrinho;
 compra valida saldo, debita e adiciona ao inventário.

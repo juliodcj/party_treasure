@@ -14,7 +14,7 @@ import {
   matchesSearch,
   playerInventory,
 } from '../lib/items.js'
-import { formatCopper, toCopper } from '../lib/money.js'
+import { formatCopper } from '../lib/money.js'
 import { SELL_RATE } from '../config.js'
 
 export default function InventoryScreen({ player, filters, openId, onToggle }) {
@@ -31,7 +31,6 @@ export default function InventoryScreen({ player, filters, openId, onToggle }) {
   )
   const grouped = useMemo(() => groupInventory(visible), [visible])
 
-  const walletCp = toCopper(player)
   const isCustom = (itemId) => player.customItems.some((custom) => custom.id === itemId)
   const filtersActive =
     !!filters.search.trim() || filters.category !== 'all' || filters.level !== 'all'
@@ -52,7 +51,6 @@ export default function InventoryScreen({ player, filters, openId, onToggle }) {
             <h2 className="group-title">{categoryLabel(id)}</h2>
             {grouped[id].map(({ item, qty }) => {
               const custom = isCustom(item.id)
-              const canBuyMore = custom || walletCp >= item.priceCp
               return (
                 <ItemRow
                   key={item.id}
@@ -111,35 +109,24 @@ export default function InventoryScreen({ player, filters, openId, onToggle }) {
                     <Stepper
                       value={qty}
                       canDec={qty > 0}
-                      canInc={canBuyMore}
                       onDec={() =>
-                        dispatch(
-                          custom
-                            ? {
-                                type: 'CHANGE_CUSTOM_QTY',
-                                playerId: player.id,
-                                itemId: item.id,
-                                delta: -1,
-                              }
-                            : { type: 'REFUND_ONE', playerId: player.id, itemId: item.id },
-                        )
+                        dispatch({
+                          type: 'CHANGE_ITEM_QTY',
+                          playerId: player.id,
+                          itemId: item.id,
+                          delta: -1,
+                        })
                       }
                       onInc={() =>
-                        dispatch(
-                          custom
-                            ? {
-                                type: 'CHANGE_CUSTOM_QTY',
-                                playerId: player.id,
-                                itemId: item.id,
-                                delta: 1,
-                              }
-                            : { type: 'BUY_ONE', playerId: player.id, itemId: item.id },
-                        )
+                        dispatch({
+                          type: 'CHANGE_ITEM_QTY',
+                          playerId: player.id,
+                          itemId: item.id,
+                          delta: 1,
+                        })
                       }
                     />
                   </div>
-
-                  {!canBuyMore ? <div className="item__warn">Ouro insuficiente</div> : null}
                 </ItemRow>
               )
             })}
