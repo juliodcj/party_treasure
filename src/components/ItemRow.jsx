@@ -3,6 +3,7 @@ import TraitList from './TraitList.jsx'
 import { ChevronRight } from './Icons.jsx'
 import { categoryLabel } from '../data/catalog.js'
 import { formatBulk, parseBulk } from '../lib/bulk.js'
+import { withoutTables } from '../lib/html.js'
 import { titleCase } from '../lib/text.js'
 
 const PHYSICAL_DAMAGE_ABBR = { bludgeoning: 'B', piercing: 'P', slashing: 'S' }
@@ -14,31 +15,62 @@ function formatDamage(damage) {
   return `${damage.dice}${damage.die}${abbr ? ` ${abbr}` : ''}`
 }
 
-/** Linha de stats real da arma: dano, mãos, alcance e grupo — vêm direto do pack do Foundry. */
-function weaponSummary(weapon) {
+/** Campos reais da arma, na ordem em que a ficha os lê. `null` some da tabela. */
+function weaponFields(weapon) {
   if (!weapon) return null
-  const parts = []
-  const damage = formatDamage(weapon.damage)
-  if (damage) parts.push(`Damage ${damage}`)
-  if (weapon.hands) parts.push(`Hands ${weapon.hands}`)
-  parts.push(`Type ${weapon.ranged ? 'Ranged' : 'Melee'}`)
-  if (weapon.group) parts.push(`Group ${titleCase(weapon.group)}`)
-  if (weapon.ranged && weapon.range) parts.push(`Range ${weapon.range} ft`)
-  if (weapon.ranged && weapon.reload) parts.push(`Reload ${weapon.reload}`)
-  return parts.join(' · ')
+  return [
+    ['Dano', formatDamage(weapon.damage)],
+    ['Mãos', weapon.hands],
+    ['Tipo', weapon.ranged ? 'À distância' : 'Corpo a corpo'],
+    ['Grupo', weapon.group ? titleCase(weapon.group) : null],
+    // Alcance e recarga só existem em arma à distância.
+    ['Alcance', weapon.ranged && weapon.range ? `${weapon.range} ft` : null],
+    ['Recarga', weapon.ranged && weapon.reload ? weapon.reload : null],
+  ]
 }
 
-/** Linha de stats real da armadura: CA, limite de Destreza, penalidades e Força mínima. */
-function armorSummary(armor) {
+/** Campos reais da armadura: CA, limite de Destreza, penalidades e Força mínima. */
+function armorFields(armor) {
   if (!armor) return null
-  const parts = []
-  if (armor.acBonus != null) parts.push(`AC +${armor.acBonus}`)
-  if (armor.dexCap != null) parts.push(`Dex Cap +${armor.dexCap}`)
-  if (armor.checkPenalty) parts.push(`Check ${armor.checkPenalty}`)
-  if (armor.speedPenalty) parts.push(`Speed ${armor.speedPenalty} ft`)
-  if (armor.strength != null) parts.push(`Str ${armor.strength}`)
-  if (armor.group) parts.push(titleCase(armor.group))
-  return parts.join(' · ')
+  return [
+    ['CA', armor.acBonus != null ? `+${armor.acBonus}` : null],
+    ['Limite Destreza', armor.dexCap != null ? `+${armor.dexCap}` : null],
+    ['Penal. de Testes', armor.checkPenalty || null],
+    ['Penal. de Movimento', armor.speedPenalty ? `${armor.speedPenalty} ft` : null],
+    ['Força', armor.strength],
+    ['Grupo', armor.group ? titleCase(armor.group) : null],
+  ]
+}
+
+/** Campos reais do escudo — os mesmos números que o pack às vezes repete na descrição. */
+function shieldFields(shield) {
+  if (!shield) return null
+  return [
+    ['Dureza', shield.hardness],
+    ['PV', shield.hpMax],
+    ['Limiar de Avaria', shield.bt],
+    ['Bônus na CA', shield.acBonus != null ? `+${shield.acBonus}` : null],
+    ['Penal. de Movimento', shield.speedPenalty ? `${shield.speedPenalty} ft` : null],
+  ]
+}
+
+/**
+ * Grade de dois campos por linha, rótulo pequeno em cima e valor em destaque
+ * embaixo — a ficha real de arma/armadura/escudo. Campo nulo nem entra.
+ */
+function StatTable({ fields }) {
+  const rows = (fields ?? []).filter(([, value]) => value != null && value !== '')
+  if (!rows.length) return null
+  return (
+    <dl className="stat-table">
+      {rows.map(([label, value]) => (
+        <div className="stat-table__cell" key={label}>
+          <dt className="stat-table__label">{label}</dt>
+          <dd className="stat-table__value">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  )
 }
 
 /**
@@ -57,8 +89,10 @@ export default function ItemRow({
   hasNote = false,
   children,
 }) {
-  const weaponStats = weaponSummary(item.weapon)
-  const armorStats = armorSummary(item.armor)
+  // Escudo: a tabela de Dureza/PV/Limiar de Avaria abaixo já mostra o que o
+  // pack às vezes repete dentro da descrição — tira a duplicata na hora de
+  // renderizar, sem mexer no dado guardado.
+  const descriptionHtml = item.shield ? withoutTables(item.descriptionHtml) : item.descriptionHtml
 
   return (
     <div className={nested ? 'subitem' : 'card'}>
@@ -85,7 +119,7 @@ export default function ItemRow({
           <div className="item__meta">
             <span className="item__meta-label">
               {categoryLabel(item.category)}
-              {item.subcategory ? ` · ${titleCase(item.subcategory)}` : ''} · Bulk{' '}
+              {item.subcategory ? ` · ${titleCase(item.subcategory)}` : ''} · Volume{' '}
               {formatBulk(parseBulk(item.bulk))}
             </span>
             {priceInBody ? (
@@ -98,21 +132,15 @@ export default function ItemRow({
 
           <TraitList traits={item.traits} />
 
-          {weaponStats ? <div className="item__stats">{weaponStats}</div> : null}
+          <StatTable fields={weaponFields(item.weapon)} />
+          <StatTable fields={armorFields(item.armor)} />
+          <StatTable fields={shieldFields(item.shield)} />
 
-          {armorStats ? <div className="item__stats">{armorStats}</div> : null}
-
-          {item.shield ? (
-            <div className="item__stats">
-              Hardness {item.shield.hardness} · HP {item.shield.hpMax} · BT {item.shield.bt}
-            </div>
-          ) : null}
-
-          {item.descriptionHtml ? (
+          {descriptionHtml ? (
             <div
               className="item__desc"
               // O HTML vem sanitizado da importação (sem script nem handler inline).
-              dangerouslySetInnerHTML={{ __html: item.descriptionHtml }}
+              dangerouslySetInnerHTML={{ __html: descriptionHtml }}
             />
           ) : (
             <p className="item__desc" style={{ whiteSpace: 'pre-line' }}>

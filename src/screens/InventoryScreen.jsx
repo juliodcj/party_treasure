@@ -4,7 +4,7 @@ import Sheet, { SheetActions } from '../components/Sheet.jsx'
 import Stepper from '../components/Stepper.jsx'
 import ItemForm from '../components/ItemForm.jsx'
 import { SearchBox } from '../components/ItemFilters.jsx'
-import { EditIcon, PlusIcon, SellIcon, SendIcon, TrashIcon } from '../components/Icons.jsx'
+import { EditIcon, MoreIcon, PlusIcon, TrashIcon } from '../components/Icons.jsx'
 import { useStore } from '../state/store.jsx'
 import { CATEGORY_ORDER, categoryLabel } from '../data/catalog.js'
 import {
@@ -58,89 +58,22 @@ export default function InventoryScreen({ player, filters, openId, onToggle }) {
         grouped[id].length ? (
           <section key={id} style={{ display: 'contents' }}>
             <h2 className="group-title">{categoryLabel(id)}</h2>
-            {grouped[id].map(({ item, qty }) => {
-              const custom = isCustom(item.id)
-              return (
-                <ItemRow
-                  key={item.id}
-                  item={item}
-                  qty={qty}
-                  priceInBody
-                  open={openId === item.id}
-                  onToggle={() => onToggle(item.id)}
-                  hasNote={!!player.itemNotes?.[item.id]}
-                >
-                  <ItemNote player={player} item={item} />
-                  <div className="item__foot">
-                    <div className="item__tools">
-                      <button
-                        type="button"
-                        className="icon-btn icon-btn--danger"
-                        title="Excluir"
-                        aria-label={`Excluir ${item.name}`}
-                        onClick={() => setDeleting(item)}
-                      >
-                        <TrashIcon />
-                      </button>
-                      {qty > 0 && !custom ? (
-                        <button
-                          type="button"
-                          className="icon-btn icon-btn--accent"
-                          title="Vender"
-                          aria-label={`Vender ${item.name}`}
-                          onClick={() => setSelling({ item, qty: 1, owned: qty })}
-                        >
-                          <SellIcon />
-                        </button>
-                      ) : null}
-                      {qty > 0 && state.players.length > 1 ? (
-                        <button
-                          type="button"
-                          className="icon-btn icon-btn--accent"
-                          title="Enviar a outro personagem"
-                          aria-label={`Enviar ${item.name}`}
-                          onClick={() => setSending({ item, qty: 1, owned: qty })}
-                        >
-                          <SendIcon />
-                        </button>
-                      ) : null}
-                      {custom ? (
-                        <button
-                          type="button"
-                          className="icon-btn icon-btn--accent"
-                          title="Editar"
-                          aria-label={`Editar ${item.name}`}
-                          onClick={() => setEditing(item)}
-                        >
-                          <EditIcon />
-                        </button>
-                      ) : null}
-                    </div>
-
-                    <Stepper
-                      value={qty}
-                      canDec={qty > 0}
-                      onDec={() =>
-                        dispatch({
-                          type: 'CHANGE_ITEM_QTY',
-                          playerId: player.id,
-                          itemId: item.id,
-                          delta: -1,
-                        })
-                      }
-                      onInc={() =>
-                        dispatch({
-                          type: 'CHANGE_ITEM_QTY',
-                          playerId: player.id,
-                          itemId: item.id,
-                          delta: 1,
-                        })
-                      }
-                    />
-                  </div>
-                </ItemRow>
-              )
-            })}
+            {grouped[id].map(({ item, qty }) => (
+              <InventoryItem
+                key={item.id}
+                player={player}
+                item={item}
+                qty={qty}
+                custom={isCustom(item.id)}
+                canSend={state.players.length > 1}
+                open={openId === item.id}
+                onToggle={() => onToggle(item.id)}
+                onDelete={() => setDeleting(item)}
+                onSell={() => setSelling({ item, qty: 1, owned: qty })}
+                onSend={() => setSending({ item, qty: 1, owned: qty })}
+                onEdit={() => setEditing(item)}
+              />
+            ))}
           </section>
         ) : null,
       )}
@@ -161,7 +94,6 @@ export default function InventoryScreen({ player, filters, openId, onToggle }) {
               setDeleting(null)
             }}
             confirmLabel="Excluir"
-            confirmVariant="danger"
           />
         </Sheet>
       ) : null}
@@ -220,11 +152,163 @@ export default function InventoryScreen({ player, filters, openId, onToggle }) {
   )
 }
 
+/**
+ * Uma linha da mochila. Só "Excluir" fica à mostra; o resto (enviar, vender,
+ * renomear, observação) espera atrás do "⋯".
+ */
+function InventoryItem({
+  player,
+  item,
+  qty,
+  custom,
+  canSend,
+  open,
+  onToggle,
+  onDelete,
+  onSell,
+  onSend,
+  onEdit,
+}) {
+  const { dispatch } = useStore()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [renaming, setRenaming] = useState(false)
+  const [noteOpen, setNoteOpen] = useState(false)
+  const [draft, setDraft] = useState(item.name)
+
+  const savedNote = player.itemNotes?.[item.id] ?? ''
+
+  // Fechar o item recolhe o menu junto: reabrir sempre começa limpo.
+  useEffect(() => {
+    if (!open) {
+      setMenuOpen(false)
+      setRenaming(false)
+      setNoteOpen(false)
+    }
+  }, [open])
+
+  const rename = () => {
+    const name = draft.trim()
+    if (name && name !== item.name) {
+      dispatch({ type: 'RENAME_ITEM', playerId: player.id, itemId: item.id, name })
+    }
+    setRenaming(false)
+    setMenuOpen(false)
+  }
+
+  return (
+    <ItemRow item={item} qty={qty} priceInBody open={open} onToggle={onToggle} hasNote={!!savedNote}>
+      {/* Observação já escrita continua à vista; só o "+ Observação" some no menu. */}
+      {savedNote || noteOpen ? (
+        <ItemNote player={player} item={item} autoEdit={noteOpen && !savedNote} />
+      ) : null}
+
+      {menuOpen ? (
+        <div className="item__menu" role="group" aria-label={`Mais ações de ${item.name}`}>
+          {qty > 0 && canSend ? (
+            <button type="button" className="item__menu-item" onClick={onSend}>
+              Enviar
+            </button>
+          ) : null}
+          {qty > 0 && !custom ? (
+            <button type="button" className="item__menu-item" onClick={onSell}>
+              Vender
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="item__menu-item"
+            onClick={() => {
+              setDraft(item.name)
+              setRenaming(true)
+            }}
+          >
+            Renomear
+          </button>
+          {savedNote ? null : (
+            <button
+              type="button"
+              className="item__menu-item"
+              onClick={() => {
+                setNoteOpen(true)
+                setMenuOpen(false)
+              }}
+            >
+              Observação
+            </button>
+          )}
+          {custom ? (
+            <button type="button" className="item__menu-item" onClick={onEdit}>
+              Editar
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {renaming ? (
+        <div className="item__rename">
+          <input
+            className="input input--sm"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') rename()
+              if (event.key === 'Escape') setRenaming(false)
+            }}
+            aria-label={`Novo nome de ${item.name}`}
+            autoFocus
+          />
+          <button type="button" className="btn btn--neutral" onClick={() => setRenaming(false)}>
+            Cancelar
+          </button>
+          <button type="button" className="btn btn--solid" disabled={!draft.trim()} onClick={rename}>
+            Salvar
+          </button>
+        </div>
+      ) : null}
+
+      <div className="item__foot">
+        <div className="item__tools">
+          <button
+            type="button"
+            className="icon-btn icon-btn--accent"
+            title="Excluir"
+            aria-label={`Excluir ${item.name}`}
+            onClick={onDelete}
+          >
+            <TrashIcon />
+          </button>
+          <button
+            type="button"
+            className="icon-btn icon-btn--accent"
+            title="Mais ações"
+            aria-label={`Mais ações de ${item.name}`}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((value) => !value)}
+          >
+            <MoreIcon />
+          </button>
+        </div>
+
+        <Stepper
+          value={qty}
+          canDec={qty > 0}
+          onDec={() =>
+            dispatch({ type: 'CHANGE_ITEM_QTY', playerId: player.id, itemId: item.id, delta: -1 })
+          }
+          onInc={() =>
+            dispatch({ type: 'CHANGE_ITEM_QTY', playerId: player.id, itemId: item.id, delta: 1 })
+          }
+        />
+      </div>
+    </ItemRow>
+  )
+}
+
 /** Observação do jogador sobre o item — pessoal, não viaja se o item for enviado. */
-function ItemNote({ player, item }) {
+function ItemNote({ player, item, autoEdit = false }) {
   const { dispatch } = useStore()
   const saved = player.itemNotes?.[item.id] ?? ''
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditing] = useState(autoEdit)
   const [draft, setDraft] = useState(saved)
 
   useEffect(() => {

@@ -66,7 +66,7 @@ export function TrashIcon() {
       <path
         d="M4 6h16M9 6V4h6v2M6 6l1 14h10l1-14"
         fill="none"
-        stroke="oklch(50% 0.16 25)"
+        stroke="oklch(50% 0.14 258)"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -134,6 +134,17 @@ export function EditIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+    </svg>
+  )
+}
+
+/** Três pontinhos verticais — botão "mais ações" do item aberto. */
+export function MoreIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="5" r="1.9" fill="oklch(50% 0.14 258)" />
+      <circle cx="12" cy="12" r="1.9" fill="oklch(50% 0.14 258)" />
+      <circle cx="12" cy="19" r="1.9" fill="oklch(50% 0.14 258)" />
     </svg>
   )
 }
