@@ -292,6 +292,40 @@ export function reducer(state, action) {
         })),
       }
 
+    case 'RENAME_ITEM': {
+      // O item da biblioteca é imutável: renomear cria uma cópia avulsa, que
+      // passa a existir só na mochila deste jogador, com os dados todos.
+      const current = resolveItem(state, action.itemId, action.playerId)
+      if (!current) return state
+      const name = action.name?.trim()
+      if (!name || name === current.name) return state
+      const renamed = normalizeItem({ ...current, id: makeId('custom'), name })
+
+      return {
+        ...state,
+        players: mapPlayer(state.players, action.playerId, (player) => {
+          const owned = player.items[action.itemId] ?? 0
+          if (owned <= 0) return player
+          const items = { ...player.items }
+          delete items[action.itemId]
+          items[renamed.id] = owned
+          const note = player.itemNotes?.[action.itemId]
+          return {
+            ...player,
+            items,
+            // Renomear de novo troca o avulso antigo, não empilha.
+            customItems: [
+              ...player.customItems.filter((custom) => custom.id !== action.itemId),
+              renamed,
+            ],
+            itemNotes: note
+              ? { ...withoutNote(player.itemNotes, action.itemId), [renamed.id]: note }
+              : player.itemNotes,
+          }
+        }),
+      }
+    }
+
     // ------------------------------------------------------------------- lojas
 
     case 'CART_SET': {

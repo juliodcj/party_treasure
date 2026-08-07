@@ -3,7 +3,8 @@ import { makeId, resolveItem } from '../lib/items.js'
 const HISTORY_LIMIT = 20
 
 // Só ações que mexem em dado real e valem a pena poder desfazer. Renomear
-// fica de fora de propósito — dispara a cada letra digitada.
+// jogador fica de fora de propósito — dispara a cada letra digitada; renomear
+// item não, é confirmado num clique só.
 const SLICE_KEYS = {
   SET_COINS: ['players'],
   ADJUST_COINS: ['players'],
@@ -19,6 +20,7 @@ const SLICE_KEYS = {
   BUY_CART: ['players'],
   ADD_CUSTOM_ITEM: ['players'],
   UPDATE_CUSTOM_ITEM: ['players'],
+  RENAME_ITEM: ['players'],
   SET_ITEM_NOTE: ['players'],
   ADD_PLAYER: ['players'],
   REMOVE_PLAYER: ['players'],
@@ -84,6 +86,8 @@ function describeAction(state, action) {
       return `Adicionou o item avulso "${action.item.name}" a ${playerName(state, action.playerId)}`
     case 'UPDATE_CUSTOM_ITEM':
       return `Editou um item avulso de ${playerName(state, action.playerId)}`
+    case 'RENAME_ITEM':
+      return `Renomeou "${itemName(state, action.itemId, action.playerId)}" para "${action.name}" na mochila de ${playerName(state, action.playerId)}`
     case 'SET_ITEM_NOTE':
       return `Editou a observação de ${itemName(state, action.itemId, action.playerId)}`
     case 'ADD_PLAYER':

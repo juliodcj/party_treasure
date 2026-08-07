@@ -169,7 +169,6 @@ function DeleteConfirmSheet({ target, onClose }) {
           onClose()
         }}
         confirmLabel="Excluir"
-        confirmVariant="danger"
       />
     </Sheet>
   )
@@ -317,7 +316,7 @@ function PlayerCard({ player, canDelete, onDelete }) {
         </button>
         <button
           type="button"
-          className="icon-btn icon-btn--danger"
+          className="icon-btn icon-btn--accent"
           title={canDelete ? 'Excluir jogador' : 'Precisa haver ao menos um jogador'}
           aria-label={`Excluir ${player.name}`}
           disabled={!canDelete}
@@ -501,7 +500,7 @@ function ShopCard({ shop, isOpen, onToggle, onDelete, onEdit }) {
         </button>
         <button
           type="button"
-          className="icon-btn icon-btn--danger"
+          className="icon-btn icon-btn--accent"
           title="Excluir loja"
           aria-label={`Excluir ${shop.name}`}
           onClick={onDelete}
@@ -540,7 +539,7 @@ function ShopCard({ shop, isOpen, onToggle, onDelete, onEdit }) {
                 <span className="gm__check-price">{formatCopper(item.priceCp)}</span>
                 <button
                   type="button"
-                  className="icon-btn icon-btn--danger"
+                  className="icon-btn icon-btn--accent"
                   style={{ width: 24, height: 24 }}
                   title="Remover da loja"
                   aria-label={`Remover ${item.name} da loja`}

@@ -48,7 +48,7 @@ export default function LibraryScreen({ filters, openId, onToggle }) {
               <div className="item__tools" style={{ marginTop: 12 }}>
                 <button
                   type="button"
-                  className="icon-btn icon-btn--danger"
+                  className="icon-btn icon-btn--accent"
                   title="Excluir"
                   aria-label={`Excluir ${item.name}`}
                   onClick={() => setDeleting(item)}
@@ -145,7 +145,6 @@ export default function LibraryScreen({ filters, openId, onToggle }) {
               setDeleting(null)
             }}
             confirmLabel="Excluir"
-            confirmVariant="danger"
           />
         </Sheet>
       ) : null}
