@@ -191,14 +191,6 @@
   flex-shrink: 0;
 }
 
-.chip--on,
-.seg__tab--on,
-.target-row--on {
-  color: #fff;
-  background: var(--accent);
-  border-color: var(--accent);
-}
-
 .chip {
   padding: 7px 14px;
   border-radius: var(--r-pill);
@@ -244,6 +236,18 @@
   border-radius: var(--r-sm);
   background: var(--surface);
   border: 1px solid var(--line-input);
+}
+
+/* O estado "ligado" vem por último de propósito: .chip, .seg__tab e
+   .target-row redeclaram fundo/borda com a mesma especificidade, e quem vem
+   depois no arquivo vence o empate. Declarado antes deles, o texto virava
+   branco sobre um fundo que continuava branco — ilegível. */
+.chip--on,
+.seg__tab--on,
+.target-row--on {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 /* Traço clicável */
@@ -469,8 +473,11 @@
 
 /* -------------------------------------------------------------- botão-ícone
 
-   Dois tamanhos, os dois com alvo maior que o desenho. A variante destrutiva
-   é a de excluir — a única ação que não dá para desfazer. */
+   Dois tamanhos, os dois com alvo maior que o desenho. Toda ação de linha
+   (editar, enviar, vender, excluir) usa --accent, para ler como um grupo —
+   o vermelho fica reservado ao botão largo dentro do diálogo de confirmação
+   (.btn--danger), não ao ícone que abre esse diálogo. .icon-btn--danger segue
+   declarado abaixo para o dia em que um botão-ícone precisar da variante. */
 
 .icon-btn {
   width: var(--tap-sm);

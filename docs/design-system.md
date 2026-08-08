@@ -40,7 +40,7 @@ diferentes, a diferença tem que ser visível.
 
 | Token | px | Papel | Exemplos |
 |---|---|---|---|
-| `--t-label` | 11 | sobrancelha, rótulo de aba, contador | `ARMA`, `BOLSA DE VALEROS`, `Nv 3`, rótulos da barra de abas |
+| `--t-label` | 11 | sobrancelha, rótulo de aba, contador | `WEAPON`, `BOLSA DE VALEROS`, `Nv 3`, rótulos da barra de abas |
 | `--t-meta` | 12 | metadado, rótulo de campo, texto de apoio | `Valor`, `Damage`, `12 itens`, `Player Core` |
 | `--t-sm` | 13 | texto secundário, botão, chip, campo compacto | `Comprar`, `Cancelar`, descrição do item, `Todos os níveis` |
 | `--t-body` | 14.5 | corpo, nome de item, campo de texto | `Steel Shield`, `Buscar item...`, `Excluir Dagger?` |
@@ -68,7 +68,7 @@ pequena usa uma delas:
 **`.label`** — sobrancelha. Rotula a faixa ou o bloco que vem abaixo. É a
 **única** coisa em caixa alta do aplicativo.
 11px · 700 · caixa alta · +0,5px · `--text-2`.
-Usada em: faixa de grupo da lista (`ARMA`, `JOGADORES`), bolsa do cabeçalho
+Usada em: faixa de grupo da lista (`WEAPON`, `JOGADORES`), bolsa do cabeçalho
 (`BOLSA DE VALEROS`), resumo do carrinho (`CARTEIRA`), Configurações.
 
 **`.field-label`** — rótulo de campo. Fica colado no campo e não separa seções,
@@ -107,18 +107,25 @@ traço clicável, avatar, o `−` do stepper.
 Eram quatro, com 0,02 contra 0,03 e 0,05 contra 0,06 — diferenças invisíveis que
 só criavam chance de escolher errado.
 
-### Azul age, vermelho destrói
+### Um azul para toda ação de linha; vermelho só dentro do diálogo
 
-`--accent` / `--accent-ink` / `--accent-tint` para o que se desfaz: **editar,
-enviar, vender, comprar, filtrar, distribuir**.
+`--accent` / `--accent-ink` / `--accent-tint` é a cor de **toda ação de
+item/jogador/loja em botão-ícone** — editar, enviar, vender, excluir, dar
+comprar, distribuir. `.icon-btn--accent` é o padrão do aplicativo; a lixeira
+usa o mesmo azul das outras ações da linha, não uma cor à parte.
 
-`--danger` / `--danger-ink` / `--danger-tint` para o que **não** se desfaz:
-**excluir item, jogador, loja; limpar o histórico; reverter**.
+`--danger` / `--danger-ink` / `--danger-tint` fica reservado a `.btn--danger` —
+o botão largo dentro de um diálogo: "Excluir" em `<SheetActions
+confirmVariant="danger">`, o "− Remover" de ajustar moedas. Botão-ícone de
+linha (`.icon-btn`) não tem variante vermelha em uso: `.icon-btn--danger`
+existe em `components.css` mas está sem chamador de propósito, preservado
+para se um caso desse tipo aparecer.
 
-A regra vale desde o primeiro clique: um botão que abre uma confirmação
-destrutiva já nasce vermelho. Antes, o botão "Excluir" era azul, idêntico ao
-"Editar" ao lado, e só o botão *dentro* do diálogo ficava vermelho — a cor
-chegava depois da decisão, quando já não servia de aviso.
+Isto foi uma escolha deliberada revertida em agosto de 2026: uma tentativa
+anterior pintou a lixeira de vermelho já na linha, mas isso quebrou a leitura
+visual das ações do item — editar, enviar, vender, excluir precisam ler como
+um grupo, e um ícone destoando ali chama mais atenção do que merece antes de
+qualquer confirmação.
 
 ### Moedas
 
@@ -228,7 +235,8 @@ Sempre `opacity: var(--disabled)`. Havia quatro opacidades diferentes.
 ## 6. Ícones — `components/Icons.jsx`
 
 **Todo SVG desenha com `currentColor`.** Quem define a cor é o botão que o
-contém, via `.icon-btn--accent`, `.icon-btn--danger` ou `.icon-btn--ghost`.
+contém, via `.icon-btn--accent` (padrão de toda ação de linha, incluindo
+excluir) ou `.icon-btn--ghost` (chevron).
 
 Nenhum ícone tem cor própria. Seis deles traziam o azul cravado em `oklch`, o que
 significava que trocar o azul do aplicativo em `tokens.css` mudava botões, chips,
@@ -241,21 +249,53 @@ O mesmo vale para tamanho: o glifo do stepper é dimensionado por CSS
 
 ## 7. Idioma na interface
 
-**Moldura nossa é traduzida. Dado do PF2e não é.**
+**Moldura nossa é traduzida. Dado do PF2e — inclusive o rótulo de categoria —
+não é.**
 
 | Traduzido | Em inglês |
 |---|---|
-| categoria (`Arma`, `Munição`, `Recipiente`) | nome do item (`Steel Shield`) |
-| título de tela, botão, mensagem, rótulo de campo | ficha técnica (`Damage`, `AC Bonus`, `Hands`) |
-| estado vazio, confirmação | traço (`agile`, `two-hand-d10`) e livro de origem |
+| título de tela, botão, mensagem, rótulo de campo, estado vazio, confirmação | categoria (`Weapon`, `Ammunition`, `Container`), nome do item (`Steel Shield`) |
+| | ficha técnica (`Damage`, `AC Bonus`, `Hands`), traço (`agile`), livro de origem |
 
-O critério: se o texto existe porque **nós** o escrevemos, vai em português; se
-vem do pack do Foundry, fica como o PF2e publica — é o vocabulário que a mesa usa
-ao consultar as regras.
+`CATEGORIES` em `data/catalog.js` guarda os rótulos em inglês **de propósito**,
+alinhados palavra por palavra com o `type` bruto do Foundry (`weapon` →
+`Weapon`, `backpack` → `Container`). Chegou a existir uma versão traduzida
+(`Arma`, `Munição`...), revertida em agosto de 2026: quando novos packs forem
+importados no futuro, o rótulo em inglês é o que permite reconhecer de olho um
+`type` novo ou um caso de borda, sem depender de uma tradução nossa que pode
+ficar desatualizada ou ambígua. Ver o comentário em `categoryLabel`.
+
+O critério geral segue valendo para todo o resto: se o texto existe porque
+**nós** o escrevemos e não precisa espelhar um `type` do pack, vai em
+português.
 
 ---
 
-## 8. Onde mora o quê
+## 8. Duas armadilhas de cascata, já vividas
+
+**`<button>` zera `text-transform` e `letter-spacing`.** O reset em
+`base.css` (`button { font: inherit; ... }`) não cobre essas duas
+propriedades, e o navegador tem sua própria UA-style zerando-as em elementos
+de formulário. Resultado: um `<button>` dentro de um `.label` (caixa alta,
+tracking) não herda nem uma coisa nem outra, mesmo com `font-size` e
+`font-weight` chegando certinho por herança. `.list-group__toggle` declara
+`text-transform: inherit; letter-spacing: inherit;` por causa disso — qualquer
+novo botão dentro de um elemento com essas propriedades precisa do mesmo.
+
+**Estado "ligado" precisa vir depois no arquivo, não antes.** `.chip`,
+`.seg__tab` e `.chip--on`, `.seg__tab--on` têm a mesma especificidade
+(0,1,0). Quando as duas regras miram a mesma propriedade (`background`,
+`border-color`), quem chegar por último no arquivo vence — não quem tem a
+classe mais "específica" na intenção. Um bug real: `.chip--on` estava
+declarado *antes* de `.chip`, então `.chip` (que vinha depois) sobrescrevia o
+fundo e a borda do estado ligado de volta para branco, deixando o texto branco
+sobre fundo branco. A regra prática: sempre declare o estado (`--on`,
+`--active`, `--selected`) **depois** do bloco base da mesma classe, ou suba a
+especificidade dele de propósito (ex.: repetir o seletor).
+
+---
+
+## 9. Onde mora o quê
 
 ```
 src/styles/

@@ -9,31 +9,31 @@ import RAW_CATALOG from './catalog.equipment.json' with { type: 'json' }
  * Categorias reais do PF2e: o proprio `type` de cada item nos packs do
  * Foundry, sem agrupamento artificial. A ordem aqui e a ordem de exibicao.
  *
- * Os rotulos sao em portugues porque sao moldura nossa, nao dado do pack — eles
- * viram cabecalho de grupo na lista, ao lado de "Jogadores" e "Historico". O
- * nome do item continua em ingles (e como o PF2e publica), e a ficha tecnica de
- * arma/armadura tambem — ali o rotulo e o campo do proprio Foundry.
+ * Os rotulos ficam em ingles de proposito, iguais ao `type` do Foundry — e a
+ * unica forma de bater o olho no rotulo e reconhecer o `type` bruto de um
+ * item novo na hora de importar mais packs, sem depender de traducao nossa
+ * que pode ficar desatualizada ou ambigua.
  */
 export const CATEGORIES = {
-  weapon: { label: 'Arma' },
-  armor: { label: 'Armadura' },
-  shield: { label: 'Escudo' },
+  weapon: { label: 'Weapon' },
+  armor: { label: 'Armor' },
+  shield: { label: 'Shield' },
   // Não é um `type` do Foundry — é "equipment" com system.usage "etched-onto-*"
   // (ver readCategory em lib/foundryImport.js). Separado pra não misturar com
-  // baú, kit, óculos etc. na mesma categoria "Equipamento".
-  rune: { label: 'Runa' },
-  ammo: { label: 'Munição' },
-  consumable: { label: 'Consumível' },
-  equipment: { label: 'Equipamento' },
-  backpack: { label: 'Recipiente' },
-  treasure: { label: 'Tesouro' },
+  // baú, kit, óculos etc. na mesma categoria "Equipment".
+  rune: { label: 'Rune' },
+  ammo: { label: 'Ammunition' },
+  consumable: { label: 'Consumable' },
+  equipment: { label: 'Equipment' },
+  backpack: { label: 'Container' },
+  treasure: { label: 'Treasure' },
   kit: { label: 'Kit' },
 }
 
 export const CATEGORY_ORDER = Object.keys(CATEGORIES)
 
 export function categoryLabel(category) {
-  return CATEGORIES[category]?.label ?? 'Outro'
+  return CATEGORIES[category]?.label ?? 'Other'
 }
 
 /** Catalogo completo de equipamentos do PF2e, ~5.700 itens. */

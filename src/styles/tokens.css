@@ -42,8 +42,11 @@
 
   /* --------------------------------------------------- vermelho destrutivo
 
-     Vale para toda ação irreversível — excluir item, jogador, loja, histórico.
-     Editar, enviar e vender são azuis: dá para desfazer. */
+     Reservado ao botão largo (.btn--danger) dentro do diálogo de confirmação
+     de algo que não se desfaz: "Excluir" em <SheetActions
+     confirmVariant="danger">, "− Remover" em ajustar moedas. Botão-ícone de
+     linha (excluir item, jogador, loja) fica no --accent do resto das ações
+     da linha — ver docs/design-system.md, seção 2. */
   --danger: oklch(55% 0.16 25);
   --danger-ink: oklch(50% 0.16 25);
   --danger-tint: oklch(55% 0.16 25 / 0.1);

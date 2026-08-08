@@ -417,6 +417,10 @@
   margin: -7px -16px -6px;
   padding: 7px 16px 6px;
   text-align: left;
+  /* <button> zera text-transform e letter-spacing por padrão do navegador —
+     sem isto o caixa-alta e o tracking do .label pai não chegam ao texto. */
+  text-transform: inherit;
+  letter-spacing: inherit;
 }
 
 /* Quantos itens a seção guarda: é o que sobra à vista quando ela está fechada. */

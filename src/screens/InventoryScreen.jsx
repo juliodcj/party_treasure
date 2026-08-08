@@ -218,11 +218,9 @@ function InventoryItem({
 
       <div className="item__foot">
         <div className="item__tools">
-          {/* Excluir é a única ação da linha que não dá para desfazer: é a
-              única em vermelho. Editar, enviar e vender continuam azuis. */}
           <button
             type="button"
-            className="icon-btn icon-btn--danger"
+            className="icon-btn icon-btn--accent"
             title="Excluir"
             aria-label={`Excluir ${item.name}`}
             onClick={onDelete}
