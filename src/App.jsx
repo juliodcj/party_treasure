@@ -76,7 +76,7 @@ export default function App() {
   const toggleItem = (id) => setOpenId((current) => (current === id ? null : id))
 
   // O botão só aparece quando há moedas soltas o bastante para valer a pena.
-  const showSimplify = isInventory && (player.silver >= 10 || player.copper >= 10)
+  const showSimplify = isCharacterTab && (player.silver >= 10 || player.copper >= 10)
 
   const subhead = isLibrary
       ? `${state.campaignItems.length} da campanha · ${CATALOG.length} oficiais`
@@ -85,90 +85,60 @@ export default function App() {
         : ''
 
   return (
-    <div className="app">
+    <div className={`app${isCharacterTab ? ' app--switcher' : ''}`}>
       <Header
         title={TABS.find((current) => current.id === tab).label}
+        titleContent={
+          isShop && shop ? (
+            <>
+              <button
+                type="button"
+                className="shop-picker__button shop-picker__button--title"
+                onClick={() => setShopPickerOpen((value) => !value)}
+                aria-expanded={shopPickerOpen}
+              >
+                <span className="shop-picker__title-text">{shop.name}</span>
+                <ChevronDown open={shopPickerOpen} />
+              </button>
+              {shopPickerOpen ? (
+                <>
+                  <div className="shop-picker__scrim" onClick={() => setShopPickerOpen(false)} />
+                  <div className="shop-picker__menu">
+                    {state.shops.map((current) => (
+                      <button
+                        key={current.id}
+                        type="button"
+                        className={`shop-picker__option${current.id === shop.id ? ' shop-picker__option--on' : ''}`}
+                        onClick={() => {
+                          dispatch({ type: 'SELECT_SHOP', shopId: current.id })
+                          setShopPickerOpen(false)
+                          setOpenId(null)
+                        }}
+                      >
+                        {current.name}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : null}
+            </>
+          ) : null
+        }
         player={isCharacterTab ? player : null}
-        showAdjust={isInventory}
-        showSend={isInventory && state.players.length > 1}
+        showAdjust={isCharacterTab}
+        showSend={isCharacterTab && state.players.length > 1}
         showSettings={tab === 'gm'}
+        showSimplify={showSimplify}
         onAdjust={() => setAdjustCoinsOpen(true)}
         onSend={() => setSendMoneyOpen(true)}
         onSettings={() => setSettingsOpen(true)}
         onEditWallet={() => setEditWalletOpen(true)}
+        onSimplify={() => dispatch({ type: 'SIMPLIFY_COINS', playerId: player.id })}
       />
 
-      {isShop && shop ? (
-        <div className="shop-picker">
-          <button
-            type="button"
-            className="shop-picker__button"
-            onClick={() => setShopPickerOpen((value) => !value)}
-            aria-expanded={shopPickerOpen}
-          >
-            {shop.name}
-            <ChevronDown open={shopPickerOpen} />
-          </button>
-          {shopPickerOpen ? (
-            <>
-              <div className="shop-picker__scrim" onClick={() => setShopPickerOpen(false)} />
-              <div className="shop-picker__menu">
-                {state.shops.map((current) => (
-                  <button
-                    key={current.id}
-                    type="button"
-                    className={`shop-picker__option${current.id === shop.id ? ' shop-picker__option--on' : ''}`}
-                    onClick={() => {
-                      dispatch({ type: 'SELECT_SHOP', shopId: current.id })
-                      setShopPickerOpen(false)
-                      setOpenId(null)
-                    }}
-                  >
-                    {current.name}
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : null}
-        </div>
-      ) : null}
-
-      {isInventory ? (
-        <div className="shop-picker">
-          <span className="shop-picker__name">{player.name}</span>
-        </div>
-      ) : null}
-
-      <div className="subhead">
-        <span className="subhead__label">{subhead}</span>
-        {showSimplify ? (
-          <button
-            type="button"
-            className="link link--muted"
-            onClick={() => dispatch({ type: 'SIMPLIFY_COINS', playerId: player.id })}
-          >
-            Simplificar moedas
-          </button>
-        ) : null}
-      </div>
-
-      {isCharacterTab ? (
-        <div className="chips" role="tablist" aria-label="Escolher personagem">
-          {state.players.map((current) => (
-            <button
-              key={current.id}
-              type="button"
-              role="tab"
-              aria-selected={current.id === player.id}
-              className={`chip${current.id === player.id ? ' chip--on' : ''}`}
-              onClick={() => {
-                dispatch({ type: 'SELECT_PLAYER', playerId: current.id })
-                setOpenId(null)
-              }}
-            >
-              {current.name}
-            </button>
-          ))}
+      {subhead ? (
+        <div className="subhead">
+          <span className="subhead__label">{subhead}</span>
         </div>
       ) : null}
 
@@ -267,20 +237,45 @@ export default function App() {
         {tab === 'gm' ? <GmScreen /> : null}
       </main>
 
-      <nav className="nav" aria-label="Navegação principal">
-        {TABS.map(({ id, label, Icon }) => (
-          <button
-            key={id}
-            type="button"
-            className={`nav__tab${tab === id ? ' nav__tab--on' : ''}`}
-            aria-current={tab === id ? 'page' : undefined}
-            onClick={() => goTo(id)}
-          >
-            <Icon />
-            <span className="nav__label">{label}</span>
-          </button>
-        ))}
-      </nav>
+      <div className="dock">
+        {isCharacterTab ? (
+          <div className="char-switcher" role="tablist" aria-label="Escolher personagem">
+            {state.players.map((current) => (
+              <button
+                key={current.id}
+                type="button"
+                role="tab"
+                aria-selected={current.id === player.id}
+                className={`char-switcher__item${current.id === player.id ? ' char-switcher__item--on' : ''}`}
+                onClick={() => {
+                  dispatch({ type: 'SELECT_PLAYER', playerId: current.id })
+                  setOpenId(null)
+                }}
+              >
+                <span className="char-switcher__avatar" aria-hidden="true">
+                  {current.name.trim().charAt(0).toUpperCase()}
+                </span>
+                <span className="char-switcher__name">{current.name.trim().split(' ')[0]}</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        <nav className="nav" aria-label="Navegação principal">
+          {TABS.map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              type="button"
+              className={`nav__tab${tab === id ? ' nav__tab--on' : ''}`}
+              aria-current={tab === id ? 'page' : undefined}
+              onClick={() => goTo(id)}
+            >
+              <Icon />
+              <span className="nav__label">{label}</span>
+            </button>
+          ))}
+        </nav>
+      </div>
 
       {sendMoneyOpen ? (
         <SendMoneySheet player={player} onClose={() => setSendMoneyOpen(false)} />

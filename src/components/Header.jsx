@@ -1,20 +1,26 @@
 import { GearIcon, PaperPlaneIcon } from './Icons.jsx'
 
-/** Título grande da tela e, nas telas de personagem, a pílula com a carteira. */
+/** Título grande da tela (ou o seletor de loja) e, nas telas de personagem,
+ *  a pílula da bolsa com moedas, simplificar, ajustar e enviar. */
 export default function Header({
   title,
+  titleContent = null,
   player = null,
   showAdjust = false,
   showSend = false,
   showSettings = false,
+  showSimplify = false,
   onAdjust,
   onSend,
   onSettings,
   onEditWallet,
+  onSimplify,
 }) {
   return (
     <header className="header">
-      <div className="header__title">{title}</div>
+      <div className="header__title-slot">
+        {titleContent ?? <div className="header__title">{title}</div>}
+      </div>
       {showSettings ? (
         <button
           type="button"
@@ -27,32 +33,10 @@ export default function Header({
         </button>
       ) : null}
       {player ? (
-        <div className="header-coins">
-          {showAdjust ? (
-            <button
-              type="button"
-              className="header-icon-btn"
-              title="Ajustar moedas"
-              aria-label="Ajustar moedas"
-              onClick={onAdjust}
-            >
-              ±
-            </button>
-          ) : null}
-          {showSend ? (
-            <button
-              type="button"
-              className="header-icon-btn"
-              title="Enviar dinheiro"
-              aria-label="Enviar dinheiro"
-              onClick={onSend}
-            >
-              <PaperPlaneIcon />
-            </button>
-          ) : null}
+        <div className="gold-pill">
           <button
             type="button"
-            className="gold-pill"
+            className="gold-pill__wallet"
             onClick={onEditWallet}
             aria-label={`Editar moedas de ${player.name}`}
           >
@@ -72,6 +56,46 @@ export default function Header({
               </span>
             </span>
           </button>
+
+          {/* Sempre renderizado: escondido por visibility, para a altura da
+              pílula nunca mudar e nada abaixo se mexer. */}
+          <button
+            type="button"
+            className={`link link--muted gold-pill__simplify${showSimplify ? '' : ' gold-pill__simplify--off'}`}
+            onClick={onSimplify}
+            disabled={!showSimplify}
+            aria-hidden={showSimplify ? undefined : true}
+            tabIndex={showSimplify ? undefined : -1}
+          >
+            simplificar
+          </button>
+
+          {showAdjust || showSend ? (
+            <div className="gold-pill__actions">
+              {showAdjust ? (
+                <button
+                  type="button"
+                  className="gold-pill__action"
+                  title="Ajustar moedas"
+                  aria-label="Ajustar moedas"
+                  onClick={onAdjust}
+                >
+                  ±
+                </button>
+              ) : null}
+              {showSend ? (
+                <button
+                  type="button"
+                  className="gold-pill__action"
+                  title="Enviar dinheiro"
+                  aria-label="Enviar dinheiro"
+                  onClick={onSend}
+                >
+                  <PaperPlaneIcon />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </header>

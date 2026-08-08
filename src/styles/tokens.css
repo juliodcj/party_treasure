@@ -61,4 +61,7 @@
 
   /* Altura da barra de abas, usada para posicionar o botão flutuante */
   --nav-h: 86px;
+
+  /* Altura da faixa de personagens acima da barra de abas (só Inventário/Loja) */
+  --switcher-h: 74px;
 }
