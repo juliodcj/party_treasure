@@ -99,15 +99,13 @@
 }
 
 /* Faixa da bolsa: moedas (abre a edição) à esquerda, ajustar/enviar
-   à direita, tudo na mesma linha. Igual no Inventário e na Loja. */
+   à direita, tudo na mesma linha. Igual no Inventário e na Loja.
+   Sem caixa em volta: corre solta no branco do cabeçalho, alinhada pela
+   esquerda com o título e a busca. */
 .gold-pill {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
-  background: var(--surface-field);
-  border-radius: var(--r-lg);
-  padding: 5px 10px 6px;
   flex-shrink: 0;
   align-self: flex-start;
 }
@@ -126,20 +124,23 @@
   color: var(--text-inactive);
 }
 
+/* O filete que separava moedas de botões era da caixa; sem ela, ficava um
+   traço solto no branco. Agora quem separa é o vão. */
 .gold-pill__actions {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
-  padding-left: 10px;
-  border-left: 1px solid var(--line-field);
+  padding-left: 6px;
 }
 
+/* Sem a caixa cinza da bolsa por trás, os botões precisam do fundo rebaixado
+   para continuarem lendo como botões em cima do branco. */
 .gold-pill__action {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--r-pill);
-  background: var(--surface);
+  background: var(--surface-field);
   display: flex;
   align-items: center;
   justify-content: center;
