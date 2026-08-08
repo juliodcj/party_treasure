@@ -55,6 +55,14 @@
   flex-shrink: 0;
 }
 
+/* Moedas à esquerda, botões de ação à direita, tudo na mesma linha. */
+.gold-pill__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .gold-pill__wallet {
   display: flex;
   flex-direction: column;
@@ -71,7 +79,7 @@
 
 .gold-pill__simplify {
   align-self: flex-start;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 /* Sem "simplificar" a pílula mantém exatamente a mesma altura. */
@@ -82,11 +90,10 @@
 .gold-pill__actions {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px solid var(--line-field);
+  gap: 8px;
+  flex-shrink: 0;
+  padding-left: 10px;
+  border-left: 1px solid var(--line-field);
 }
 
 .gold-pill__action {

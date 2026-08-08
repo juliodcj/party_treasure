@@ -34,28 +34,57 @@ export default function Header({
       ) : null}
       {player ? (
         <div className="gold-pill">
-          <button
-            type="button"
-            className="gold-pill__wallet"
-            onClick={onEditWallet}
-            aria-label={`Editar moedas de ${player.name}`}
-          >
-            <span className="gold-pill__label">Bolsa</span>
-            <span className="gold-pill__coins">
-              <span className="gold-pill__coin">
-                <span className="gold-pill__value gold-pill__value--gold">{player.gold}</span>
-                <span className="coin-dot coin-dot--gold" />
+          <div className="gold-pill__top">
+            <button
+              type="button"
+              className="gold-pill__wallet"
+              onClick={onEditWallet}
+              aria-label={`Editar moedas de ${player.name}`}
+            >
+              <span className="gold-pill__label">Bolsa</span>
+              <span className="gold-pill__coins">
+                <span className="gold-pill__coin">
+                  <span className="gold-pill__value gold-pill__value--gold">{player.gold}</span>
+                  <span className="coin-dot coin-dot--gold" />
+                </span>
+                <span className="gold-pill__coin">
+                  <span className="gold-pill__value gold-pill__value--silver">{player.silver}</span>
+                  <span className="coin-dot coin-dot--silver" />
+                </span>
+                <span className="gold-pill__coin">
+                  <span className="gold-pill__value gold-pill__value--copper">{player.copper}</span>
+                  <span className="coin-dot coin-dot--copper" />
+                </span>
               </span>
-              <span className="gold-pill__coin">
-                <span className="gold-pill__value gold-pill__value--silver">{player.silver}</span>
-                <span className="coin-dot coin-dot--silver" />
-              </span>
-              <span className="gold-pill__coin">
-                <span className="gold-pill__value gold-pill__value--copper">{player.copper}</span>
-                <span className="coin-dot coin-dot--copper" />
-              </span>
-            </span>
-          </button>
+            </button>
+
+            {showAdjust || showSend ? (
+              <div className="gold-pill__actions">
+                {showAdjust ? (
+                  <button
+                    type="button"
+                    className="gold-pill__action"
+                    title="Ajustar moedas"
+                    aria-label="Ajustar moedas"
+                    onClick={onAdjust}
+                  >
+                    ±
+                  </button>
+                ) : null}
+                {showSend ? (
+                  <button
+                    type="button"
+                    className="gold-pill__action"
+                    title="Enviar dinheiro"
+                    aria-label="Enviar dinheiro"
+                    onClick={onSend}
+                  >
+                    <PaperPlaneIcon />
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
 
           {/* Sempre renderizado: escondido por visibility, para a altura da
               pílula nunca mudar e nada abaixo se mexer. */}
@@ -69,33 +98,6 @@ export default function Header({
           >
             simplificar
           </button>
-
-          {showAdjust || showSend ? (
-            <div className="gold-pill__actions">
-              {showAdjust ? (
-                <button
-                  type="button"
-                  className="gold-pill__action"
-                  title="Ajustar moedas"
-                  aria-label="Ajustar moedas"
-                  onClick={onAdjust}
-                >
-                  ±
-                </button>
-              ) : null}
-              {showSend ? (
-                <button
-                  type="button"
-                  className="gold-pill__action"
-                  title="Enviar dinheiro"
-                  aria-label="Enviar dinheiro"
-                  onClick={onSend}
-                >
-                  <PaperPlaneIcon />
-                </button>
-              ) : null}
-            </div>
-          ) : null}
         </div>
       ) : null}
     </header>
