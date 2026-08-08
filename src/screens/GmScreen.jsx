@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import Sheet, { SheetActions } from '../components/Sheet.jsx'
 import Stepper from '../components/Stepper.jsx'
 import { CoinInputs } from '../components/ItemForm.jsx'
-import { SearchBox, FilterSelects, EMPTY_FILTERS } from '../components/ItemFilters.jsx'
+import { EMPTY_FILTERS, FiltersBar } from '../components/ItemFilters.jsx'
 import { ChevronRight, EditIcon, TrashIcon } from '../components/Icons.jsx'
 import EditWalletSheet from '../components/EditWalletSheet.jsx'
 import ShopEditScreen from './ShopEditScreen.jsx'
@@ -54,12 +54,10 @@ function LibrarySection({ onOpen }) {
   const { state } = useStore()
 
   return (
-    <section>
-      <div className="gm__section-head">
-        <h2 className="gm__section-title">Biblioteca</h2>
-      </div>
+    <section className="list-group">
+      <h2 className="list-group__title">Biblioteca</h2>
 
-      <div className="card card--folder">
+      <div className="list-rows">
         <button type="button" className="gm__card-head" onClick={onOpen}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="folder__name">Catálogo de itens</div>
@@ -89,53 +87,44 @@ function HistorySection() {
   const entries = [...state.history].reverse() // mais recente primeiro
 
   return (
-    <section>
-      <div className="gm__section-head">
-        <h2 className="gm__section-title">Histórico</h2>
+    <section className="list-group">
+      <h2 className="list-group__title">
+        <span>Histórico</span>
         {total ? (
           <button type="button" className="link link--muted" onClick={() => setClearing(true)}>
             Limpar
           </button>
         ) : null}
-      </div>
+      </h2>
 
-      <div className="card card--folder">
+      <div className="list-rows">
         {entries.length === 0 ? (
           <div className="empty" style={{ padding: '24px 16px' }}>
             Nenhuma alteração recente.
           </div>
         ) : (
-          <div className="gm__list" style={{ gap: 0, padding: '4px 14px' }}>
-            {entries.map((entry, position) => {
-              const originalIndex = total - 1 - position
-              const count = total - originalIndex
-              return (
-                <div
-                  className="gm__row"
-                  key={entry.id}
-                  style={{
-                    padding: '10px 0',
-                    borderTop: position > 0 ? '1px solid var(--line)' : 'none',
-                  }}
-                >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, color: 'var(--text)' }}>{entry.label}</div>
-                    <div style={{ fontSize: 11.5, color: 'var(--text-faint)', marginTop: 1 }}>
-                      {formatHistoryTime(entry.at)}
-                    </div>
+          entries.map((entry, position) => {
+            const originalIndex = total - 1 - position
+            const count = total - originalIndex
+            return (
+              <div className="gm__row" key={entry.id} style={{ padding: '10px 16px' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5, color: 'var(--text)' }}>{entry.label}</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--text-faint)', marginTop: 1 }}>
+                    {formatHistoryTime(entry.at)}
                   </div>
-                  <button
-                    type="button"
-                    className="btn btn--neutral"
-                    style={{ fontSize: 12, padding: '6px 12px', flexShrink: 0 }}
-                    onClick={() => setConfirming({ entryId: entry.id, label: entry.label, count })}
-                  >
-                    Reverter
-                  </button>
                 </div>
-              )
-            })}
-          </div>
+                <button
+                  type="button"
+                  className="btn btn--neutral"
+                  style={{ fontSize: 12, padding: '6px 12px', flexShrink: 0 }}
+                  onClick={() => setConfirming({ entryId: entry.id, label: entry.label, count })}
+                >
+                  Reverter
+                </button>
+              </div>
+            )
+          })
         )}
       </div>
 
@@ -210,31 +199,31 @@ function PlayersSection({ onRequestDelete }) {
   const [groupOpen, setGroupOpen] = useState(false)
 
   return (
-    <section>
-      <div className="gm__section-head">
-        <h2 className="gm__section-title">Jogadores</h2>
+    <section className="list-group">
+      <h2 className="list-group__title">
+        <span>Jogadores</span>
         <button type="button" className="link" onClick={() => dispatch({ type: 'ADD_PLAYER' })}>
           + Novo jogador
         </button>
-      </div>
+      </h2>
 
-      <div className="card card--folder" style={{ marginBottom: 8 }}>
-        <div className="gm__card-head">
-          <span style={{ flex: 1, fontSize: 13.5, color: 'var(--text-muted)' }}>
-            Dar moedas ao grupo (dividido igualmente)
-          </span>
-          <button
-            type="button"
-            className="btn btn--solid"
-            onClick={() => setGroupOpen((value) => !value)}
-          >
-            Distribuir
-          </button>
+      <div className="list-rows">
+        <div>
+          <div className="gm__card-head">
+            <span style={{ flex: 1, fontSize: 13.5, color: 'var(--text-muted)' }}>
+              Dar moedas ao grupo (dividido igualmente)
+            </span>
+            <button
+              type="button"
+              className="btn btn--solid"
+              onClick={() => setGroupOpen((value) => !value)}
+            >
+              Distribuir
+            </button>
+          </div>
+          {groupOpen ? <GroupGivePanel onDone={() => setGroupOpen(false)} /> : null}
         </div>
-        {groupOpen ? <GroupGivePanel onDone={() => setGroupOpen(false)} /> : null}
-      </div>
 
-      <div className="gm__list">
         {state.players.map((player) => (
           <PlayerCard
             key={player.id}
@@ -292,23 +281,29 @@ function PlayerCard({ player, canDelete, onDelete }) {
   const [gold, setGold] = useState('')
   const [silver, setSilver] = useState('')
   const [copper, setCopper] = useState('')
-  const [search, setSearch] = useState('')
+  const [filters, setFilters] = useState(EMPTY_FILTERS)
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const [drafts, setDrafts] = useState({})
   const [editingWallet, setEditingWallet] = useState(false)
 
   const catalog = useMemo(() => libraryItems(state), [state])
-  const term = search.trim().toLowerCase()
-  const rows = catalog.filter((item) => !term || item.name.toLowerCase().includes(term))
+  const rows = catalog.filter(
+    (item) =>
+      matchesSearch(item, filters.search) &&
+      matchesFilters(item, filters) &&
+      matchesContent(item, state.settings),
+  )
   const hasDraft = Object.values(drafts).some((qty) => qty > 0)
 
   const openPanel = (next) => {
     setPanel((current) => (current === next ? null : next))
     setDrafts({})
-    setSearch('')
+    setFilters(EMPTY_FILTERS)
+    setFiltersOpen(false)
   }
 
   return (
-    <div className="card card--folder">
+    <div>
       <div className="gm__card-head">
         <div style={{ flex: 1, minWidth: 0 }}>
           <input
@@ -401,11 +396,13 @@ function PlayerCard({ player, canDelete, onDelete }) {
 
       {panel === 'items' ? (
         <div className="gm__panel">
-          <SearchBox
-            sunken
+          <FiltersBar
             small
-            value={search}
-            onChange={setSearch}
+            filters={filters}
+            onChange={setFilters}
+            levels={availableLevels(catalog)}
+            open={filtersOpen}
+            onToggle={() => setFiltersOpen((value) => !value)}
             placeholder="Buscar item para dar..."
           />
           <div className="gm__scroll">
@@ -466,15 +463,15 @@ function ShopsSection({ onRequestDelete, onCreateShop, onEditShop }) {
   const [openId, setOpenId] = useState(null)
 
   return (
-    <section>
-      <div className="gm__section-head">
-        <h2 className="gm__section-title">Lojas</h2>
+    <section className="list-group">
+      <h2 className="list-group__title">
+        <span>Lojas</span>
         <button type="button" className="link" onClick={onCreateShop}>
           + Nova loja
         </button>
-      </div>
+      </h2>
 
-      <div className="gm__list">
+      <div className="list-rows">
         {state.shops.map((shop) => (
           <ShopCard
             key={shop.id}
@@ -493,6 +490,7 @@ function ShopsSection({ onRequestDelete, onCreateShop, onEditShop }) {
 function ShopCard({ shop, isOpen, onToggle, onDelete, onEdit }) {
   const { state, dispatch } = useStore()
   const [filters, setFilters] = useState(EMPTY_FILTERS)
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   // Aqui dentro só interessa o que já está na prateleira — o catálogo
   // inteiro para marcar/desmarcar vive na tela cheia de edição.
@@ -508,7 +506,7 @@ function ShopCard({ shop, isOpen, onToggle, onDelete, onEdit }) {
   )
 
   return (
-    <div className="card card--folder">
+    <div>
       <div className="gm__card-head">
         <div style={{ flex: 1, minWidth: 0 }}>
           <button type="button" className="inline-input" onClick={onToggle} aria-expanded={isOpen}>
@@ -548,17 +546,13 @@ function ShopCard({ shop, isOpen, onToggle, onDelete, onEdit }) {
 
       {isOpen ? (
         <div className="gm__panel">
-          <SearchBox
-            sunken
+          <FiltersBar
             small
-            value={filters.search}
-            onChange={(search) => setFilters({ ...filters, search })}
-          />
-          <FilterSelects
-            small
-            value={filters}
+            filters={filters}
             onChange={setFilters}
             levels={availableLevels(stocked)}
+            open={filtersOpen}
+            onToggle={() => setFiltersOpen((value) => !value)}
           />
           <div className="gm__scroll" style={{ maxHeight: 260, gap: 2 }}>
             {rows.map((item) => (

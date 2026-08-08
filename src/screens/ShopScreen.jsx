@@ -59,42 +59,48 @@ export default function ShopScreen({ player, shop, filters, openId, onToggle }) 
 
       {CATEGORY_ORDER.map((id) =>
         grouped[id].length ? (
-          <section key={id} style={{ display: 'contents' }}>
-            <h2 className="group-title">{categoryLabel(id)}</h2>
-            {grouped[id].map(({ item }) => {
-              const qty = state.cart[item.id] ?? 0
-              return (
-                <ItemRow
-                  key={item.id}
-                  item={item}
-                  priceInHead
-                  open={openId === item.id}
-                  onToggle={() => onToggle(item.id)}
-                  cart={
-                    qty > 0 ? (
-                      <div className="item__cart-pill">
-                        <Stepper
-                          size={24}
-                          value={qty}
-                          canDec={qty > 0}
-                          onDec={() => dispatch({ type: 'CART_SET', itemId: item.id, qty: qty - 1 })}
-                          onInc={() => dispatch({ type: 'CART_SET', itemId: item.id, qty: qty + 1 })}
-                          label="itens no carrinho"
-                        />
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        className="item__add-btn"
-                        onClick={() => dispatch({ type: 'CART_SET', itemId: item.id, qty: 1 })}
-                      >
-                        Comprar
-                      </button>
-                    )
-                  }
-                />
-              )
-            })}
+          <section className="list-group" key={id}>
+            <h2 className="list-group__title">{categoryLabel(id)}</h2>
+            <div className="list-rows">
+              {grouped[id].map(({ item }) => {
+                const qty = state.cart[item.id] ?? 0
+                return (
+                  <ItemRow
+                    key={item.id}
+                    item={item}
+                    priceInHead
+                    open={openId === item.id}
+                    onToggle={() => onToggle(item.id)}
+                    cart={
+                      qty > 0 ? (
+                        <div className="item__cart-pill">
+                          <Stepper
+                            size={24}
+                            value={qty}
+                            canDec={qty > 0}
+                            onDec={() =>
+                              dispatch({ type: 'CART_SET', itemId: item.id, qty: qty - 1 })
+                            }
+                            onInc={() =>
+                              dispatch({ type: 'CART_SET', itemId: item.id, qty: qty + 1 })
+                            }
+                            label="itens no carrinho"
+                          />
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="item__add-btn"
+                          onClick={() => dispatch({ type: 'CART_SET', itemId: item.id, qty: 1 })}
+                        >
+                          Comprar
+                        </button>
+                      )
+                    }
+                  />
+                )
+              })}
+            </div>
           </section>
         ) : null,
       )}

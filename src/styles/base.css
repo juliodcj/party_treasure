@@ -82,10 +82,22 @@ textarea {
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  padding: 10px 16px 16px;
+  /* O respiro de cima é margem do primeiro filho, não padding do rolador: o
+     padding entraria no cálculo do "position: sticky" e os cabeçalhos de
+     grupo grudariam 10px abaixo do topo, com itens passando pela fresta. */
+  padding: 0 16px 16px;
   display: flex;
   flex-direction: column;
   gap: 7px;
+}
+
+/* O segundo seletor cobre as telas que agrupam com <section display: contents>:
+   ali a margem precisa ir no filho, que é quem vira item do flex. O :not()
+   deixa de fora a lista agrupada, que é uma <section> de verdade e encosta no
+   cabeçalho de propósito. */
+.app__scroll > :first-child,
+.app__scroll > section:first-child:not(.list-group) > :first-child {
+  margin-top: 10px;
 }
 
 /* Nas abas com botão flutuante, o fim da lista sobe o bastante para o último

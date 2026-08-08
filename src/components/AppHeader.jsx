@@ -1,4 +1,5 @@
 import { PaperPlaneIcon } from './Icons.jsx'
+import { canSimplify } from '../lib/money.js'
 
 /**
  * A moldura fixa no topo, igual nas quatro abas: o que entra aqui não rola
@@ -59,7 +60,12 @@ export function WalletPill({
   onAdjust,
   onSend,
   onEditWallet,
+  onSimplify,
 }) {
+  // O atalho só existe quando trocar as miúdas pelas graúdas muda alguma
+  // coisa — senão seria um clique que não faz nada.
+  const showSimplify = !!onSimplify && canSimplify(player)
+
   return (
     <div className="gold-pill">
       <button
@@ -84,6 +90,20 @@ export function WalletPill({
           </span>
         </span>
       </button>
+
+      {/* Fora do botão da bolsa de propósito: um botão não pode morar dentro
+          do outro, e clicar aqui simplifica em vez de abrir a edição. */}
+      {showSimplify ? (
+        <button
+          type="button"
+          className="gold-pill__simplify"
+          onClick={onSimplify}
+          title="Trocar as moedas miúdas pelas graúdas"
+          aria-label={`Simplificar as moedas de ${player.name}`}
+        >
+          Simplificar
+        </button>
+      ) : null}
 
       {showAdjust || showSend ? (
         <div className="gold-pill__actions">

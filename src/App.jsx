@@ -4,9 +4,9 @@ import CharacterPicker, { initialOf } from './components/CharacterPicker.jsx'
 import SendMoneySheet from './components/SendMoneySheet.jsx'
 import AdjustCoinsSheet from './components/AdjustCoinsSheet.jsx'
 import EditWalletSheet from './components/EditWalletSheet.jsx'
-import { SearchBox, FilterSelects, LevelPicker, EMPTY_FILTERS } from './components/ItemFilters.jsx'
+import { EMPTY_FILTERS, FiltersBar } from './components/ItemFilters.jsx'
 import SettingsSheet from './components/SettingsSheet.jsx'
-import { BagIcon, ChevronDown, CrownIcon, FilterIcon, GearIcon, ShopIcon } from './components/Icons.jsx'
+import { BagIcon, ChevronDown, CrownIcon, GearIcon, ShopIcon } from './components/Icons.jsx'
 import InventoryScreen from './screens/InventoryScreen.jsx'
 import ShopScreen from './screens/ShopScreen.jsx'
 import LibraryScreen from './screens/LibraryScreen.jsx'
@@ -31,43 +31,6 @@ const TITLES = {
   shop: 'Loja',
   gm: 'Mestre',
   library: 'Biblioteca',
-}
-
-/**
- * Faixa de busca do cabeçalho: campo + funil que revela os filtros embaixo.
- * A Biblioteca só filtra por nível; as outras abas filtram tipo e nível.
- */
-function FiltersBar({ filters, onChange, levels, open, onToggle, levelsOnly = false }) {
-  return (
-    <div className="filters">
-      <div className="filters__row">
-        <SearchBox value={filters.search} onChange={(search) => onChange({ ...filters, search })} />
-        <button
-          type="button"
-          className={`filters__toggle${open ? ' filters__toggle--on' : ''}`}
-          onClick={onToggle}
-          aria-expanded={open}
-          aria-label="Filtros"
-          title="Filtros"
-        >
-          <FilterIcon color={open ? 'var(--accent-ink)' : 'var(--text-muted)'} />
-        </button>
-      </div>
-      {open ? (
-        levelsOnly ? (
-          <div className="filters__row">
-            <LevelPicker
-              levels={levels}
-              value={filters.levels}
-              onChange={(next) => onChange({ ...filters, levels: next })}
-            />
-          </div>
-        ) : (
-          <FilterSelects value={filters} onChange={onChange} levels={levels} />
-        )
-      ) : null}
-    </div>
-  )
 }
 
 export default function App() {
@@ -196,6 +159,7 @@ export default function App() {
             onAdjust={() => setAdjustCoinsOpen(true)}
             onSend={() => setSendMoneyOpen(true)}
             onEditWallet={() => setEditWalletOpen(true)}
+            onSimplify={() => dispatch({ type: 'SIMPLIFY_COINS', playerId: player.id })}
           />
         ) : null}
 

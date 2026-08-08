@@ -56,24 +56,26 @@ export default function InventoryScreen({ player, filters, openId, onToggle }) {
 
       {CATEGORY_ORDER.map((id) =>
         grouped[id].length ? (
-          <section key={id} style={{ display: 'contents' }}>
-            <h2 className="group-title">{categoryLabel(id)}</h2>
-            {grouped[id].map(({ item, qty }) => (
-              <InventoryItem
-                key={item.id}
-                player={player}
-                item={item}
-                qty={qty}
-                custom={isCustom(item.id)}
-                canSend={state.players.length > 1}
-                open={openId === item.id}
-                onToggle={() => onToggle(item.id)}
-                onDelete={() => setDeleting(item)}
-                onSell={() => setSelling({ item, qty: 1, owned: qty })}
-                onSend={() => setSending({ item, qty: 1, owned: qty })}
-                onEdit={() => setEditing(item)}
-              />
-            ))}
+          <section className="list-group" key={id}>
+            <h2 className="list-group__title">{categoryLabel(id)}</h2>
+            <div className="list-rows">
+              {grouped[id].map(({ item, qty }) => (
+                <InventoryItem
+                  key={item.id}
+                  player={player}
+                  item={item}
+                  qty={qty}
+                  custom={isCustom(item.id)}
+                  canSend={state.players.length > 1}
+                  open={openId === item.id}
+                  onToggle={() => onToggle(item.id)}
+                  onDelete={() => setDeleting(item)}
+                  onSell={() => setSelling({ item, qty: 1, owned: qty })}
+                  onSend={() => setSending({ item, qty: 1, owned: qty })}
+                  onEdit={() => setEditing(item)}
+                />
+              ))}
+            </div>
           </section>
         ) : null,
       )}
@@ -203,7 +205,14 @@ function InventoryItem({
   }
 
   return (
-    <ItemRow item={item} qty={qty} priceInBody open={open} onToggle={onToggle} hasNote={!!savedNote}>
+    <ItemRow
+      item={item}
+      qty={qty}
+      priceInBody
+      open={open}
+      onToggle={onToggle}
+      hasNote={!!savedNote}
+    >
       {/* Observação já escrita continua à vista; só o "+ Observação" some no menu. */}
       {savedNote || noteOpen ? (
         <ItemNote player={player} item={item} autoEdit={noteOpen && !savedNote} />
