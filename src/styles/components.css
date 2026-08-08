@@ -249,7 +249,7 @@
   background: var(--surface);
   border: 1px solid var(--line-field);
   border-radius: var(--r-lg);
-  padding: 9px 12px;
+  padding: 8px 12px;
 }
 
 .search--sunken {
@@ -363,20 +363,21 @@
 
 /* ------------------------------------------------------------------- modal */
 
+/* O que flutua é sempre "absolute" dentro de .app, nunca "fixed" na janela:
+   .app tem a altura da tela e é a coluna do aparelho, então a folha nasce
+   alinhada com ela em qualquer largura de monitor, sem conta de centralizar. */
 .overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.35);
   z-index: 40;
 }
 
 .sheet {
-  position: fixed;
+  position: absolute;
   left: 16px;
   right: 16px;
   z-index: 41;
-  max-width: 488px;
-  margin: 0 auto;
   background: var(--surface);
   border-radius: var(--r-2xl);
   padding: 16px;
@@ -387,7 +388,7 @@
 
 /* Folha ancorada acima da barra de abas, como no protótipo */
 .sheet--bottom {
-  bottom: calc(var(--nav-h) + 24px + env(safe-area-inset-bottom));
+  bottom: calc(var(--dock-h) + 16px);
   max-height: 62dvh;
   overflow: auto;
 }
@@ -430,11 +431,9 @@
 
 /* Tela cheia por cima de tudo (cadastro/edição de loja), acima do .sheet */
 .screen-modal {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 45;
-  max-width: 520px;
-  margin: 0 auto;
   background: var(--bg);
   display: flex;
   flex-direction: column;
@@ -535,13 +534,16 @@
 
 /* ------------------------------------------------------- botão flutuante */
 
+/* Encostado no canto inferior direito da coluna, logo acima do rodapé. O
+   respiro de --fab-gutter no fim da lista garante que ele nunca fique em
+   cima do último item, mesmo com a rolagem no fim. */
 .fab {
-  position: fixed;
+  position: absolute;
   right: 16px;
-  bottom: calc(var(--nav-h) + 24px + env(safe-area-inset-bottom));
+  bottom: calc(var(--dock-h) + 16px);
   z-index: 30;
-  width: 52px;
-  height: 52px;
+  width: var(--fab-size);
+  height: var(--fab-size);
   border-radius: var(--r-pill);
   background: var(--accent);
   color: #fff;
@@ -561,11 +563,31 @@
   white-space: nowrap;
 }
 
-/* Numa tela larga a coluna centraliza; o flutuante acompanha a borda dela. */
-@media (min-width: 520px) {
-  .fab {
-    right: calc(50% - 260px + 16px);
-  }
+/* Carrinho da Loja: apagado enquanto não há nada dentro. */
+.fab--cart:disabled {
+  background: var(--surface-muted);
+  color: var(--text-inactive);
+  box-shadow: var(--shadow-pill);
+  cursor: default;
+}
+
+/* Contador de itens no carrinho, pendurado no canto do flutuante */
+.fab__badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--accent-ink);
+  border: 1.5px solid var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .chevron {

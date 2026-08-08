@@ -1,8 +1,9 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import ItemRow from '../components/ItemRow.jsx'
+import Sheet from '../components/Sheet.jsx'
 import Stepper from '../components/Stepper.jsx'
 import { PriceBadges } from '../components/Coins.jsx'
-import { ArrowRightIcon } from '../components/Icons.jsx'
+import { ArrowRightIcon, CartIcon } from '../components/Icons.jsx'
 import { useStore } from '../state/store.jsx'
 import { CATEGORY_ORDER, categoryLabel } from '../data/catalog.js'
 import { groupInventory, matchesContent, matchesFilters, matchesSearch, resolveItem } from '../lib/items.js'
@@ -11,6 +12,7 @@ import { plural } from '../lib/text.js'
 
 export default function ShopScreen({ player, shop, filters, openId, onToggle }) {
   const { state, dispatch } = useStore()
+  const [cartOpen, setCartOpen] = useState(false)
 
   const stock = useMemo(() => {
     if (!shop) return []
@@ -36,6 +38,12 @@ export default function ShopScreen({ player, shop, filters, openId, onToggle }) 
   const itemCount = lines.reduce((sum, line) => sum + line.qty, 0)
   const walletCp = toCopper(player)
   const affordable = walletCp >= totalCp
+
+  // Esvaziou o carrinho (comprou, ou tirou o último item pelo stepper da
+  // lista): não faz sentido manter a confirmação aberta em cima de nada.
+  useEffect(() => {
+    if (itemCount === 0) setCartOpen(false)
+  }, [itemCount])
 
   if (!shop) {
     return <div className="empty">Nenhuma loja cadastrada.{'\n'}O mestre cria as lojas na aba Mestre.</div>
@@ -91,33 +99,70 @@ export default function ShopScreen({ player, shop, filters, openId, onToggle }) 
         ) : null,
       )}
 
-      {lines.length ? (
-        <div className="shop-summary">
-          <div className="shop-summary__row">
-            <div className="shop-summary__col">
-              <div className="shop-summary__label">Carteira</div>
+      {/* O resumo da compra deixou de cobrir a lista: mora atrás deste
+          carrinho e só aparece quando se pede a confirmação. */}
+      <button
+        type="button"
+        className="fab fab--cart"
+        onClick={() => setCartOpen(true)}
+        disabled={itemCount === 0}
+        aria-label={
+          itemCount === 0
+            ? 'Carrinho vazio'
+            : `Abrir carrinho com ${plural(itemCount, 'item', 'itens')}`
+        }
+      >
+        <CartIcon size={22} />
+        {itemCount > 0 ? <span className="fab__badge">{itemCount}</span> : null}
+      </button>
+
+      {cartOpen ? (
+        <Sheet title="Carrinho" onClose={() => setCartOpen(false)}>
+          <div className="cart__lines">
+            {lines.map(({ item, qty }) => (
+              <div className="cart__line" key={item.id}>
+                <span className="cart__line-name">{item.name}</span>
+                <PriceBadges totalCp={item.priceCp * qty} />
+                <Stepper
+                  size={24}
+                  value={qty}
+                  canDec={qty > 0}
+                  onDec={() => dispatch({ type: 'CART_SET', itemId: item.id, qty: qty - 1 })}
+                  onInc={() => dispatch({ type: 'CART_SET', itemId: item.id, qty: qty + 1 })}
+                  label={`${item.name} no carrinho`}
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="cart__wallet">
+            <div className="cart__wallet-col">
+              <div className="cart__label">Carteira</div>
               <PriceBadges totalCp={walletCp} />
             </div>
             <ArrowRightIcon />
-            <div className="shop-summary__col shop-summary__col--right">
-              <div className={`shop-summary__label${affordable ? '' : ' shop-summary__label--danger'}`}>
+            <div className="cart__wallet-col cart__wallet-col--right">
+              <div className={`cart__label${affordable ? '' : ' cart__label--danger'}`}>
                 Depois da compra
               </div>
               <PriceBadges totalCp={Math.max(0, walletCp - totalCp)} />
             </div>
           </div>
-          <div className="shop-summary__divider" />
+
           <button
             type="button"
-            className="shop-summary__buy"
-            style={{ opacity: affordable ? 1 : 0.45 }}
-            onClick={() => affordable && dispatch({ type: 'BUY_CART' })}
+            className="cart__buy"
+            disabled={!affordable}
+            onClick={() => {
+              dispatch({ type: 'BUY_CART' })
+              setCartOpen(false)
+            }}
             aria-label={`Comprar ${plural(itemCount, 'item', 'itens')}`}
           >
-            <span className="shop-summary__buy-label">Comprar {plural(itemCount, 'item', 'itens')}</span>
+            <span className="cart__buy-label">Comprar {plural(itemCount, 'item', 'itens')}</span>
             <PriceBadges totalCp={totalCp} />
           </button>
-        </div>
+        </Sheet>
       ) : null}
     </>
   )
