@@ -203,19 +203,20 @@ function InventoryItem({
       ) : null}
 
       {menuOpen ? (
-        <div className="item__menu" role="group" aria-label={`Mais ações de ${item.name}`}>
+        <div className="item__menu" role="menu" aria-label={`Mais ações de ${item.name}`}>
           {qty > 0 && canSend ? (
-            <button type="button" className="item__menu-item" onClick={onSend}>
+            <button type="button" role="menuitem" className="item__menu-item" onClick={onSend}>
               Enviar
             </button>
           ) : null}
           {qty > 0 && !custom ? (
-            <button type="button" className="item__menu-item" onClick={onSell}>
+            <button type="button" role="menuitem" className="item__menu-item" onClick={onSell}>
               Vender
             </button>
           ) : null}
           <button
             type="button"
+            role="menuitem"
             className="item__menu-item"
             onClick={() => {
               setDraft(item.name)
@@ -227,6 +228,7 @@ function InventoryItem({
           {savedNote ? null : (
             <button
               type="button"
+              role="menuitem"
               className="item__menu-item"
               onClick={() => {
                 setNoteOpen(true)
@@ -237,7 +239,7 @@ function InventoryItem({
             </button>
           )}
           {custom ? (
-            <button type="button" className="item__menu-item" onClick={onEdit}>
+            <button type="button" role="menuitem" className="item__menu-item" onClick={onEdit}>
               Editar
             </button>
           ) : null}
