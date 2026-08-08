@@ -37,6 +37,26 @@
   min-width: 0;
 }
 
+/* Seta de voltar, nas telas que são filhas de outra (a Biblioteca, dentro do
+   Mestre). Mesmo desenho do "<" da tela cheia de edição de loja. */
+.app-header__back {
+  width: 26px;
+  height: 36px;
+  margin-left: -4px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-shrink: 0;
+}
+
+.app-header__chevron {
+  width: 9px;
+  height: 9px;
+  border-left: 1.8px solid var(--text);
+  border-bottom: 1.8px solid var(--text);
+  transform: rotate(45deg);
+}
+
 .app-header__title {
   font-size: 26px;
   font-weight: 700;
@@ -951,96 +971,95 @@
   white-space: nowrap;
 }
 
-/* ------------------------------------------------- faixa de personagens */
+/* --------------------------------------------------- trocar de personagem */
 
-/* Fica presa acima da barra de abas; some nas abas Biblioteca/Mestre.
-   Altura declarada (não deduzida do conteúdo) porque --dock-h conta com ela
-   para ancorar o flutuante e as folhas. */
-.char-switcher {
-  height: var(--switcher-h);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  overflow-x: auto;
-  padding: 0 12px;
-  background: var(--surface);
-  border-top: 1px solid var(--line);
-  scrollbar-width: none;
-}
-
-.char-switcher::-webkit-scrollbar {
-  display: none;
-}
-
-.char-switcher__item {
-  flex-shrink: 0;
-  width: 56px;
+/* Folha que o primeiro botão da barra abre. Substitui a faixa fixa que morava
+   acima das abas: a mesa inteira cabe aqui, com as moedas de cada um à vista. */
+.char-list {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
-.char-switcher__avatar {
+.char-list__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  background: var(--surface-sunken);
+}
+
+.char-list__row--on {
+  background: var(--accent-tint);
+}
+
+.char-list__avatar {
   width: 36px;
   height: 36px;
   border-radius: var(--r-pill);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 17px;
+  flex-shrink: 0;
+  font-size: 16px;
   font-weight: 700;
   background: var(--surface-muted);
   color: var(--text-muted);
 }
 
-.char-switcher__item--on .char-switcher__avatar {
+.char-list__row--on .char-list__avatar {
   background: var(--accent);
   color: #fff;
 }
 
-.char-switcher__name {
-  max-width: 100%;
-  font-size: 11px;
-  line-height: 13px;
+.char-list__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.char-list__name {
+  display: block;
+  font-size: 14.5px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.char-switcher__item--on .char-switcher__name {
-  font-weight: 700;
+.char-list__row--on .char-list__name {
   color: var(--accent-ink);
 }
 
 /* ------------------------------------------------------------ barra de abas */
 
-/* Faixa de personagens + barra de abas presas no rodapé.
-   Já não é "fixed" nem "sticky": é o último filho flex de .app, que tem a
-   altura exata da tela e não rola. Antes, com "fixed", a barra subia e
-   aparecia em dois níveis quando a barra de endereço do navegador aparecia
-   ou sumia ao rolar; agora a página nunca rola, então nada disso acontece e
-   o rodapé tem altura e posição fixas sempre. */
+/* Barra presa no rodapé. Já não é "fixed" nem "sticky": é o último filho flex
+   de .app, que tem a altura exata da tela e não rola. Antes, com "fixed", a
+   barra subia e aparecia em dois níveis quando a barra de endereço do
+   navegador aparecia ou sumia ao rolar; agora a página nunca rola, então nada
+   disso acontece e o rodapé tem altura e posição fixas sempre. */
 .dock {
   flex-shrink: 0;
   z-index: 20;
 }
 
-/* Altura declarada, pelo mesmo motivo da faixa de personagens: --dock-h. */
+/* Altura declarada, e não deduzida do conteúdo, porque é dela que --dock-h
+   tira a medida para ancorar o flutuante e as folhas. */
 .nav {
   height: calc(var(--nav-h) + env(safe-area-inset-bottom));
   display: flex;
   align-items: stretch;
-  padding: 0 8px env(safe-area-inset-bottom);
+  padding: 0 6px env(safe-area-inset-bottom);
   background: var(--surface);
   border-top: 1px solid var(--line);
 }
 
 .nav__tab {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1049,11 +1068,39 @@
   color: var(--text-inactive);
 }
 
+/* Berço de altura fixa: o ícone de 22 e a inicial de 36 do personagem ficam
+   no mesmo trilho, então os quatro rótulos saem alinhados. */
+.nav__icon {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Inicial do personagem que está jogando — sempre cheia, porque é identidade
+   e não estado de aba. */
+.nav__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  background: var(--accent);
+  color: #fff;
+}
+
 .nav__tab--on {
   color: var(--accent-ink);
 }
 
 .nav__label {
+  max-width: 100%;
   font-size: 11px;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

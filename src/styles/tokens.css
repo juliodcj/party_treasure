@@ -65,15 +65,11 @@
   --app-w: 360px;
 
   /* Altura da barra de abas (sem a área segura, somada à parte). */
-  --nav-h: 66px;
+  --nav-h: 74px;
 
-  /* Altura da faixa de personagens acima da barra de abas (só Inventário/Loja) */
-  --switcher-h: 66px;
-
-  /* Altura total do rodapé preso embaixo. Fica exata porque .nav e
-     .char-switcher têm altura declarada — é ela que ancora o flutuante e as
-     folhas, então não pode ser um chute. A aba com faixa de personagens
-     redefine este token (ver .app--switcher). */
+  /* Altura total do rodapé preso embaixo. Fica exata porque .nav tem altura
+     declarada — é ela que ancora o flutuante e as folhas, então não pode ser
+     um chute. */
   --dock-h: calc(var(--nav-h) + env(safe-area-inset-bottom));
 
   /* Respiro embaixo da lista para o botão flutuante não cobrir o último item */

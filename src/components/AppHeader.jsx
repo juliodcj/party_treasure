@@ -5,15 +5,33 @@ import { PaperPlaneIcon } from './Icons.jsx'
  * junto com a lista.
  *
  * O conteúdo é montado em faixas empilhadas. A primeira é sempre a do título
- * (com um canto à direita para ações, como a engrenagem do Mestre); as demais
- * cada aba escolhe e passa como `children`, na ordem em que devem aparecer —
- * bolsa, contagem, busca. Fixar mais uma coisa amanhã é só passar mais um
- * filho, sem mexer no cabeçalho nem nas outras abas.
+ * (com um canto à esquerda para voltar, quando a tela é filha de outra, e um
+ * à direita para ações, como a engrenagem do Mestre); as demais cada aba
+ * escolhe e passa como `children`, na ordem em que devem aparecer — bolsa,
+ * contagem, busca. Fixar mais uma coisa amanhã é só passar mais um filho, sem
+ * mexer no cabeçalho nem nas outras abas.
  */
-export default function AppHeader({ title, titleContent = null, actions = null, children }) {
+export default function AppHeader({
+  title,
+  titleContent = null,
+  onBack = null,
+  actions = null,
+  children,
+}) {
   return (
     <header className="app-header">
       <div className="app-header__row">
+        {onBack ? (
+          <button
+            type="button"
+            className="app-header__back"
+            onClick={onBack}
+            aria-label="Voltar"
+            title="Voltar"
+          >
+            <span className="app-header__chevron" aria-hidden="true" />
+          </button>
+        ) : null}
         <div className="app-header__title-slot">
           {titleContent ?? <h1 className="app-header__title">{title}</h1>}
         </div>

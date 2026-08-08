@@ -76,12 +76,6 @@ textarea {
   overflow: hidden;
 }
 
-/* A faixa de personagens engorda o rodapé; o token acompanha, e com ele o
-   flutuante e as folhas ancoradas logo acima da barra de abas. */
-.app--switcher {
-  --dock-h: calc(var(--nav-h) + var(--switcher-h) + env(safe-area-inset-bottom));
-}
-
 .app__scroll {
   flex: 1;
   min-height: 0;
