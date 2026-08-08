@@ -102,6 +102,17 @@ export default function GmScreen({ onOpenLibrary }) {
 function LibrarySection({ onOpen }) {
   const { state } = useStore()
 
+  // Mesmo filtro de conteúdo que a Biblioteca de verdade aplica — senão o
+  // número aqui não bate com o que a lista mostra ao abrir.
+  const campaignCount = useMemo(
+    () => state.campaignItems.filter((item) => matchesContent(item, state.settings)).length,
+    [state.campaignItems, state.settings],
+  )
+  const officialCount = useMemo(
+    () => CATALOG.filter((item) => matchesContent(item, state.settings)).length,
+    [state.settings],
+  )
+
   return (
     <section className="list-group">
       <h2 className="label list-group__title">Biblioteca</h2>
@@ -111,7 +122,7 @@ function LibrarySection({ onOpen }) {
           <div className="gm__grow">
             <div className="folder__name">Catálogo de itens</div>
             <div className="folder__count">
-              {state.campaignItems.length} da campanha · {CATALOG.length} oficiais
+              {campaignCount} da campanha · {officialCount} oficiais
             </div>
           </div>
           <span className="icon-btn icon-btn--ghost">
