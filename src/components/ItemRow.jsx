@@ -1,4 +1,4 @@
-import { PriceBadges } from './Coins.jsx'
+import { Price } from './Coins.jsx'
 import TraitList from './TraitList.jsx'
 import { ChevronRight } from './Icons.jsx'
 import { categoryLabel } from '../data/catalog.js'
@@ -71,7 +71,7 @@ function StatTable({ fields }) {
     <dl className="stat-table">
       {rows.map(([label, value]) => (
         <div className="stat-table__cell" key={label}>
-          <dt className="stat-table__label">{label}</dt>
+          <dt className="field-label stat-table__label">{label}</dt>
           <dd className="stat-table__value">{value}</dd>
         </div>
       ))}
@@ -112,11 +112,18 @@ export default function ItemRow({
 
         {qty > 0 ? <span className="item__qty">{qty}</span> : null}
 
-        {priceInHead ? <PriceBadges totalCp={item.priceCp} /> : null}
+        {priceInHead ? <Price totalCp={item.priceCp} /> : null}
 
         {cart ? <div className="item__cart">{cart}</div> : null}
 
-        <button type="button" onClick={onToggle} aria-label={open ? 'Fechar item' : 'Abrir item'}>
+        {/* O alvo é o botão, não o desenho: antes a área clicável era o próprio
+            SVG de 7×12px, ao lado de botões-ícone de 28. */}
+        <button
+          type="button"
+          className="icon-btn icon-btn--ghost"
+          onClick={onToggle}
+          aria-label={open ? 'Fechar item' : 'Abrir item'}
+        >
           <ChevronRight open={open} />
         </button>
       </div>
@@ -130,8 +137,8 @@ export default function ItemRow({
               {formatBulk(parseBulk(item.bulk))}
             </span>
             {priceInBody ? (
-              <span className="coin-badges">
-                <PriceBadges totalCp={item.priceCp} size="lg" />
+              <span className="coins coins--lg">
+                <Price totalCp={item.priceCp} size="lg" />
                 <span className="item__unit">/un</span>
               </span>
             ) : null}
@@ -150,7 +157,7 @@ export default function ItemRow({
               dangerouslySetInnerHTML={{ __html: descriptionHtml }}
             />
           ) : (
-            <p className="item__desc" style={{ whiteSpace: 'pre-line' }}>
+            <p className="item__desc item__desc--plain">
               {item.description || 'Sem descrição.'}
             </p>
           )}

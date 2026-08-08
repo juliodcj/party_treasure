@@ -1,4 +1,5 @@
 import Sheet from './Sheet.jsx'
+import Coins from './Coins.jsx'
 import { useStore } from '../state/store.jsx'
 
 /** Primeira letra do nome, o mesmo desenho do botão na barra de abas. */
@@ -35,18 +36,13 @@ export default function CharacterPicker({ activeId, onClose }) {
               </span>
               <span className="char-list__body">
                 <span className="char-list__name">{player.name}</span>
-                <span className="gm__coins">
-                  {[
-                    ['gold', player.gold],
-                    ['silver', player.silver],
-                    ['copper', player.copper],
-                  ].map(([coin, value]) => (
-                    <span className="gm__coin" key={coin}>
-                      <span className="gm__coin-value">{value}</span>
-                      <span className={`coin-dot coin-dot--${coin}`} />
-                    </span>
-                  ))}
-                </span>
+                <Coins
+                  gold={player.gold}
+                  silver={player.silver}
+                  copper={player.copper}
+                  size="sm"
+                  showZeros
+                />
               </span>
             </button>
           )

@@ -57,7 +57,7 @@ export default function InventoryScreen({ player, filters, openId, onToggle }) {
       {CATEGORY_ORDER.map((id) =>
         grouped[id].length ? (
           <section className="list-group" key={id}>
-            <h2 className="list-group__title">{categoryLabel(id)}</h2>
+            <h2 className="label list-group__title">{categoryLabel(id)}</h2>
             <div className="list-rows">
               {grouped[id].map(({ item, qty }) => (
                 <InventoryItem
@@ -106,11 +106,9 @@ export default function InventoryScreen({ player, filters, openId, onToggle }) {
             Deseja vender {selling.qty}x {selling.item.name} por{' '}
             {formatCopper(Math.floor(selling.item.priceCp * SELL_RATE) * selling.qty)}?
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+          <div className="sheet__center-row">
             <Stepper
-              size={34}
-              gap={18}
-              valueSize={18}
+              size="lg"
               value={selling.qty}
               canDec={selling.qty > 1}
               canInc={selling.qty < selling.owned}
@@ -220,9 +218,11 @@ function InventoryItem({
 
       <div className="item__foot">
         <div className="item__tools">
+          {/* Excluir é a única ação da linha que não dá para desfazer: é a
+              única em vermelho. Editar, enviar e vender continuam azuis. */}
           <button
             type="button"
-            className="icon-btn icon-btn--accent"
+            className="icon-btn icon-btn--danger"
             title="Excluir"
             aria-label={`Excluir ${item.name}`}
             onClick={onDelete}
@@ -317,11 +317,11 @@ function InventoryItem({
             aria-label={`Novo nome de ${item.name}`}
             autoFocus
           />
-          <button type="button" className="btn btn--neutral" onClick={() => setRenaming(false)}>
-            Cancelar
-          </button>
           <button type="button" className="btn btn--solid" disabled={!draft.trim()} onClick={rename}>
             Salvar
+          </button>
+          <button type="button" className="btn btn--neutral" onClick={() => setRenaming(false)}>
+            Cancelar
           </button>
         </div>
       ) : null}
@@ -348,8 +348,7 @@ function ItemNote({ player, item, autoEdit = false }) {
   if (editing) {
     return (
       <textarea
-        className="textarea"
-        style={{ marginTop: 10, minHeight: 60 }}
+        className="textarea item-note__field"
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={save}
@@ -363,14 +362,14 @@ function ItemNote({ player, item, autoEdit = false }) {
   if (saved) {
     return (
       <button type="button" className="item-note" onClick={() => setEditing(true)}>
-        <EditIcon />
+        <EditIcon size={14} />
         {saved}
       </button>
     )
   }
 
   return (
-    <button type="button" className="link" style={{ marginTop: 10 }} onClick={() => setEditing(true)}>
+    <button type="button" className="link item-note__add" onClick={() => setEditing(true)}>
       + Observação
     </button>
   )
@@ -417,28 +416,21 @@ function AddItemSheet({ player, onClose }) {
         />
       ) : (
         <>
-          <div style={{ marginBottom: 10 }}>
-            <SearchBox
-              sunken
-              small
-              value={search}
-              onChange={setSearch}
-              placeholder="Buscar na biblioteca..."
-            />
+          <div className="sheet__search">
+            <SearchBox sunken value={search} onChange={setSearch} placeholder="Buscar na biblioteca..." />
           </div>
-          <div style={{ overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <div className="gm__scroll">
             {rows.map((item) => (
-              <div className="gm__row" key={item.id} style={{ padding: '6px 2px' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13.5 }}>{item.name}</div>
-                  <div style={{ fontSize: 11.5, color: 'var(--text-faint)', marginTop: 1 }}>
+              <div className="gm__row" key={item.id}>
+                <div className="gm__grow">
+                  <div className="gm__row-name">{item.name}</div>
+                  <div className="gm__row-sub">
                     Nv {item.level} · {formatCopper(item.priceCp)}
                   </div>
                 </div>
                 <button
                   type="button"
-                  className="btn btn--solid"
-                  style={{ fontSize: 11.5, padding: '6px 11px', borderRadius: 7 }}
+                  className="btn btn--tint"
                   onClick={() =>
                     dispatch({ type: 'GIVE_ITEM', playerId: player.id, itemId: item.id, qty: 1 })
                   }
@@ -447,7 +439,9 @@ function AddItemSheet({ player, onClose }) {
                 </button>
               </div>
             ))}
-            {rows.length === 0 ? <div className="empty">Nenhum item encontrado.</div> : null}
+            {rows.length === 0 ? (
+              <div className="empty empty--inline">Nenhum item encontrado.</div>
+            ) : null}
           </div>
         </>
       )}
@@ -467,8 +461,7 @@ function SendItemSheet({ player, entry, onClose }) {
       <div className="sheet__question">Enviar {entry.item.name} para quem?</div>
 
       <select
-        className="input"
-        style={{ marginTop: 14 }}
+        className="input sheet__field"
         value={targetId}
         onChange={(event) => setTargetId(event.target.value)}
         aria-label="Para quem enviar"
@@ -480,11 +473,9 @@ function SendItemSheet({ player, entry, onClose }) {
         ))}
       </select>
 
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+      <div className="sheet__center-row">
         <Stepper
-          size={34}
-          gap={18}
-          valueSize={18}
+          size="lg"
           value={qty}
           canDec={qty > 1}
           canInc={qty < entry.owned}

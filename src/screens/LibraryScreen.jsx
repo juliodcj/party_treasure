@@ -36,7 +36,7 @@ export default function LibraryScreen({ filters, openId, onToggle }) {
     <>
       {campaign.length ? (
         <section className="list-group">
-          <h2 className="list-group__title">Itens da Campanha</h2>
+          <h2 className="label list-group__title">Itens da Campanha</h2>
           <div className="list-rows">
             {campaign.map((item) => (
               <ItemRow
@@ -46,25 +46,27 @@ export default function LibraryScreen({ filters, openId, onToggle }) {
                 open={openId === item.id}
                 onToggle={() => onToggle(item.id)}
               >
-                <div className="item__tools" style={{ marginTop: 12 }}>
-                  <button
-                    type="button"
-                    className="icon-btn icon-btn--accent"
-                    title="Excluir"
-                    aria-label={`Excluir ${item.name}`}
-                    onClick={() => setDeleting(item)}
-                  >
-                    <TrashIcon />
-                  </button>
-                  <button
-                    type="button"
-                    className="icon-btn icon-btn--accent"
-                    title="Editar"
-                    aria-label={`Editar ${item.name}`}
-                    onClick={() => setEditing(item)}
-                  >
-                    <EditIcon />
-                  </button>
+                <div className="item__foot">
+                  <div className="item__tools">
+                    <button
+                      type="button"
+                      className="icon-btn icon-btn--danger"
+                      title="Excluir"
+                      aria-label={`Excluir ${item.name}`}
+                      onClick={() => setDeleting(item)}
+                    >
+                      <TrashIcon />
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-btn icon-btn--accent"
+                      title="Editar"
+                      aria-label={`Editar ${item.name}`}
+                      onClick={() => setEditing(item)}
+                    >
+                      <EditIcon />
+                    </button>
+                  </div>
                 </div>
               </ItemRow>
             ))}
@@ -73,7 +75,7 @@ export default function LibraryScreen({ filters, openId, onToggle }) {
       ) : null}
 
       <section className="list-group">
-        <h2 className="list-group__title">Itens Oficiais</h2>
+        <h2 className="label list-group__title">Itens Oficiais</h2>
         {folders.length === 0 ? <div className="empty">Nenhum item encontrado.</div> : null}
         <div className="list-rows">
           {folders.map((folder) => {
@@ -86,15 +88,15 @@ export default function LibraryScreen({ filters, openId, onToggle }) {
                   onClick={() => setOpenFolder(isOpen ? null : folder.id)}
                   aria-expanded={isOpen}
                 >
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    <span className="folder__name" style={{ display: 'block' }}>
-                      {folder.label}
-                    </span>
-                    <span className="folder__count" style={{ display: 'block' }}>
+                  <span className="gm__grow">
+                    <span className="folder__name">{folder.label}</span>
+                    <span className="folder__count">
                       {plural(folder.items.length, 'item', 'itens')}
                     </span>
                   </span>
-                  <ChevronRight open={isOpen} />
+                  <span className="icon-btn icon-btn--ghost">
+                    <ChevronRight open={isOpen} />
+                  </span>
                 </button>
                 {isOpen ? (
                   <div className="folder__body">
@@ -204,14 +206,13 @@ function ImportPanel({ onClose }) {
 
   return (
     <>
-      <p style={{ fontSize: 12.5, color: 'var(--text-soft)', marginBottom: 8, lineHeight: 1.4 }}>
+      <p className="import__hint">
         Cole o conteúdo de um arquivo de <code>packs/pf2e/equipment</code>. Aceita um item, uma
         lista, ou um item por linha.
       </p>
 
       <textarea
-        className="textarea"
-        style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12, marginBottom: 10 }}
+        className="textarea import__field"
         placeholder='{ "name": "Steel Shield", "type": "shield", "system": { … } }'
         value={text}
         onChange={(event) => {
@@ -230,19 +231,19 @@ function ImportPanel({ onClose }) {
       </button>
 
       {result ? (
-        <div style={{ marginTop: 10 }}>
+        <div className="import__result">
           {result.errors.map((error, index) => (
-            <div key={index} style={{ fontSize: 12.5, color: 'var(--danger)', marginBottom: 6 }}>
+            <p className="form-error" key={index}>
               {error}
-            </div>
+            </p>
           ))}
 
           {result.items.length ? (
             <>
-              <div style={{ fontSize: 12.5, color: 'var(--text-soft)', marginBottom: 8 }}>
+              <p className="import__hint">
                 {plural(result.items.length, 'item pronto', 'itens prontos')} para entrar na
                 biblioteca:
-              </div>
+              </p>
               {result.items.map((item) => (
                 <div className="gm__row" key={item.id}>
                   <span className="gm__row-name">{item.name}</span>

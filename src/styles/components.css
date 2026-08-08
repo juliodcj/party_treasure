@@ -1,10 +1,38 @@
-/* ------------------------------------------------------------------- botões */
+/* ---------------------------------------------------------------- etiquetas
+
+   Duas, e só duas. Antes eram seis variações do mesmo papel, com quatro
+   tamanhos, três cinzas e três espacejamentos diferentes. */
+
+/* Sobrancelha: rotula a faixa ou o bloco que vem abaixo ("WEAPON", "JOGADORES",
+   "BOLSA DE VALEROS", "CARTEIRA"). É a única etiqueta em caixa alta do
+   aplicativo. */
+.label {
+  font-size: var(--t-label);
+  font-weight: 700;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+/* Rótulo de campo em formulário ("Valor", "Damage", "Para qual personagem?").
+   Mesma família, sem caixa alta: fica colado no campo e não separa seções. */
+.field-label {
+  font-size: var(--t-meta);
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+/* ------------------------------------------------------------------- botões
+
+   Duas alturas. A pequena é pílula de 32px, a mesma forma do "Comprar" da Loja
+   e do stepper — é o botão que mora dentro de uma linha. A larga é de 44px, o
+   alvo de toque cheio, e é a dos diálogos e rodapés. */
 
 .btn {
-  font-size: 12px;
+  font-size: var(--t-sm);
   font-weight: 700;
-  padding: 8px 10px;
-  border-radius: var(--r-sm);
+  padding: 7px 14px;
+  border-radius: var(--r-pill);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -21,7 +49,7 @@
 
 .btn--neutral {
   color: var(--text);
-  background: var(--surface-button);
+  background: var(--surface-raised);
 }
 
 .btn--danger {
@@ -29,44 +57,81 @@
   background: var(--danger);
 }
 
+/* Metade de um par de ações: divide a linha com o irmão. */
 .btn--wide {
   flex: 1;
   text-align: center;
-  font-size: 14px;
-  padding: 11px;
+  font-size: var(--t-body);
+  padding: 12px;
   border-radius: var(--r-md);
 }
 
+/* Ação única ocupando a linha inteira. */
 .btn--block {
   width: 100%;
   text-align: center;
-  font-size: 13px;
-  padding: 9px;
+  font-size: var(--t-body);
+  padding: 12px;
+  border-radius: var(--r-md);
 }
 
 .btn:disabled {
-  opacity: 0.4;
+  opacity: var(--disabled);
+}
+
+/* Par de ações. Confirmar vem primeiro — é a ordem de leitura, e a ação que a
+   pessoa veio fazer não deve ficar depois da saída. Vale para todo aceitar/
+   cancelar do aplicativo: diálogo, painel do Mestre, rodapé de tela cheia. */
+.actions {
+  display: flex;
+  gap: 10px;
 }
 
 /* Link de ação: "+ Novo jogador" */
 .link {
-  font-size: 12.5px;
+  font-size: var(--t-meta);
   font-weight: 700;
   color: var(--accent-ink);
   white-space: nowrap;
 }
 
 .link--muted {
-  font-size: 12px;
   font-weight: 600;
-  color: var(--text-faint);
+  color: var(--text-2);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
-/* ------------------------------------------------------------ passo redondo */
+/* ------------------------------------------------------------------ stepper
+
+   Um só desenho, em dois tamanhos: o "−" cinza e o "+" azul dentro de uma
+   pílula tingida. Antes eram quatro tamanhos e duas molduras — só a Loja tinha
+   a pílula, e mudar quantidade parecia uma coisa diferente em cada aba. */
+
+.stepper {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  background: var(--accent-tint);
+  border-radius: var(--r-pill);
+  padding: 4px;
+}
+
+/* Dentro de uma linha de lista. */
+.stepper--sm {
+  --step: 24px;
+  gap: 6px;
+}
+
+/* Dentro de um diálogo, onde a quantidade é a decisão principal da tela. */
+.stepper--lg {
+  --step: 32px;
+  gap: 10px;
+}
 
 .step {
+  width: var(--step);
+  height: var(--step);
   border-radius: var(--r-pill);
   display: flex;
   align-items: center;
@@ -74,22 +139,23 @@
   flex-shrink: 0;
 }
 
+/* O glifo acompanha o botão em proporção, sem tamanho calculado no JavaScript. */
+.step svg {
+  width: 42%;
+  height: auto;
+}
+
 .step--minus {
-  background: var(--surface-button);
+  background: var(--surface-raised);
 }
 
 .step--plus {
   background: var(--accent);
+  color: #fff;
 }
 
 .step:disabled {
-  opacity: 0.35;
-}
-
-.stepper {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
+  opacity: var(--disabled);
 }
 
 .stepper__value {
@@ -99,32 +165,66 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* --------------------------------------------------------------- pílulas */
-
-.chip {
-  flex-shrink: 0;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 7px 14px;
-  border-radius: var(--r-pill);
-  white-space: nowrap;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--line-field);
+.stepper--sm .stepper__value {
+  font-size: var(--t-sm);
+  min-width: 16px;
 }
 
-.chip--on {
+.stepper--lg .stepper__value {
+  font-size: var(--t-lg);
+  min-width: 20px;
+}
+
+/* --------------------------------------------------------------- opções
+
+   Duas formas: pílula para escolha solta (nível, conteúdo) e retângulo de
+   raio --r-sm para escolha em grade ou lista (aba, destinatário). As duas
+   compartilham tipo e estado ligado. */
+
+.chip,
+.seg__tab,
+.target-row {
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.chip--on,
+.seg__tab--on,
+.target-row--on {
   color: #fff;
   background: var(--accent);
   border-color: var(--accent);
 }
 
+.chip {
+  padding: 7px 14px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  border: 1px solid var(--line-field);
+}
+
 .chip--sm {
-  font-size: 12px;
-  font-weight: 700;
   padding: 5px 3px;
   min-width: 30px;
   text-align: center;
+}
+
+.seg {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+
+.seg__tab {
+  flex: 1;
+  text-align: center;
+  padding: 9px 8px;
+  border-radius: var(--r-sm);
+  background: var(--surface-raised);
 }
 
 /* Lista vertical de personagens clicáveis, para escolher o destino de um envio */
@@ -139,40 +239,19 @@
   display: block;
   width: 100%;
   text-align: left;
-  padding: 10px 12px;
-  border-radius: var(--r-md);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
+  white-space: normal;
+  padding: 11px 12px;
+  border-radius: var(--r-sm);
   background: var(--surface);
   border: 1px solid var(--line-input);
 }
 
-.target-row--on {
-  color: #fff;
-  background: var(--accent);
-  border-color: var(--accent);
-}
-
-.chips {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding: 0 16px 10px;
-  flex-shrink: 0;
-  scrollbar-width: none;
-}
-
-.chips::-webkit-scrollbar {
-  display: none;
-}
-
 /* Traço clicável */
 .trait {
-  font-size: 12px;
+  font-size: var(--t-meta);
   font-weight: 600;
-  color: rgba(60, 60, 67, 0.7);
-  background: var(--surface-muted);
+  color: var(--text-2);
+  background: var(--surface-raised);
   padding: 4px 10px;
   border-radius: var(--r-pill);
 }
@@ -184,31 +263,60 @@
   margin-top: 8px;
 }
 
-/* ------------------------------------------------------------------ moedas */
+/* ------------------------------------------------------------------ moedas
 
-.coin-badges {
+   Um desenho só: o número em tinta cheia e o pontinho da denominação ao lado.
+   Antes eram três marcações à mão, com três tamanhos de ponto e três esquemas
+   de cor para o mesmo dado. */
+
+.coins {
   display: flex;
   align-items: center;
-  gap: 7px;
   flex-shrink: 0;
 }
 
-.coin-badge {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.coins--sm {
+  --dot: 7px;
+  gap: 8px;
 }
 
-.coin-badge__amount {
-  font-size: 13.5px;
+.coins--md {
+  --dot: 8px;
+  gap: 7px;
+}
+
+.coins--lg {
+  --dot: 10px;
+  gap: 10px;
+}
+
+.coin {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.coin__amount {
   font-weight: 600;
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 
+.coins--sm .coin__amount {
+  font-size: var(--t-meta);
+}
+
+.coins--md .coin__amount {
+  font-size: var(--t-sm);
+}
+
+.coins--lg .coin__amount {
+  font-size: var(--t-body);
+}
+
 .coin-dot {
-  width: 8px;
-  height: 8px;
+  width: var(--dot, 8px);
+  height: var(--dot, 8px);
   border-radius: var(--r-pill);
   flex-shrink: 0;
 }
@@ -231,15 +339,19 @@
   gap: 8px;
   background: var(--surface);
   border: 1px solid var(--line-field);
-  border-radius: var(--r-lg);
+  border-radius: var(--r-md);
   padding: 8px 12px;
+  /* A lupa herda daqui; o texto digitado repõe --text logo abaixo. */
+  color: var(--text-2);
 }
 
 .search--sunken {
-  background: var(--surface-field);
-  border: 0;
-  border-radius: var(--r-md);
-  padding: 8px 10px;
+  background: var(--surface-sunken);
+  border-color: transparent;
+}
+
+.search > svg {
+  flex-shrink: 0;
 }
 
 .search__input {
@@ -247,45 +359,35 @@
   outline: none;
   flex: 1;
   min-width: 0;
-  font-size: 14.5px;
+  font-size: var(--t-body);
   color: var(--text);
   background: transparent;
-}
-
-.search--sunken .search__input {
-  font-size: 13px;
 }
 
 .select {
   flex: 1;
   min-width: 0;
-  font-size: 13px;
+  font-size: var(--t-sm);
   font-weight: 600;
   color: var(--text);
   background: var(--surface);
   border: 1px solid var(--line-field);
-  border-radius: var(--r-md);
-  padding: 8px 10px;
-}
-
-.select--sm {
-  font-size: 12px;
-  padding: 6px 8px;
   border-radius: var(--r-sm);
+  padding: 9px 10px;
 }
 
 .input {
   width: 100%;
   border: 1px solid var(--line-input);
   border-radius: var(--r-md);
-  padding: 9px 12px;
-  font-size: 14px;
+  padding: 10px 12px;
+  font-size: var(--t-body);
   background: var(--surface);
 }
 
 .input--sm {
-  padding: 7px 10px;
-  font-size: 13px;
+  padding: 8px 10px;
+  font-size: var(--t-sm);
   border-radius: var(--r-sm);
 }
 
@@ -293,8 +395,9 @@
   width: 100%;
   border: 1px solid var(--line-input);
   border-radius: var(--r-md);
-  padding: 9px 12px;
-  font-size: 14px;
+  padding: 10px 12px;
+  font-size: var(--t-body);
+  line-height: var(--lh-text);
   min-height: 90px;
   resize: none;
   background: var(--surface);
@@ -302,7 +405,7 @@
 
 /* Nome editável em linha (jogador, loja) */
 .inline-input {
-  font-size: 15px;
+  font-size: var(--t-body);
   font-weight: 600;
   color: var(--text);
   border: none;
@@ -320,18 +423,37 @@
   align-items: center;
   gap: 5px;
   min-width: 0;
+  --dot: 10px;
 }
 
-.coin-dot--lg {
-  width: 10px;
-  height: 10px;
+.coin-fields {
+  display: flex;
+  gap: 8px;
+}
+
+/* Formulário: o respiro entre campos é do contêiner, não margem de cada um —
+   assim nenhum campo precisa saber quem vem antes ou depois dele. */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form__row {
+  display: flex;
+  gap: 8px;
+}
+
+.form__row > * {
+  flex: 1;
+  min-width: 0;
 }
 
 /* Caixa de seleção da prateleira da loja */
 .checkbox {
-  width: 18px;
-  height: 18px;
-  border-radius: 5px;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-sm);
   border: 1.5px solid var(--line-check);
   display: flex;
   align-items: center;
@@ -342,6 +464,41 @@
 .checkbox--on {
   border-color: var(--accent);
   background: var(--accent);
+  color: #fff;
+}
+
+/* -------------------------------------------------------------- botão-ícone
+
+   Dois tamanhos, os dois com alvo maior que o desenho. A variante destrutiva
+   é a de excluir — a única ação que não dá para desfazer. */
+
+.icon-btn {
+  width: var(--tap-sm);
+  height: var(--tap-sm);
+  border-radius: var(--r-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon-btn--accent {
+  background: var(--accent-tint);
+  color: var(--accent-ink);
+}
+
+.icon-btn--danger {
+  background: var(--danger-tint);
+  color: var(--danger-ink);
+}
+
+.icon-btn--ghost {
+  color: var(--ornament);
+}
+
+.icon-btn:disabled {
+  opacity: var(--disabled);
+  cursor: not-allowed;
 }
 
 /* ------------------------------------------------------------------- modal */
@@ -362,7 +519,7 @@
   right: 16px;
   z-index: 41;
   background: var(--surface);
-  border-radius: var(--r-2xl);
+  border-radius: var(--r-lg);
   padding: 16px;
   box-shadow: var(--shadow-modal);
   display: flex;
@@ -386,17 +543,18 @@
 }
 
 .sheet__title {
-  font-size: 15px;
+  font-size: var(--t-lg);
   font-weight: 700;
   color: var(--text);
+  line-height: var(--lh-snug);
   margin-bottom: 10px;
 }
 
 .sheet__question {
-  font-size: 15px;
+  font-size: var(--t-body);
   font-weight: 600;
   color: var(--text);
-  line-height: 1.4;
+  line-height: var(--lh-snug);
 }
 
 .sheet__actions {
@@ -406,10 +564,40 @@
 }
 
 .sheet__body {
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: var(--t-body);
+  line-height: var(--lh-text);
   color: var(--text-body);
   margin-top: 8px;
+}
+
+/* Aviso de erro dentro de um formulário ("Saldo insuficiente"). */
+.form-error {
+  font-size: var(--t-meta);
+  line-height: var(--lh-text);
+  color: var(--danger-ink);
+  margin-top: 8px;
+}
+
+/* Rótulo que apresenta o bloco logo abaixo dentro de uma folha. */
+.send-money__label {
+  margin: 14px 0 8px;
+}
+
+/* Campo solto dentro de um diálogo, abaixo da pergunta. */
+.sheet__field {
+  margin-top: 14px;
+}
+
+/* Controle centralizado dentro de um diálogo — o stepper de vender/enviar. */
+.sheet__center-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+/* Busca no topo de uma folha, antes da lista que ela filtra. */
+.sheet__search {
+  margin-bottom: 10px;
 }
 
 /* Tela cheia por cima de tudo (cadastro/edição de loja), acima do .sheet */
@@ -432,8 +620,8 @@
 }
 
 .screen-modal__back {
-  width: 30px;
-  height: 30px;
+  width: var(--tap-md);
+  height: var(--tap-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -449,7 +637,7 @@
 }
 
 .screen-modal__title {
-  font-size: 16px;
+  font-size: var(--t-lg);
   font-weight: 700;
   color: var(--text);
 }
@@ -464,9 +652,13 @@
 }
 
 .screen-modal__count {
-  font-size: 12.5px;
-  color: var(--text-soft);
+  font-size: var(--t-meta);
+  color: var(--text-2);
   margin-top: 8px;
+}
+
+.screen-modal__filters {
+  padding: 10px 0;
 }
 
 .screen-modal__list {
@@ -477,8 +669,8 @@
 }
 
 .screen-modal__more {
-  font-size: 12px;
-  color: var(--text-faint);
+  font-size: var(--t-meta);
+  color: var(--text-2);
   text-align: center;
   padding: 10px 4px 2px;
 }
@@ -489,30 +681,6 @@
   padding: 12px 16px calc(12px + var(--safe-b));
   border-top: 1px solid var(--line);
   flex-shrink: 0;
-}
-
-/* Abas dentro da folha "Adicionar item" */
-.seg {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 14px;
-  flex-shrink: 0;
-}
-
-.seg__tab {
-  flex: 1;
-  text-align: center;
-  font-size: 13px;
-  font-weight: 700;
-  padding: 8px;
-  border-radius: 9px;
-  color: var(--text);
-  background: var(--surface-muted);
-}
-
-.seg__tab--on {
-  color: #fff;
-  background: var(--accent);
 }
 
 /* ------------------------------------------------------- botão flutuante */
@@ -536,20 +704,10 @@
   box-shadow: var(--shadow-float);
 }
 
-.fab--wide {
-  width: auto;
-  height: auto;
-  gap: 8px;
-  padding: 12px 18px;
-  font-size: 14px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
 /* Carrinho da Loja: apagado enquanto não há nada dentro. */
 .fab--cart:disabled {
-  background: var(--surface-muted);
-  color: var(--text-inactive);
+  background: var(--surface-raised);
+  color: var(--text-3);
   box-shadow: var(--shadow-pill);
   cursor: default;
 }
@@ -566,14 +724,23 @@
   background: var(--surface);
   color: var(--accent-ink);
   border: 1.5px solid var(--accent);
-  font-size: 11px;
+  font-size: var(--t-label);
   font-weight: 700;
-  line-height: 17px;
-  text-align: center;
   font-variant-numeric: tabular-nums;
+  /* Centralizado por flex, e não por uma altura de linha calculada à mão que
+     saía do prumo assim que a fonte ou a borda mudasse. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .chevron {
   flex-shrink: 0;
   transition: transform 0.15s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
 }

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import Sheet, { SheetActions } from '../components/Sheet.jsx'
 import Stepper from '../components/Stepper.jsx'
+import Coins from '../components/Coins.jsx'
 import { CoinInputs } from '../components/ItemForm.jsx'
 import { EMPTY_FILTERS, FiltersBar } from '../components/ItemFilters.jsx'
 import { ChevronRight, EditIcon, TrashIcon } from '../components/Icons.jsx'
@@ -19,22 +20,71 @@ import {
 import { formatCopper } from '../lib/money.js'
 import { plural } from '../lib/text.js'
 
+/* Quais seções ficam abertas. Mora fora do componente porque a aba Mestre é
+   desmontada ao trocar de aba: guardado só no estado do React, fechar o
+   Histórico duraria até a primeira passada no Inventário. Também não vai para
+   o localStorage — é preferência da sessão, não dado da mesa, e tudo que entra
+   no store passa pelo histórico de "Reverter". */
+let openSections = { players: true, shops: true, history: true }
+
+/**
+ * Faixa de título que abre e fecha. A ação da direita ("+ Novo jogador",
+ * "Limpar") fica fora do botão de propósito — ver o comentário do CSS.
+ */
+function SectionHead({ title, count, open, onToggle, action = null }) {
+  return (
+    <h2 className="label list-group__title">
+      <button
+        type="button"
+        className="list-group__toggle"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-label={`${open ? 'Fechar' : 'Abrir'} ${title}`}
+      >
+        <ChevronRight open={open} />
+        <span>{title}</span>
+        {count != null ? <span className="list-group__count">{count}</span> : null}
+      </button>
+      {action}
+    </h2>
+  )
+}
+
 export default function GmScreen({ onOpenLibrary }) {
   // Uma única confirmação por vez, compartilhada entre jogadores e lojas.
   const [deleting, setDeleting] = useState(null) // { type: 'player' | 'shop', id, name }
   // undefined = fechada; null = criando loja nova; objeto = editando essa loja.
   const [shopEditor, setShopEditor] = useState(undefined)
+  const [sections, setSections] = useState(openSections)
+
+  // Espelha no módulo o que o React acabou de guardar, para a escolha
+  // atravessar a troca de aba.
+  const setSection = (id, value) => {
+    setSections((current) => {
+      openSections = { ...current, [id]: value }
+      return openSections
+    })
+  }
 
   return (
     <div className="gm">
       <LibrarySection onOpen={onOpenLibrary} />
-      <PlayersSection onRequestDelete={(id, name) => setDeleting({ type: 'player', id, name })} />
+      <PlayersSection
+        open={sections.players}
+        onOpenChange={(value) => setSection('players', value)}
+        onRequestDelete={(id, name) => setDeleting({ type: 'player', id, name })}
+      />
       <ShopsSection
+        open={sections.shops}
+        onOpenChange={(value) => setSection('shops', value)}
         onRequestDelete={(id, name) => setDeleting({ type: 'shop', id, name })}
         onCreateShop={() => setShopEditor(null)}
         onEditShop={(shop) => setShopEditor(shop)}
       />
-      <HistorySection />
+      <HistorySection
+        open={sections.history}
+        onOpenChange={(value) => setSection('history', value)}
+      />
 
       {deleting ? (
         <DeleteConfirmSheet target={deleting} onClose={() => setDeleting(null)} />
@@ -55,17 +105,19 @@ function LibrarySection({ onOpen }) {
 
   return (
     <section className="list-group">
-      <h2 className="list-group__title">Biblioteca</h2>
+      <h2 className="label list-group__title">Biblioteca</h2>
 
       <div className="list-rows">
         <button type="button" className="gm__card-head" onClick={onOpen}>
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="gm__grow">
             <div className="folder__name">Catálogo de itens</div>
             <div className="folder__count">
               {state.campaignItems.length} da campanha · {CATALOG.length} oficiais
             </div>
           </div>
-          <ChevronRight />
+          <span className="icon-btn icon-btn--ghost">
+            <ChevronRight />
+          </span>
         </button>
       </div>
     </section>
@@ -78,7 +130,7 @@ function formatHistoryTime(at) {
   return new Date(at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
 
-function HistorySection() {
+function HistorySection({ open, onOpenChange }) {
   const { state, dispatch } = useStore()
   const [confirming, setConfirming] = useState(null) // { entryId, label, count }
   const [clearing, setClearing] = useState(false)
@@ -88,45 +140,47 @@ function HistorySection() {
 
   return (
     <section className="list-group">
-      <h2 className="list-group__title">
-        <span>Histórico</span>
-        {total ? (
-          <button type="button" className="link link--muted" onClick={() => setClearing(true)}>
-            Limpar
-          </button>
-        ) : null}
-      </h2>
+      <SectionHead
+        title="Histórico"
+        count={total}
+        open={open}
+        onToggle={() => onOpenChange(!open)}
+        action={
+          total ? (
+            <button type="button" className="link link--muted" onClick={() => setClearing(true)}>
+              Limpar
+            </button>
+          ) : null
+        }
+      />
 
-      <div className="list-rows">
-        {entries.length === 0 ? (
-          <div className="empty" style={{ padding: '24px 16px' }}>
-            Nenhuma alteração recente.
-          </div>
-        ) : (
-          entries.map((entry, position) => {
-            const originalIndex = total - 1 - position
-            const count = total - originalIndex
-            return (
-              <div className="gm__row" key={entry.id} style={{ padding: '10px 16px' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13.5, color: 'var(--text)' }}>{entry.label}</div>
-                  <div style={{ fontSize: 11.5, color: 'var(--text-faint)', marginTop: 1 }}>
-                    {formatHistoryTime(entry.at)}
+      {open ? (
+        <div className="list-rows">
+          {entries.length === 0 ? (
+            <div className="empty empty--inline">Nenhuma alteração recente.</div>
+          ) : (
+            entries.map((entry, position) => {
+              const originalIndex = total - 1 - position
+              const count = total - originalIndex
+              return (
+                <div className="gm__row gm__row--list" key={entry.id}>
+                  <div className="gm__grow">
+                    <div className="gm__row-name">{entry.label}</div>
+                    <div className="gm__row-sub">{formatHistoryTime(entry.at)}</div>
                   </div>
+                  <button
+                    type="button"
+                    className="btn btn--neutral"
+                    onClick={() => setConfirming({ entryId: entry.id, label: entry.label, count })}
+                  >
+                    Reverter
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className="btn btn--neutral"
-                  style={{ fontSize: 12, padding: '6px 12px', flexShrink: 0 }}
-                  onClick={() => setConfirming({ entryId: entry.id, label: entry.label, count })}
-                >
-                  Reverter
-                </button>
-              </div>
-            )
-          })
-        )}
-      </div>
+              )
+            })
+          )}
+        </div>
+      ) : null}
 
       {confirming ? (
         <Sheet center onClose={() => setConfirming(null)}>
@@ -194,45 +248,59 @@ function DeleteConfirmSheet({ target, onClose }) {
 
 /* --------------------------------------------------------------- jogadores */
 
-function PlayersSection({ onRequestDelete }) {
+function PlayersSection({ open, onOpenChange, onRequestDelete }) {
   const { state, dispatch } = useStore()
   const [groupOpen, setGroupOpen] = useState(false)
 
   return (
     <section className="list-group">
-      <h2 className="list-group__title">
-        <span>Jogadores</span>
-        <button type="button" className="link" onClick={() => dispatch({ type: 'ADD_PLAYER' })}>
-          + Novo jogador
-        </button>
-      </h2>
+      <SectionHead
+        title="Jogadores"
+        count={state.players.length}
+        open={open}
+        onToggle={() => onOpenChange(!open)}
+        action={
+          <button
+            type="button"
+            className="link"
+            onClick={() => {
+              // Criar com a seção fechada esconderia o jogador recém-criado.
+              onOpenChange(true)
+              dispatch({ type: 'ADD_PLAYER' })
+            }}
+          >
+            + Novo jogador
+          </button>
+        }
+      />
 
-      <div className="list-rows">
-        <div>
-          <div className="gm__card-head">
-            <span style={{ flex: 1, fontSize: 13.5, color: 'var(--text-muted)' }}>
-              Dar moedas ao grupo (dividido igualmente)
-            </span>
-            <button
-              type="button"
-              className="btn btn--solid"
-              onClick={() => setGroupOpen((value) => !value)}
-            >
-              Distribuir
-            </button>
+      {open ? (
+        <div className="list-rows">
+          <div>
+            <div className="gm__card-head">
+              <span className="gm__hint">Dar moedas ao grupo (dividido igualmente)</span>
+              <button
+                type="button"
+                className="btn btn--tint"
+                aria-expanded={groupOpen}
+                onClick={() => setGroupOpen((value) => !value)}
+              >
+                Distribuir
+              </button>
+            </div>
+            {groupOpen ? <GroupGivePanel onDone={() => setGroupOpen(false)} /> : null}
           </div>
-          {groupOpen ? <GroupGivePanel onDone={() => setGroupOpen(false)} /> : null}
-        </div>
 
-        {state.players.map((player) => (
-          <PlayerCard
-            key={player.id}
-            player={player}
-            canDelete={state.players.length > 1}
-            onDelete={() => onRequestDelete(player.id, player.name)}
-          />
-        ))}
-      </div>
+          {state.players.map((player) => (
+            <PlayerCard
+              key={player.id}
+              player={player}
+              canDelete={state.players.length > 1}
+              onDelete={() => onRequestDelete(player.id, player.name)}
+            />
+          ))}
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -305,7 +373,7 @@ function PlayerCard({ player, canDelete, onDelete }) {
   return (
     <div>
       <div className="gm__card-head">
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="gm__grow">
           <input
             className="inline-input"
             value={player.name}
@@ -316,31 +384,40 @@ function PlayerCard({ player, canDelete, onDelete }) {
           />
           <button
             type="button"
-            className="gm__coins"
+            className="gm__wallet-btn"
             onClick={() => setEditingWallet(true)}
             aria-label={`Editar moedas de ${player.name}`}
           >
-            {[
-              ['gold', player.gold],
-              ['silver', player.silver],
-              ['copper', player.copper],
-            ].map(([coin, value]) => (
-              <span className="gm__coin" key={coin}>
-                <span className="gm__coin-value">{value}</span>
-                <span className={`coin-dot coin-dot--${coin}`} />
-              </span>
-            ))}
+            <Coins
+              gold={player.gold}
+              silver={player.silver}
+              copper={player.copper}
+              size="sm"
+              showZeros
+            />
           </button>
         </div>
-        <button type="button" className="btn btn--solid" onClick={() => openPanel('coins')}>
+        {/* "Dinheiro" e "Item" são ações irmãs: mesmo peso. O azul cheio fica
+            para quem fecha um fluxo, não para quem abre um painel. */}
+        <button
+          type="button"
+          className="btn btn--tint"
+          aria-expanded={panel === 'coins'}
+          onClick={() => openPanel('coins')}
+        >
           Dinheiro
         </button>
-        <button type="button" className="btn btn--tint" onClick={() => openPanel('items')}>
+        <button
+          type="button"
+          className="btn btn--tint"
+          aria-expanded={panel === 'items'}
+          onClick={() => openPanel('items')}
+        >
           Item
         </button>
         <button
           type="button"
-          className="icon-btn icon-btn--accent"
+          className="icon-btn icon-btn--danger"
           title={canDelete ? 'Excluir jogador' : 'Precisa haver ao menos um jogador'}
           aria-label={`Excluir ${player.name}`}
           disabled={!canDelete}
@@ -361,43 +438,31 @@ function PlayerCard({ player, canDelete, onDelete }) {
             onSilver={setSilver}
             onCopper={setCopper}
           />
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button
-              type="button"
-              className="btn btn--neutral btn--wide"
-              onClick={() => setPanel(null)}
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              className="btn btn--solid btn--wide"
-              onClick={() => {
-                dispatch({
-                  type: 'GIVE_COINS',
-                  playerId: player.id,
-                  coins: {
-                    gold: Number.parseInt(gold, 10) || 0,
-                    silver: Number.parseInt(silver, 10) || 0,
-                    copper: Number.parseInt(copper, 10) || 0,
-                  },
-                })
-                setGold('')
-                setSilver('')
-                setCopper('')
-                setPanel(null)
-              }}
-            >
-              Dar
-            </button>
-          </div>
+          <SheetActions
+            onCancel={() => setPanel(null)}
+            confirmLabel="Dar"
+            onConfirm={() => {
+              dispatch({
+                type: 'GIVE_COINS',
+                playerId: player.id,
+                coins: {
+                  gold: Number.parseInt(gold, 10) || 0,
+                  silver: Number.parseInt(silver, 10) || 0,
+                  copper: Number.parseInt(copper, 10) || 0,
+                },
+              })
+              setGold('')
+              setSilver('')
+              setCopper('')
+              setPanel(null)
+            }}
+          />
         </div>
       ) : null}
 
       {panel === 'items' ? (
         <div className="gm__panel">
           <FiltersBar
-            small
             filters={filters}
             onChange={setFilters}
             levels={availableLevels(catalog)}
@@ -413,39 +478,31 @@ function PlayerCard({ player, canDelete, onDelete }) {
                   <span className="gm__row-name">{item.name}</span>
                   <span className="item__level">Nv {item.level}</span>
                   <Stepper
-                    size={22}
                     value={qty}
                     canDec={qty > 0}
                     onDec={() => setDrafts({ ...drafts, [item.id]: qty - 1 })}
                     onInc={() => setDrafts({ ...drafts, [item.id]: qty + 1 })}
+                    label={`${item.name} para dar`}
                   />
                 </div>
               )
             })}
+            {rows.length === 0 ? (
+              <div className="empty empty--inline">Nenhum item encontrado.</div>
+            ) : null}
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button
-              type="button"
-              className="btn btn--neutral btn--wide"
-              onClick={() => setPanel(null)}
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              className="btn btn--solid btn--wide"
-              disabled={!hasDraft}
-              onClick={() => {
-                for (const [itemId, qty] of Object.entries(drafts)) {
-                  if (qty > 0) dispatch({ type: 'GIVE_ITEM', playerId: player.id, itemId, qty })
-                }
-                setDrafts({})
-                setPanel(null)
-              }}
-            >
-              Finalizar
-            </button>
-          </div>
+          <SheetActions
+            onCancel={() => setPanel(null)}
+            confirmLabel="Finalizar"
+            disabled={!hasDraft}
+            onConfirm={() => {
+              for (const [itemId, qty] of Object.entries(drafts)) {
+                if (qty > 0) dispatch({ type: 'GIVE_ITEM', playerId: player.id, itemId, qty })
+              }
+              setDrafts({})
+              setPanel(null)
+            }}
+          />
         </div>
       ) : null}
 
@@ -458,31 +515,47 @@ function PlayerCard({ player, canDelete, onDelete }) {
 
 /* ------------------------------------------------------------------- lojas */
 
-function ShopsSection({ onRequestDelete, onCreateShop, onEditShop }) {
+function ShopsSection({ open, onOpenChange, onRequestDelete, onCreateShop, onEditShop }) {
   const { state } = useStore()
   const [openId, setOpenId] = useState(null)
 
   return (
     <section className="list-group">
-      <h2 className="list-group__title">
-        <span>Lojas</span>
-        <button type="button" className="link" onClick={onCreateShop}>
-          + Nova loja
-        </button>
-      </h2>
+      <SectionHead
+        title="Lojas"
+        count={state.shops.length}
+        open={open}
+        onToggle={() => onOpenChange(!open)}
+        action={
+          <button
+            type="button"
+            className="link"
+            onClick={() => {
+              // A loja nova aparece aqui depois de salva: a seção precisa estar
+              // aberta para o mestre ver o que acabou de criar.
+              onOpenChange(true)
+              onCreateShop()
+            }}
+          >
+            + Nova loja
+          </button>
+        }
+      />
 
-      <div className="list-rows">
-        {state.shops.map((shop) => (
-          <ShopCard
-            key={shop.id}
-            shop={shop}
-            isOpen={openId === shop.id}
-            onToggle={() => setOpenId(openId === shop.id ? null : shop.id)}
-            onDelete={() => onRequestDelete(shop.id, shop.name)}
-            onEdit={() => onEditShop(shop)}
-          />
-        ))}
-      </div>
+      {open ? (
+        <div className="list-rows">
+          {state.shops.map((shop) => (
+            <ShopCard
+              key={shop.id}
+              shop={shop}
+              isOpen={openId === shop.id}
+              onToggle={() => setOpenId(openId === shop.id ? null : shop.id)}
+              onDelete={() => onRequestDelete(shop.id, shop.name)}
+              onEdit={() => onEditShop(shop)}
+            />
+          ))}
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -508,7 +581,7 @@ function ShopCard({ shop, isOpen, onToggle, onDelete, onEdit }) {
   return (
     <div>
       <div className="gm__card-head">
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="gm__grow">
           <button type="button" className="inline-input" onClick={onToggle} aria-expanded={isOpen}>
             {shop.name}
           </button>
@@ -527,7 +600,7 @@ function ShopCard({ shop, isOpen, onToggle, onDelete, onEdit }) {
         </button>
         <button
           type="button"
-          className="icon-btn icon-btn--accent"
+          className="icon-btn icon-btn--danger"
           title="Excluir loja"
           aria-label={`Excluir ${shop.name}`}
           onClick={onDelete}
@@ -536,6 +609,7 @@ function ShopCard({ shop, isOpen, onToggle, onDelete, onEdit }) {
         </button>
         <button
           type="button"
+          className="icon-btn icon-btn--ghost"
           onClick={onToggle}
           aria-expanded={isOpen}
           aria-label={`${isOpen ? 'Fechar' : 'Abrir'} itens de ${shop.name}`}
@@ -547,14 +621,13 @@ function ShopCard({ shop, isOpen, onToggle, onDelete, onEdit }) {
       {isOpen ? (
         <div className="gm__panel">
           <FiltersBar
-            small
             filters={filters}
             onChange={setFilters}
             levels={availableLevels(stocked)}
             open={filtersOpen}
             onToggle={() => setFiltersOpen((value) => !value)}
           />
-          <div className="gm__scroll" style={{ maxHeight: 260, gap: 2 }}>
+          <div className="gm__scroll">
             {rows.map((item) => (
               <div className="gm__row" key={item.id}>
                 <span className="gm__row-name">{item.name}</span>
@@ -562,8 +635,7 @@ function ShopCard({ shop, isOpen, onToggle, onDelete, onEdit }) {
                 <span className="gm__check-price">{formatCopper(item.priceCp)}</span>
                 <button
                   type="button"
-                  className="icon-btn icon-btn--accent"
-                  style={{ width: 24, height: 24 }}
+                  className="icon-btn icon-btn--danger"
                   title="Remover da loja"
                   aria-label={`Remover ${item.name} da loja`}
                   onClick={() =>
@@ -575,7 +647,7 @@ function ShopCard({ shop, isOpen, onToggle, onDelete, onEdit }) {
               </div>
             ))}
             {rows.length === 0 ? (
-              <div className="empty">
+              <div className="empty empty--inline">
                 {stocked.length === 0 ? 'Nenhum item cadastrado.' : 'Nenhum item encontrado.'}
               </div>
             ) : null}

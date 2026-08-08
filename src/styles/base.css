@@ -27,8 +27,8 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
-  font-size: 14.5px;
-  line-height: 1.4;
+  font-size: var(--t-body);
+  line-height: var(--lh-snug);
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
   overscroll-behavior: none;
@@ -121,25 +121,18 @@ textarea {
   }
 }
 
-.stack {
-  display: flex;
-  flex-direction: column;
-}
-
-.row {
-  display: flex;
-  align-items: center;
-}
-
-.spacer {
-  flex: 1;
-}
-
+/* Estado vazio de tela inteira: "Sua mochila está vazia". */
 .empty {
   text-align: center;
   padding: 60px 20px;
-  color: var(--text-fainter);
-  font-size: 14px;
-  line-height: 1.5;
+  color: var(--text-2);
+  font-size: var(--t-sm);
+  line-height: var(--lh-text);
   white-space: pre-line;
+}
+
+/* O mesmo vazio dentro de um painel de 220px — a lista de uma loja, a folha de
+   adicionar item. Sem isto, sobravam 120px de respiro numa caixa de 220. */
+.empty--inline {
+  padding: 24px 16px;
 }

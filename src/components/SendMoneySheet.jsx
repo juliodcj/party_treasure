@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import Sheet from './Sheet.jsx'
+import Sheet, { SheetActions } from './Sheet.jsx'
 import { CoinInputs } from './ItemForm.jsx'
 import { useStore } from '../state/store.jsx'
 import { formatCopper, toCopper } from '../lib/money.js'
@@ -46,34 +46,27 @@ export default function SendMoneySheet({ player, onClose }) {
         <div className="sheet__question">
           {player.name} quer enviar {formatCopper(amountCp)} para {target.name}?
         </div>
-        <div className="sheet__actions">
-          <button type="button" className="btn btn--neutral btn--wide" onClick={() => setStep('pick')}>
-            Voltar
-          </button>
-          <button type="button" className="btn btn--solid btn--wide" onClick={confirm}>
-            Confirmar
-          </button>
-        </div>
+        <SheetActions
+          onCancel={() => setStep('pick')}
+          onConfirm={confirm}
+          cancelLabel="Voltar"
+        />
       </Sheet>
     )
   }
 
   return (
     <Sheet center title="Enviar dinheiro" onClose={onClose}>
-      <div style={{ marginBottom: 14 }}>
-        <CoinInputs
-          gold={gold}
-          silver={silver}
-          copper={copper}
-          onGold={setGold}
-          onSilver={setSilver}
-          onCopper={setCopper}
-        />
-      </div>
+      <CoinInputs
+        gold={gold}
+        silver={silver}
+        copper={copper}
+        onGold={setGold}
+        onSilver={setSilver}
+        onCopper={setCopper}
+      />
 
-      <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text-faint)', marginBottom: 8 }}>
-        Para qual personagem?
-      </div>
+      <div className="field-label send-money__label">Para qual personagem?</div>
       <div className="target-list">
         {others.map((other) => (
           <button
@@ -88,24 +81,15 @@ export default function SendMoneySheet({ player, onClose }) {
       </div>
 
       {tooMuch ? (
-        <div style={{ fontSize: 12.5, color: 'var(--danger)', marginBottom: 8 }}>
-          Saldo insuficiente: você tem {formatCopper(totalCp)}.
-        </div>
+        <p className="form-error">Saldo insuficiente: você tem {formatCopper(totalCp)}.</p>
       ) : null}
 
-      <div className="sheet__actions">
-        <button type="button" className="btn btn--neutral btn--wide" onClick={onClose}>
-          Cancelar
-        </button>
-        <button
-          type="button"
-          className="btn btn--solid btn--wide"
-          disabled={!amountCp || !targetId || tooMuch}
-          onClick={() => setStep('confirm')}
-        >
-          Continuar
-        </button>
-      </div>
+      <SheetActions
+        onCancel={onClose}
+        onConfirm={() => setStep('confirm')}
+        confirmLabel="Continuar"
+        disabled={!amountCp || !targetId || tooMuch}
+      />
     </Sheet>
   )
 }

@@ -1,4 +1,9 @@
-// Ícones tirados um a um do protótipo do Claude Design, para o traço bater.
+/* Ícones do protótipo do Claude Design.
+
+   REGRA: nenhum ícone tem cor própria. Todos desenham com `currentColor` e
+   herdam a cor de quem os contém — o botão, a linha, a aba. Era o contrário
+   antes: seis ícones traziam o azul cravado em oklch, então trocar o azul do
+   aplicativo em tokens.css mudava tudo menos os ícones. */
 
 export function ChevronRight({ open = false }) {
   return (
@@ -12,7 +17,7 @@ export function ChevronRight({ open = false }) {
     >
       <path
         d="M1 1l5 5-5 5"
-        stroke="rgba(60,60,67,0.3)"
+        stroke="currentColor"
         strokeWidth="1.6"
         fill="none"
         strokeLinecap="round"
@@ -28,12 +33,13 @@ export function ChevronDown({ open = false }) {
       width="11"
       height="7"
       viewBox="0 0 14 9"
-      style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}
+      className="chevron"
+      style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
       aria-hidden="true"
     >
       <path
         d="M1 1l6 6 6-6"
-        stroke="#1c1c1e"
+        stroke="currentColor"
         strokeWidth="2"
         fill="none"
         strokeLinecap="round"
@@ -45,14 +51,14 @@ export function ChevronDown({ open = false }) {
 
 export function SearchIcon({ size = 15 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 15 15" style={{ flexShrink: 0 }} aria-hidden="true">
-      <circle cx="6.5" cy="6.5" r="5" fill="none" stroke="rgba(60,60,67,0.45)" strokeWidth="1.6" />
+    <svg width={size} height={size} viewBox="0 0 15 15" aria-hidden="true">
+      <circle cx="6.5" cy="6.5" r="5" fill="none" stroke="currentColor" strokeWidth="1.6" />
       <line
         x1="10.3"
         y1="10.3"
         x2="14"
         y2="14"
-        stroke="rgba(60,60,67,0.45)"
+        stroke="currentColor"
         strokeWidth="1.6"
         strokeLinecap="round"
       />
@@ -60,45 +66,13 @@ export function SearchIcon({ size = 15 }) {
   )
 }
 
-export function TrashIcon() {
+export function TrashIcon({ size = 15 }) {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
       <path
         d="M4 6h16M9 6V4h6v2M6 6l1 14h10l1-14"
         fill="none"
-        stroke="oklch(50% 0.14 258)"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
-
-/** Etiqueta de preço — "Vender", para não se confundir com a seta de "Enviar". */
-export function SellIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M20.6 13.4L13.4 20.6a2 2 0 01-2.8 0L3 13V3h10l7.6 7.6a2 2 0 010 2.8z"
-        fill="none"
-        stroke="oklch(50% 0.14 258)"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="7.5" cy="7.5" r="1.2" fill="oklch(50% 0.14 258)" />
-    </svg>
-  )
-}
-
-export function SendIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M4 12h14M13 6l6 6-6 6"
-        fill="none"
-        stroke="oklch(50% 0.14 258)"
+        stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -108,13 +82,13 @@ export function SendIcon() {
 }
 
 /** Avião de papel — botão "Enviar dinheiro" do cabeçalho. */
-export function PaperPlaneIcon() {
+export function PaperPlaneIcon({ size = 15 }) {
   return (
-    <svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
       <path
         d="M2 10l16-7-6 16-2.5-6.5L2 10z"
         fill="none"
-        stroke="oklch(50% 0.14 258)"
+        stroke="currentColor"
         strokeWidth="1.6"
         strokeLinejoin="round"
         strokeLinecap="round"
@@ -123,13 +97,13 @@ export function PaperPlaneIcon() {
   )
 }
 
-export function EditIcon() {
+export function EditIcon({ size = 15 }) {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
       <path
         d="M4 20h4l10-10-4-4L4 16v4zM14 6l4 4"
         fill="none"
-        stroke="oklch(50% 0.14 258)"
+        stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -139,12 +113,12 @@ export function EditIcon() {
 }
 
 /** Três pontinhos verticais — botão "mais ações" do item aberto. */
-export function MoreIcon() {
+export function MoreIcon({ size = 15 }) {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="12" cy="5" r="1.9" fill="oklch(50% 0.14 258)" />
-      <circle cx="12" cy="12" r="1.9" fill="oklch(50% 0.14 258)" />
-      <circle cx="12" cy="19" r="1.9" fill="oklch(50% 0.14 258)" />
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="5" r="1.9" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.9" fill="currentColor" />
+      <circle cx="12" cy="19" r="1.9" fill="currentColor" />
     </svg>
   )
 }
@@ -152,45 +126,35 @@ export function MoreIcon() {
 export function PlusIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
-      <rect x="9" width="2" height="20" rx="1" fill="#fff" />
-      <rect y="9" width="20" height="2" rx="1" fill="#fff" />
+      <rect x="9" width="2" height="20" rx="1" fill="currentColor" />
+      <rect y="9" width="20" height="2" rx="1" fill="currentColor" />
     </svg>
   )
 }
 
-export function StepperPlus({ size }) {
+/* Os dois glifos do stepper não recebem tamanho: quem dimensiona é o CSS
+   (.step svg { width: 42% }), para o desenho acompanhar o botão em proporção
+   em vez de depender de uma conta no JavaScript. */
+
+export function StepperPlus() {
   return (
-    <svg width={size} height={size} viewBox="0 0 12 12" aria-hidden="true">
-      <rect x="5" width="2" height="12" rx="1" fill="#fff" />
-      <rect y="5" width="12" height="2" rx="1" fill="#fff" />
+    <svg viewBox="0 0 12 12" aria-hidden="true">
+      <rect x="5" width="2" height="12" rx="1" fill="currentColor" />
+      <rect y="5" width="12" height="2" rx="1" fill="currentColor" />
     </svg>
   )
 }
 
-export function StepperMinus({ width }) {
+export function StepperMinus() {
   return (
-    <svg width={width} height="2" viewBox="0 0 12 2" aria-hidden="true">
-      <rect width="12" height="2" rx="1" fill="#1c1c1e" />
-    </svg>
-  )
-}
-
-/** Três controles deslizantes — botão "Conteúdo" (livros/remaster). */
-export function TuneIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 20 20" aria-hidden="true">
-      <line x1="3" y1="5" x2="17" y2="5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      <line x1="3" y1="10" x2="17" y2="10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      <line x1="3" y1="15" x2="17" y2="15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      <circle cx="7" cy="5" r="2" fill="var(--surface)" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="13" cy="10" r="2" fill="var(--surface)" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="9" cy="15" r="2" fill="var(--surface)" stroke="currentColor" strokeWidth="1.6" />
+    <svg viewBox="0 0 12 2" aria-hidden="true">
+      <rect width="12" height="2" rx="1" fill="currentColor" />
     </svg>
   )
 }
 
 /** Engrenagem — botão "Configurações", na aba Mestre. */
-export function GearIcon({ size = 15 }) {
+export function GearIcon({ size = 19 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
       <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.8" />
@@ -211,7 +175,7 @@ export function CheckIcon() {
     <svg width="10" height="8" viewBox="0 0 10 8" aria-hidden="true">
       <path
         d="M1 4l3 3 5-6"
-        stroke="#fff"
+        stroke="currentColor"
         strokeWidth="1.8"
         fill="none"
         strokeLinecap="round"
@@ -221,8 +185,8 @@ export function CheckIcon() {
   )
 }
 
-/** Carrinho de compras — "Comprar tudo", para não repetir o ícone da aba Loja. */
-export function CartIcon({ size = 18 }) {
+/** Carrinho de compras — o flutuante da Loja, para não repetir o ícone da aba. */
+export function CartIcon({ size = 22 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
       <path
@@ -239,25 +203,25 @@ export function CartIcon({ size = 18 }) {
   )
 }
 
-/** Funil — botão "Filtros" da Loja, que revela tipo/nível ao alternar. */
-export function FilterIcon({ color = 'currentColor' }) {
+/** Funil — botão "Filtros", que revela tipo/nível ao alternar. */
+export function FilterIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
-      <line x1="2" y1="4.5" x2="14" y2="4.5" stroke={color} strokeWidth="1.7" strokeLinecap="round" />
-      <line x1="2" y1="11.5" x2="14" y2="11.5" stroke={color} strokeWidth="1.7" strokeLinecap="round" />
-      <circle cx="10" cy="4.5" r="2.4" fill="var(--surface)" stroke={color} strokeWidth="1.7" />
-      <circle cx="5.5" cy="11.5" r="2.4" fill="var(--surface)" stroke={color} strokeWidth="1.7" />
+      <line x1="2" y1="4.5" x2="14" y2="4.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <line x1="2" y1="11.5" x2="14" y2="11.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <circle cx="10" cy="4.5" r="2.4" fill="var(--surface)" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="5.5" cy="11.5" r="2.4" fill="var(--surface)" stroke="currentColor" strokeWidth="1.7" />
     </svg>
   )
 }
 
-/** Seta "carteira agora → depois da compra", no resumo flutuante da Loja. */
+/** Seta "carteira agora → depois da compra", no resumo do carrinho. */
 export function ArrowRightIcon() {
   return (
     <svg width="16" height="12" viewBox="0 0 16 12" aria-hidden="true">
       <path
         d="M1 6h12M9 2l4 4-4 4"
-        stroke="rgba(60,60,67,0.3)"
+        stroke="currentColor"
         strokeWidth="1.6"
         fill="none"
         strokeLinecap="round"
