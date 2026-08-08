@@ -309,10 +309,10 @@ function PlayerCard({ player, canDelete, onDelete }) {
           </button>
         </div>
         <button type="button" className="btn btn--solid" onClick={() => openPanel('coins')}>
-          Dar moedas
+          Dinheiro
         </button>
         <button type="button" className="btn btn--tint" onClick={() => openPanel('items')}>
-          Dar item
+          Item
         </button>
         <button
           type="button"
