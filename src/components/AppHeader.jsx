@@ -68,7 +68,7 @@ export function WalletPill({
         onClick={onEditWallet}
         aria-label={`Editar moedas de ${player.name}`}
       >
-        <span className="gold-pill__label">Bolsa</span>
+        <span className="gold-pill__label">Bolsa de {player.name}</span>
         <span className="gold-pill__coins">
           <span className="gold-pill__coin">
             <span className="gold-pill__value gold-pill__value--gold">{player.gold}</span>

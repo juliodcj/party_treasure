@@ -101,13 +101,18 @@
 /* Faixa da bolsa: moedas (abre a edição) à esquerda, ajustar/enviar
    à direita, tudo na mesma linha. Igual no Inventário e na Loja.
    Sem caixa em volta: corre solta no branco do cabeçalho, alinhada pela
-   esquerda com o título e a busca. */
+   esquerda com o título e a busca.
+
+   Ocupa a linha inteira (e não só o que o conteúdo pede) por dois motivos:
+   os botões caem no mesmo prumo do funil de filtros logo abaixo, e o nome do
+   personagem passa a ter um limite contra o qual cortar em reticências. */
 .gold-pill {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
   flex-shrink: 0;
-  align-self: flex-start;
+  align-self: stretch;
 }
 
 .gold-pill__wallet {
@@ -115,13 +120,20 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 3px;
+  min-width: 0;
   text-align: left;
 }
 
+/* "Bolsa de Fulano": nome comprido corta em reticências em vez de empurrar os
+   botões de ajustar e enviar para fora. */
 .gold-pill__label {
+  max-width: 100%;
   font-size: 12px;
   font-weight: 700;
   color: var(--text-inactive);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* O filete que separava moedas de botões era da caixa; sem ela, ficava um
