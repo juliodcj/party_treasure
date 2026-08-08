@@ -35,80 +35,85 @@ export default function LibraryScreen({ filters, openId, onToggle }) {
   return (
     <>
       {campaign.length ? (
-        <>
-          <h2 className="group-title">Itens da Campanha</h2>
-          {campaign.map((item) => (
-            <ItemRow
-              key={item.id}
-              item={item}
-              priceInHead
-              open={openId === item.id}
-              onToggle={() => onToggle(item.id)}
-            >
-              <div className="item__tools" style={{ marginTop: 12 }}>
-                <button
-                  type="button"
-                  className="icon-btn icon-btn--accent"
-                  title="Excluir"
-                  aria-label={`Excluir ${item.name}`}
-                  onClick={() => setDeleting(item)}
-                >
-                  <TrashIcon />
-                </button>
-                <button
-                  type="button"
-                  className="icon-btn icon-btn--accent"
-                  title="Editar"
-                  aria-label={`Editar ${item.name}`}
-                  onClick={() => setEditing(item)}
-                >
-                  <EditIcon />
-                </button>
-              </div>
-            </ItemRow>
-          ))}
-        </>
+        <section className="list-group">
+          <h2 className="list-group__title">Itens da Campanha</h2>
+          <div className="list-rows">
+            {campaign.map((item) => (
+              <ItemRow
+                key={item.id}
+                item={item}
+                priceInHead
+                open={openId === item.id}
+                onToggle={() => onToggle(item.id)}
+              >
+                <div className="item__tools" style={{ marginTop: 12 }}>
+                  <button
+                    type="button"
+                    className="icon-btn icon-btn--accent"
+                    title="Excluir"
+                    aria-label={`Excluir ${item.name}`}
+                    onClick={() => setDeleting(item)}
+                  >
+                    <TrashIcon />
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-btn icon-btn--accent"
+                    title="Editar"
+                    aria-label={`Editar ${item.name}`}
+                    onClick={() => setEditing(item)}
+                  >
+                    <EditIcon />
+                  </button>
+                </div>
+              </ItemRow>
+            ))}
+          </div>
+        </section>
       ) : null}
 
-      <h2 className="group-title">Itens Oficiais</h2>
-      {folders.length === 0 ? <div className="empty">Nenhum item encontrado.</div> : null}
-      {folders.map((folder) => {
-        const isOpen = openFolder === folder.id
-        return (
-          <div className="card card--folder" key={folder.id}>
-            <button
-              type="button"
-              className="folder__head"
-              onClick={() => setOpenFolder(isOpen ? null : folder.id)}
-              aria-expanded={isOpen}
-            >
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span className="folder__name" style={{ display: 'block' }}>
-                  {folder.label}
-                </span>
-                <span className="folder__count" style={{ display: 'block' }}>
-                  {plural(folder.items.length, 'item', 'itens')}
-                </span>
-              </span>
-              <ChevronRight open={isOpen} />
-            </button>
-            {isOpen ? (
-              <div className="folder__body">
-                {folder.items.map((item) => (
-                  <ItemRow
-                    key={item.id}
-                    item={item}
-                    nested
-                    priceInHead
-                    open={openId === item.id}
-                    onToggle={() => onToggle(item.id)}
-                  />
-                ))}
+      <section className="list-group">
+        <h2 className="list-group__title">Itens Oficiais</h2>
+        {folders.length === 0 ? <div className="empty">Nenhum item encontrado.</div> : null}
+        <div className="list-rows">
+          {folders.map((folder) => {
+            const isOpen = openFolder === folder.id
+            return (
+              <div className="folder" key={folder.id}>
+                <button
+                  type="button"
+                  className="folder__head"
+                  onClick={() => setOpenFolder(isOpen ? null : folder.id)}
+                  aria-expanded={isOpen}
+                >
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span className="folder__name" style={{ display: 'block' }}>
+                      {folder.label}
+                    </span>
+                    <span className="folder__count" style={{ display: 'block' }}>
+                      {plural(folder.items.length, 'item', 'itens')}
+                    </span>
+                  </span>
+                  <ChevronRight open={isOpen} />
+                </button>
+                {isOpen ? (
+                  <div className="folder__body">
+                    {folder.items.map((item) => (
+                      <ItemRow
+                        key={item.id}
+                        item={item}
+                        priceInHead
+                        open={openId === item.id}
+                        onToggle={() => onToggle(item.id)}
+                      />
+                    ))}
+                  </div>
+                ) : null}
               </div>
-            ) : null}
-          </div>
-        )
-      })}
+            )
+          })}
+        </div>
+      </section>
 
       <button
         type="button"

@@ -136,6 +136,21 @@
   text-overflow: ellipsis;
 }
 
+/* "Simplificar": atalho que só aparece quando há moeda miúda sobrando.
+   O margin-right cola ele nas moedas em vez de deixá-lo boiando no meio da
+   faixa, e o align-self o desce para a linha das moedas — não a do rótulo. */
+.gold-pill__simplify {
+  margin-right: auto;
+  align-self: flex-end;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* O filete que separava moedas de botões era da caixa; sem ela, ficava um
    traço solto no branco. Agora quem separa é o vão. */
 .gold-pill__actions {
@@ -400,19 +415,89 @@
   margin-top: 8px;
 }
 
-.group-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-fainter);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin: 4px 2px 0;
+/* ------------------------------------------- lista agrupada (full-bleed)
+
+   A linguagem de lista do aplicativo inteiro: em vez de um cartão por item,
+   cada grupo vira um bloco só, encostado nas duas bordas da tela — sem recuo,
+   sem canto arredondado. Linha branca, filete fino entre uma e outra, e a
+   faixa cinza do cabeçalho colando no topo enquanto o grupo passa (o sticky é
+   limitado pela altura da .list-group, então o próximo grupo empurra o
+   anterior).
+
+   Os -16px em toda a linha desfazem o padding lateral do .app__scroll: o
+   recuo continua valendo em quem ainda usa cartão (folhas, modais), só a
+   lista o ignora. */
+
+.list-group {
+  display: flex;
+  flex-direction: column;
+  margin: 0 -16px;
 }
 
-.group-title + .group-title,
-.card + .group-title,
-.card--folder + .group-title {
-  margin-top: 10px;
+/* Anula o respiro que o .app__scroll põe entre filhos: aqui a faixa cinza do
+   cabeçalho já é o separador entre um grupo e outro. E o primeiro grupo
+   encosta direto no cabeçalho do aplicativo, sem a fresta de 10px que as
+   telas de cartão usam. Só vale para grupo irmão de grupo no rolador — quem
+   agrupa por dentro (a tela do Mestre) tem o próprio respiro. */
+.app__scroll > .list-group + .list-group {
+  margin-top: -7px;
+}
+
+.app__scroll > .list-group:first-child {
+  margin-top: 0;
+}
+
+.list-group__title {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 7px 16px 6px;
+  background: var(--bg);
+}
+
+/* Ação da direita na faixa ("+ Novo jogador", "Limpar"): mesma linha do
+   título, mas sem o caixa-alta nem o espacejamento dele. */
+.list-group__title .link {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12.5px;
+}
+
+.list-rows {
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+/* Filete entre linhas — serve tanto para item quanto para os blocos maiores
+   (jogador, loja, pasta) que a tela do Mestre e a Biblioteca empilham. */
+.list-rows > * + * {
+  border-top: 1px solid var(--line);
+}
+
+/* Alinha o texto da linha com o do cabeçalho, agora que não há mais cartão */
+.list-row .item__head {
+  padding-left: 16px;
+  padding-right: 14px;
+}
+
+.list-row .item__body {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* Item aberto se destaca do resto da lista */
+.list-rows > .list-row:has(.item__body) {
+  background: var(--surface-sunken);
 }
 
 /* -------------------------------------------------------------- item na lista */
@@ -818,30 +903,11 @@
   text-align: right;
 }
 
-/* Item dentro de uma pasta da Biblioteca: fundo rebaixado */
-.subitem {
-  background: var(--surface-sunken);
-  border-radius: var(--r-md);
-  margin-top: 6px;
-}
-
-.subitem .item__head {
-  padding: 9px 10px;
-}
-
-.subitem .item__name {
-  font-size: 14px;
-}
-
-.subitem .item__body {
-  padding: 2px 10px 10px;
-}
-
 .folder__head {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 14px;
+  padding: 12px 16px;
   width: 100%;
   text-align: left;
 }
@@ -858,45 +924,39 @@
   margin-top: 2px;
 }
 
+/* Pasta aberta: as linhas de dentro seguem o mesmo desenho da lista, só
+   recuadas mais um degrau para se lerem como filhas da pasta. */
 .folder__body {
-  padding: 0 10px 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
   border-top: 1px solid var(--line);
+  background: var(--surface-sunken);
+}
+
+.folder__body > .list-row + .list-row {
+  border-top: 1px solid var(--line);
+}
+
+.folder__body .item__head {
+  padding-left: 30px;
+}
+
+.folder__body .item__body {
+  padding-left: 30px;
 }
 
 /* ------------------------------------------------------------------ mestre */
 
+/* As seções do Mestre são .list-group como as outras telas; o respiro entre
+   elas é faixa de fundo, que se funde com a do cabeçalho seguinte. */
 .gm {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-}
-
-.gm__section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.gm__section-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.gm__list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .gm__card-head {
-  padding: 12px 14px;
+  padding: 12px 16px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -905,7 +965,7 @@
 }
 
 .gm__panel {
-  padding: 0 14px 14px;
+  padding: 0 16px 14px;
   display: flex;
   flex-direction: column;
   gap: 8px;

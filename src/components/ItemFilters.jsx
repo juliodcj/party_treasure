@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { SearchIcon } from './Icons.jsx'
+import { FilterIcon, SearchIcon } from './Icons.jsx'
 import { CATEGORIES } from '../data/catalog.js'
 
 /** Caixa de busca com a lupa dentro, como no protótipo. */
@@ -104,3 +104,56 @@ export function FilterSelects({ value, onChange, levels = [], small = false }) {
 }
 
 export const EMPTY_FILTERS = { search: '', category: 'all', levels: [] }
+
+/**
+ * Faixa de busca padrão: campo + funil que revela os filtros embaixo.
+ * `levelsOnly` mostra só o filtro de nível (caso da Biblioteca); o padrão
+ * filtra tipo e nível juntos.
+ */
+export function FiltersBar({
+  filters,
+  onChange,
+  levels,
+  open,
+  onToggle,
+  levelsOnly = false,
+  small = false,
+  placeholder,
+}) {
+  return (
+    <div className="filters">
+      <div className="filters__row">
+        <SearchBox
+          small={small}
+          value={filters.search}
+          onChange={(search) => onChange({ ...filters, search })}
+          {...(placeholder ? { placeholder } : {})}
+        />
+        <button
+          type="button"
+          className={`filters__toggle${open ? ' filters__toggle--on' : ''}`}
+          onClick={onToggle}
+          aria-expanded={open}
+          aria-label="Filtros"
+          title="Filtros"
+        >
+          <FilterIcon color={open ? 'var(--accent-ink)' : 'var(--text-muted)'} />
+        </button>
+      </div>
+      {open ? (
+        levelsOnly ? (
+          <div className="filters__row">
+            <LevelPicker
+              levels={levels}
+              value={filters.levels}
+              onChange={(next) => onChange({ ...filters, levels: next })}
+              small={small}
+            />
+          </div>
+        ) : (
+          <FilterSelects value={filters} onChange={onChange} levels={levels} small={small} />
+        )
+      ) : null}
+    </div>
+  )
+}

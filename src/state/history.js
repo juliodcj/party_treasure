@@ -11,6 +11,7 @@ const SLICE_KEYS = {
   GIVE_COINS: ['players'],
   SPLIT_COINS: ['players'],
   TRANSFER_COINS: ['players'],
+  SIMPLIFY_COINS: ['players'],
   GIVE_ITEM: ['players'],
   DROP_ITEM: ['players'],
   CHANGE_ITEM_QTY: ['players'],
@@ -68,6 +69,8 @@ function describeAction(state, action) {
       return 'Distribuiu moedas entre o grupo'
     case 'TRANSFER_COINS':
       return `${playerName(state, action.fromId)} enviou dinheiro a ${playerName(state, action.toId)}`
+    case 'SIMPLIFY_COINS':
+      return `Simplificou as moedas de ${playerName(state, action.playerId)}`
     case 'GIVE_ITEM':
       return `Deu ${itemName(state, action.itemId, action.playerId)} a ${playerName(state, action.playerId)}`
     case 'DROP_ITEM':

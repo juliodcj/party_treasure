@@ -23,6 +23,7 @@ function formatDamage(damage) {
 function weaponFields(weapon) {
   if (!weapon) return null
   return [
+    ['Category', weapon.category ? titleCase(weapon.category) : null],
     ['Damage', formatDamage(weapon.damage)],
     ['Hands', weapon.hands],
     ['Type', weapon.ranged ? 'Ranged' : 'Melee'],
@@ -37,6 +38,7 @@ function weaponFields(weapon) {
 function armorFields(armor) {
   if (!armor) return null
   return [
+    ['Category', armor.category ? titleCase(armor.category) : null],
     ['AC Bonus', armor.acBonus != null ? `+${armor.acBonus}` : null],
     ['Dex Cap', armor.dexCap != null ? `+${armor.dexCap}` : null],
     ['Check Penalty', armor.checkPenalty || null],
@@ -89,7 +91,6 @@ export default function ItemRow({
   priceInHead = false,
   priceInBody = false,
   cart = null,
-  nested = false,
   hasNote = false,
   children,
 }) {
@@ -99,7 +100,9 @@ export default function ItemRow({
   const descriptionHtml = item.shield ? withoutTables(item.descriptionHtml) : item.descriptionHtml
 
   return (
-    <div className={nested ? 'subitem' : 'card'}>
+    // A linha vive dentro de uma .list-rows: quem desenha borda e fundo é o
+    // bloco do grupo, aqui fica só o filete que separa uma linha da outra.
+    <div className="list-row">
       <div className="item__head">
         <button type="button" className="item__name-btn" onClick={onToggle} aria-expanded={open}>
           <span className={`item__name${open ? ' item__name--open' : ''}`}>{item.name}</span>

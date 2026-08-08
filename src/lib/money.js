@@ -92,3 +92,16 @@ export function spendCopper(wallet, amountCp) {
   if (owed > total) return null
   return withWalletCopper(wallet, total - owed)
 }
+
+/** Junta tudo e redistribui na menor quantidade de moedas. */
+export function simplifyWallet(wallet) {
+  return fromCopper(toCopper(wallet))
+}
+
+/**
+ * Simplificar só muda alguma coisa se houver 10 ou mais de prata ou de cobre —
+ * é o que decide se o atalho aparece no cabeçalho.
+ */
+export function canSimplify({ silver = 0, copper = 0 } = {}) {
+  return silver >= CP_PER_SP || copper >= CP_PER_SP
+}
