@@ -64,15 +64,31 @@
      aqui, para o que se vê no navegador ser o que se vê no celular. */
   --app-w: 360px;
 
-  /* Altura da barra de abas (sem a área segura, somada à parte). */
+  /* Recorte inferior do sistema que a página precisa reservar.
+     Numa aba do navegador: nenhum. Quem cuida da barra do sistema ali é o
+     próprio navegador, que já encolhe a viewport — descontar o recorte de
+     novo só criava uma faixa branca vazia embaixo da barra de abas, um nível
+     a mais que não é de ninguém. Instalado como aplicativo é outra história:
+     aí a página encosta mesmo no indicador do sistema (ver abaixo). */
+  --safe-b: 0px;
+
+  /* Altura da barra de abas (sem o recorte, somado à parte). */
   --nav-h: 74px;
 
   /* Altura total do rodapé preso embaixo. Fica exata porque .nav tem altura
      declarada — é ela que ancora o flutuante e as folhas, então não pode ser
      um chute. */
-  --dock-h: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  --dock-h: calc(var(--nav-h) + var(--safe-b));
 
   /* Respiro embaixo da lista para o botão flutuante não cobrir o último item */
   --fab-size: 52px;
   --fab-gutter: calc(var(--fab-size) + 28px);
+}
+
+/* Fora da aba (instalado na tela inicial, ou em tela cheia) a página é dona
+   da tela inteira e o recorte passa a valer de verdade. */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  :root {
+    --safe-b: env(safe-area-inset-bottom);
+  }
 }
