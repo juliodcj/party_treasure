@@ -15,17 +15,21 @@ function formatDamage(damage) {
   return `${damage.dice}${damage.die}${abbr ? ` ${abbr}` : ''}`
 }
 
-/** Campos reais da arma, na ordem em que a ficha os lê. `null` some da tabela. */
+/**
+ * Campos reais da arma, na ordem em que a ficha os lê. `null` some da tabela.
+ * Rótulo e valor ficam em inglês — é como o pack do Foundry chama cada coisa,
+ * sem tradução nossa.
+ */
 function weaponFields(weapon) {
   if (!weapon) return null
   return [
-    ['Dano', formatDamage(weapon.damage)],
-    ['Mãos', weapon.hands],
-    ['Tipo', weapon.ranged ? 'À distância' : 'Corpo a corpo'],
-    ['Grupo', weapon.group ? titleCase(weapon.group) : null],
-    // Alcance e recarga só existem em arma à distância.
-    ['Alcance', weapon.ranged && weapon.range ? `${weapon.range} ft` : null],
-    ['Recarga', weapon.ranged && weapon.reload ? weapon.reload : null],
+    ['Damage', formatDamage(weapon.damage)],
+    ['Hands', weapon.hands],
+    ['Type', weapon.ranged ? 'Ranged' : 'Melee'],
+    ['Group', weapon.group ? titleCase(weapon.group) : null],
+    // Range e Reload só existem em arma à distância.
+    ['Range', weapon.ranged && weapon.range ? `${weapon.range} ft` : null],
+    ['Reload', weapon.ranged && weapon.reload ? weapon.reload : null],
   ]
 }
 
@@ -33,12 +37,12 @@ function weaponFields(weapon) {
 function armorFields(armor) {
   if (!armor) return null
   return [
-    ['CA', armor.acBonus != null ? `+${armor.acBonus}` : null],
-    ['Limite Destreza', armor.dexCap != null ? `+${armor.dexCap}` : null],
-    ['Penal. de Testes', armor.checkPenalty || null],
-    ['Penal. de Movimento', armor.speedPenalty ? `${armor.speedPenalty} ft` : null],
-    ['Força', armor.strength],
-    ['Grupo', armor.group ? titleCase(armor.group) : null],
+    ['AC Bonus', armor.acBonus != null ? `+${armor.acBonus}` : null],
+    ['Dex Cap', armor.dexCap != null ? `+${armor.dexCap}` : null],
+    ['Check Penalty', armor.checkPenalty || null],
+    ['Speed Penalty', armor.speedPenalty ? `${armor.speedPenalty} ft` : null],
+    ['Strength', armor.strength],
+    ['Group', armor.group ? titleCase(armor.group) : null],
   ]
 }
 
@@ -46,11 +50,11 @@ function armorFields(armor) {
 function shieldFields(shield) {
   if (!shield) return null
   return [
-    ['Dureza', shield.hardness],
-    ['PV', shield.hpMax],
-    ['Limiar de Avaria', shield.bt],
-    ['Bônus na CA', shield.acBonus != null ? `+${shield.acBonus}` : null],
-    ['Penal. de Movimento', shield.speedPenalty ? `${shield.speedPenalty} ft` : null],
+    ['Hardness', shield.hardness],
+    ['HP', shield.hpMax],
+    ['BT', shield.bt],
+    ['AC Bonus', shield.acBonus != null ? `+${shield.acBonus}` : null],
+    ['Speed Penalty', shield.speedPenalty ? `${shield.speedPenalty} ft` : null],
   ]
 }
 
