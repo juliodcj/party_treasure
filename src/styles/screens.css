@@ -1062,10 +1062,10 @@
 /* Altura declarada, e não deduzida do conteúdo, porque é dela que --dock-h
    tira a medida para ancorar o flutuante e as folhas. */
 .nav {
-  height: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  height: calc(var(--nav-h) + var(--safe-b));
   display: flex;
   align-items: stretch;
-  padding: 0 6px env(safe-area-inset-bottom);
+  padding: 0 6px var(--safe-b);
   background: var(--surface);
   border-top: 1px solid var(--line);
 }
