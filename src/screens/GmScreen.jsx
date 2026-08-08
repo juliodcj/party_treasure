@@ -7,6 +7,7 @@ import { ChevronRight, EditIcon, TrashIcon } from '../components/Icons.jsx'
 import EditWalletSheet from '../components/EditWalletSheet.jsx'
 import ShopEditScreen from './ShopEditScreen.jsx'
 import { useStore } from '../state/store.jsx'
+import { CATALOG } from '../data/catalog.js'
 import {
   availableLevels,
   libraryItems,
@@ -18,7 +19,7 @@ import {
 import { formatCopper } from '../lib/money.js'
 import { plural } from '../lib/text.js'
 
-export default function GmScreen() {
+export default function GmScreen({ onOpenLibrary }) {
   // Uma única confirmação por vez, compartilhada entre jogadores e lojas.
   const [deleting, setDeleting] = useState(null) // { type: 'player' | 'shop', id, name }
   // undefined = fechada; null = criando loja nova; objeto = editando essa loja.
@@ -26,6 +27,7 @@ export default function GmScreen() {
 
   return (
     <div className="gm">
+      <LibrarySection onOpen={onOpenLibrary} />
       <PlayersSection onRequestDelete={(id, name) => setDeleting({ type: 'player', id, name })} />
       <ShopsSection
         onRequestDelete={(id, name) => setDeleting({ type: 'shop', id, name })}
@@ -42,6 +44,33 @@ export default function GmScreen() {
         <ShopEditScreen shop={shopEditor} onClose={() => setShopEditor(undefined)} />
       ) : null}
     </div>
+  )
+}
+
+/* ------------------------------------------------------------- biblioteca */
+
+/** Porta de entrada da Biblioteca, que deixou de ser aba e virou tela do Mestre. */
+function LibrarySection({ onOpen }) {
+  const { state } = useStore()
+
+  return (
+    <section>
+      <div className="gm__section-head">
+        <h2 className="gm__section-title">Biblioteca</h2>
+      </div>
+
+      <div className="card card--folder">
+        <button type="button" className="gm__card-head" onClick={onOpen}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="folder__name">Catálogo de itens</div>
+            <div className="folder__count">
+              {state.campaignItems.length} da campanha · {CATALOG.length} oficiais
+            </div>
+          </div>
+          <ChevronRight />
+        </button>
+      </div>
+    </section>
   )
 }
 

@@ -190,10 +190,9 @@ export function TuneIcon() {
 }
 
 /** Engrenagem — botão "Configurações", na aba Mestre. */
-/** Engrenagem — botão "Configurações". */
-export function GearIcon() {
+export function GearIcon({ size = 15 }) {
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
       <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.8" />
       <path
         d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"
@@ -304,27 +303,6 @@ export function ShopIcon() {
       />
       <line x1="9" y1="20" x2="9" y2="13" stroke="currentColor" strokeWidth="1.8" />
       <line x1="15" y1="20" x2="15" y2="13" stroke="currentColor" strokeWidth="1.8" />
-    </svg>
-  )
-}
-
-export function BookIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M4 19.5A2.5 2.5 0 016.5 17H20"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
     </svg>
   )
 }

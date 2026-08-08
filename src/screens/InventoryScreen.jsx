@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import ItemRow from '../components/ItemRow.jsx'
 import Sheet, { SheetActions } from '../components/Sheet.jsx'
 import Stepper from '../components/Stepper.jsx'
@@ -174,6 +174,7 @@ function InventoryItem({
   const [renaming, setRenaming] = useState(false)
   const [noteOpen, setNoteOpen] = useState(false)
   const [draft, setDraft] = useState(item.name)
+  const menuRef = useRef(null)
 
   const savedNote = player.itemNotes?.[item.id] ?? ''
 
@@ -185,6 +186,12 @@ function InventoryItem({
       setNoteOpen(false)
     }
   }, [open])
+
+  // Abrindo para baixo, o menu pode nascer fora da parte visível quando o
+  // item está no pé da lista. "nearest" rola só o necessário para revelá-lo.
+  useEffect(() => {
+    if (menuOpen) menuRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [menuOpen])
 
   const rename = () => {
     const name = draft.trim()
@@ -202,8 +209,50 @@ function InventoryItem({
         <ItemNote player={player} item={item} autoEdit={noteOpen && !savedNote} />
       ) : null}
 
+      <div className="item__foot">
+        <div className="item__tools">
+          <button
+            type="button"
+            className="icon-btn icon-btn--accent"
+            title="Excluir"
+            aria-label={`Excluir ${item.name}`}
+            onClick={onDelete}
+          >
+            <TrashIcon />
+          </button>
+          <button
+            type="button"
+            className="icon-btn icon-btn--accent"
+            title="Mais ações"
+            aria-label={`Mais ações de ${item.name}`}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((value) => !value)}
+          >
+            <MoreIcon />
+          </button>
+        </div>
+
+        <Stepper
+          value={qty}
+          canDec={qty > 0}
+          onDec={() =>
+            dispatch({ type: 'CHANGE_ITEM_QTY', playerId: player.id, itemId: item.id, delta: -1 })
+          }
+          onInc={() =>
+            dispatch({ type: 'CHANGE_ITEM_QTY', playerId: player.id, itemId: item.id, delta: 1 })
+          }
+        />
+      </div>
+
+      {/* Menu e renomear vêm depois do rodapé: abrem para baixo do "⋯" que os
+          chamou, e não por cima dele. */}
       {menuOpen ? (
-        <div className="item__menu" role="menu" aria-label={`Mais ações de ${item.name}`}>
+        <div
+          className="item__menu"
+          role="menu"
+          aria-label={`Mais ações de ${item.name}`}
+          ref={menuRef}
+        >
           {qty > 0 && canSend ? (
             <button type="button" role="menuitem" className="item__menu-item" onClick={onSend}>
               Enviar
@@ -267,41 +316,6 @@ function InventoryItem({
           </button>
         </div>
       ) : null}
-
-      <div className="item__foot">
-        <div className="item__tools">
-          <button
-            type="button"
-            className="icon-btn icon-btn--accent"
-            title="Excluir"
-            aria-label={`Excluir ${item.name}`}
-            onClick={onDelete}
-          >
-            <TrashIcon />
-          </button>
-          <button
-            type="button"
-            className="icon-btn icon-btn--accent"
-            title="Mais ações"
-            aria-label={`Mais ações de ${item.name}`}
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((value) => !value)}
-          >
-            <MoreIcon />
-          </button>
-        </div>
-
-        <Stepper
-          value={qty}
-          canDec={qty > 0}
-          onDec={() =>
-            dispatch({ type: 'CHANGE_ITEM_QTY', playerId: player.id, itemId: item.id, delta: -1 })
-          }
-          onInc={() =>
-            dispatch({ type: 'CHANGE_ITEM_QTY', playerId: player.id, itemId: item.id, delta: 1 })
-          }
-        />
-      </div>
     </ItemRow>
   )
 }

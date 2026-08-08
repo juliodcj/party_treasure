@@ -1,67 +1,118 @@
 /* ---------------------------------------------------------------- cabeçalho */
 
-/* No protótipo o topo era a barra de status do iPhone (58px fixos).
+/* A moldura fixa do topo, igual nas quatro abas. É um filho flex de .app com
+   flex-shrink: 0 — não rola e não muda de altura por causa da lista.
+   O fundo branco, a base reta de ponta a ponta e a sombra rasa são o "frame"
+   que separa o que está preso do que rola por baixo — é uma faixa, não um
+   cartão: nada de cantos arredondados embaixo, que dariam cara de caixa
+   solta em cima da lista.
+
+   No protótipo o topo era a barra de status do iPhone (58px fixos).
    No Android quem reserva esse espaço é a área segura. */
-.header {
-  padding: calc(env(safe-area-inset-top) + 14px) 20px 6px;
+.app-header {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  flex-shrink: 0;
+  gap: 8px;
+  padding: calc(env(safe-area-inset-top) + 12px) 16px 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
 }
 
 /* Título (ou seletor de loja) e a engrenagem de Configurações, lado a lado */
-.header__row {
+.app-header__row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
 
 /* O título divide a linha com a engrenagem: ele encolhe e quebra, ela não. */
-.header__title-slot {
+.app-header__title-slot {
   position: relative;
   flex: 1;
   min-width: 0;
 }
 
-.header__title {
-  font-size: 30px;
+/* Seta de voltar, nas telas que são filhas de outra (a Biblioteca, dentro do
+   Mestre). Mesmo desenho do "<" da tela cheia de edição de loja. */
+.app-header__back {
+  width: 26px;
+  height: 36px;
+  margin-left: -4px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-shrink: 0;
+}
+
+.app-header__chevron {
+  width: 9px;
+  height: 9px;
+  border-left: 1.8px solid var(--text);
+  border-bottom: 1.8px solid var(--text);
+  transform: rotate(45deg);
+}
+
+.app-header__title {
+  font-size: 26px;
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.5px;
+  line-height: 1.15;
 }
 
 .header-icon-btn {
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   border-radius: var(--r-pill);
-  background: var(--surface);
-  border: 1px solid rgba(0, 0, 0, 0.07);
+  background: var(--surface-field);
+  border: 1px solid var(--line-field);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-pill);
   flex-shrink: 0;
   font-size: 15px;
   font-weight: 700;
   color: var(--accent-ink);
 }
 
-/* Cartão branco da bolsa: moedas (abre a edição) à esquerda, ajustar/enviar
-   à direita, tudo na mesma linha. Igual no Inventário e na Loja. */
+/* Dentro da moldura branca, os controles ficam rebaixados em vez de flutuar
+   como cartões — é o que separa "campo" de "fundo" agora que o topo é branco. */
+.app-header .search,
+.app-header .filters__toggle,
+.app-header .select {
+  background: var(--surface-field);
+  border-color: transparent;
+}
+
+.app-header .filters__toggle--on {
+  background: var(--accent-tint);
+}
+
+.app-header .subhead,
+.app-header .filters {
+  padding: 0;
+}
+
+/* Faixa da bolsa: moedas (abre a edição) à esquerda, ajustar/enviar
+   à direita, tudo na mesma linha. Igual no Inventário e na Loja.
+   Sem caixa em volta: corre solta no branco do cabeçalho, alinhada pela
+   esquerda com o título e a busca.
+
+   Ocupa a linha inteira (e não só o que o conteúdo pede) por dois motivos:
+   os botões caem no mesmo prumo do funil de filtros logo abaixo, e o nome do
+   personagem passa a ter um limite contra o qual cortar em reticências. */
 .gold-pill {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  background: var(--surface);
-  border: 1px solid rgba(0, 0, 0, 0.07);
-  border-radius: var(--r-xl);
-  padding: 6px 12px 7px;
-  box-shadow: var(--shadow-pill);
   flex-shrink: 0;
-  align-self: flex-start;
+  align-self: stretch;
 }
 
 .gold-pill__wallet {
@@ -69,27 +120,37 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 3px;
+  min-width: 0;
   text-align: left;
 }
 
+/* "Bolsa de Fulano": nome comprido corta em reticências em vez de empurrar os
+   botões de ajustar e enviar para fora. */
 .gold-pill__label {
+  max-width: 100%;
   font-size: 12px;
   font-weight: 700;
   color: var(--text-inactive);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* O filete que separava moedas de botões era da caixa; sem ela, ficava um
+   traço solto no branco. Agora quem separa é o vão. */
 .gold-pill__actions {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
-  padding-left: 10px;
-  border-left: 1px solid var(--line-field);
+  padding-left: 6px;
 }
 
+/* Sem a caixa cinza da bolsa por trás, os botões precisam do fundo rebaixado
+   para continuarem lendo como botões em cima do branco. */
 .gold-pill__action {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--r-pill);
   background: var(--surface-field);
   display: flex;
@@ -152,7 +213,7 @@
   gap: 8px;
   width: 100%;
   text-align: left;
-  font-size: 30px;
+  font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.5px;
   line-height: 1.15;
@@ -189,7 +250,7 @@
 }
 
 /* O menu agora pende do slot do título, não mais do bloco antigo. */
-.header__title-slot .shop-picker__menu {
+.app-header__title-slot .shop-picker__menu {
   top: calc(100% + 6px);
   left: 0;
 }
@@ -209,15 +270,14 @@
   color: var(--accent-ink);
 }
 
-/* Linha entre o título e a lista, com a contagem de itens/jogadores */
+/* Faixa de contagem de itens/jogadores, dentro da moldura fixa */
 .subhead {
-  padding: 0 20px 12px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  min-height: 18px;
+  margin-top: -2px;
 }
 
 .subhead__label {
@@ -226,7 +286,6 @@
 }
 
 .filters {
-  padding: 0 16px 10px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -250,8 +309,8 @@
 
 /* Botão de alternar filtros: funil que revela tipo/nível ao lado da busca */
 .filters__toggle {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: var(--r-md);
   background: var(--surface);
   border: 1px solid var(--line-field);
@@ -476,47 +535,64 @@
   flex-shrink: 0;
 }
 
-/* --------------------------------------------------------- resumo da Loja */
+/* ------------------------------------------------- carrinho da Loja */
 
-/* Cartão flutuante: carteira agora -> depois da compra, e o botão de comprar */
-.shop-summary {
-  position: fixed;
-  left: 16px;
-  right: 16px;
-  bottom: calc(var(--nav-h) + 12px + env(safe-area-inset-bottom));
-  z-index: 30;
-  max-width: 488px;
-  margin: 0 auto;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-2xl);
-  box-shadow: var(--shadow-modal);
-  padding: 12px 14px;
+/* O resumo da compra vive na folha que o carrinho flutuante abre — antes era
+   um cartão sempre à mostra, que crescia e cobria a lista. */
+
+.cart__lines {
+  display: flex;
+  flex-direction: column;
+  max-height: 32dvh;
+  overflow: auto;
+  margin: -2px 0 12px;
 }
 
-@media (min-width: 520px) {
-  .shop-summary {
-    left: calc(50% - 260px + 16px);
-    right: calc(50% - 260px + 16px);
-  }
-}
-
-.shop-summary__row {
+.cart__line {
   display: flex;
   align-items: center;
   gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
 }
 
-.shop-summary__col {
+.cart__line:last-child {
+  border-bottom: none;
+}
+
+.cart__line-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cart__wallet {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.cart__wallet-col {
   flex: 1;
   min-width: 0;
 }
 
-.shop-summary__col--right {
+.cart__wallet-col--right {
   text-align: right;
 }
 
-.shop-summary__label {
+.cart__wallet-col--right .coin-badges {
+  justify-content: flex-end;
+}
+
+.cart__label {
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.6px;
@@ -526,39 +602,36 @@
   margin-bottom: 4px;
 }
 
-.shop-summary__label--danger {
+.cart__label--danger {
   color: var(--danger);
 }
 
-.shop-summary__col--right .coin-badges {
-  justify-content: flex-end;
-}
-
-.shop-summary__divider {
-  height: 1px;
-  background: var(--line);
-  margin: 11px 0;
-}
-
-.shop-summary__buy {
+.cart__buy {
   width: 100%;
-  height: 48px;
+  height: 46px;
+  margin-top: 12px;
   border-radius: var(--r-lg);
   background: var(--accent);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
+  flex-shrink: 0;
 }
 
-.shop-summary__buy-label {
+.cart__buy:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cart__buy-label {
   font-size: 15px;
   font-weight: 700;
   color: #fff;
   white-space: nowrap;
 }
 
-.shop-summary__buy .coin-badge__amount {
+.cart__buy .coin-badge__amount {
   color: #fff;
 }
 
@@ -911,110 +984,125 @@
   white-space: nowrap;
 }
 
-/* ------------------------------------------------- faixa de personagens */
+/* --------------------------------------------------- trocar de personagem */
 
-/* Fica presa acima da barra de abas; some nas abas Biblioteca/Mestre. */
-.char-switcher {
-  display: flex;
-  justify-content: center;
-  gap: 14px;
-  overflow-x: auto;
-  padding: 8px 12px;
-  background: var(--surface);
-  border-top: 1px solid var(--line);
-  scrollbar-width: none;
-}
-
-.char-switcher::-webkit-scrollbar {
-  display: none;
-}
-
-.char-switcher__item {
-  flex-shrink: 0;
-  width: 56px;
+/* Folha que o primeiro botão da barra abre. Substitui a faixa fixa que morava
+   acima das abas: a mesa inteira cabe aqui, com as moedas de cada um à vista. */
+.char-list {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
-.char-switcher__avatar {
-  width: 40px;
-  height: 40px;
+.char-list__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  background: var(--surface-sunken);
+}
+
+.char-list__row--on {
+  background: var(--accent-tint);
+}
+
+.char-list__avatar {
+  width: 36px;
+  height: 36px;
   border-radius: var(--r-pill);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 17px;
+  flex-shrink: 0;
+  font-size: 16px;
   font-weight: 700;
   background: var(--surface-muted);
   color: var(--text-muted);
 }
 
-.char-switcher__item--on .char-switcher__avatar {
+.char-list__row--on .char-list__avatar {
   background: var(--accent);
   color: #fff;
 }
 
-.char-switcher__name {
-  max-width: 100%;
-  font-size: 11px;
-  line-height: 13px;
+.char-list__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.char-list__name {
+  display: block;
+  font-size: 14.5px;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.char-switcher__item--on .char-switcher__name {
-  font-weight: 700;
+.char-list__row--on .char-list__name {
   color: var(--accent-ink);
-}
-
-/* Os flutuantes precisam subir para não cobrir a faixa de personagens. */
-.app--switcher .fab,
-.app--switcher .sheet--bottom {
-  bottom: calc(var(--nav-h) + var(--switcher-h) + 24px + env(safe-area-inset-bottom));
-}
-
-.app--switcher .shop-summary {
-  bottom: calc(var(--nav-h) + var(--switcher-h) + 12px + env(safe-area-inset-bottom));
 }
 
 /* ------------------------------------------------------------ barra de abas */
 
-/* Prende a faixa de personagens + a barra de abas juntas no rodapé.
-   É "fixed" (não "sticky"): no celular, "sticky" recalcula com atraso quando
-   a barra de endereço do navegador esconde/aparece ao rolar a tela, e por um
-   instante dá pra ver a barra "dobrada" (a antiga posição em branco por cima
-   da nova). "fixed" fica presa direto na viewport e não sofre esse salto. */
+/* Barra presa no rodapé. Já não é "fixed" nem "sticky": é o último filho flex
+   de .app, que tem a altura exata da tela e não rola. Antes, com "fixed", a
+   barra subia e aparecia em dois níveis quando a barra de endereço do
+   navegador aparecia ou sumia ao rolar; agora a página nunca rola, então nada
+   disso acontece e o rodapé tem altura e posição fixas sempre. */
 .dock {
-  position: fixed;
-  left: 50%;
-  bottom: 0;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 520px;
+  flex-shrink: 0;
   z-index: 20;
 }
 
+/* Altura declarada, e não deduzida do conteúdo, porque é dela que --dock-h
+   tira a medida para ancorar o flutuante e as folhas. */
 .nav {
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom));
   display: flex;
-  flex-shrink: 0;
-  padding: 8px 8px calc(10px + env(safe-area-inset-bottom));
+  align-items: stretch;
+  padding: 0 6px env(safe-area-inset-bottom);
   background: var(--surface);
   border-top: 1px solid var(--line);
 }
 
 .nav__tab {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 3px;
-  padding: 6px 0;
   color: var(--text-inactive);
+}
+
+/* Berço de altura fixa: o ícone de 22 e a inicial de 36 do personagem ficam
+   no mesmo trilho, então os quatro rótulos saem alinhados. */
+.nav__icon {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Inicial do personagem que está jogando — sempre cheia, porque é identidade
+   e não estado de aba. */
+.nav__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  background: var(--accent);
+  color: #fff;
 }
 
 .nav__tab--on {
@@ -1022,6 +1110,10 @@
 }
 
 .nav__label {
+  max-width: 100%;
   font-size: 11px;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

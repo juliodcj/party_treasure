@@ -19,6 +19,9 @@ body,
   height: 100%;
 }
 
+/* Quem rola é a lista lá dentro (.app__scroll), nunca a página. Enquanto o
+   documento não rola, o navegador do celular não recolhe/mostra a barra de
+   endereço — que era o que fazia o rodapé "pular" e aparecer em dois níveis. */
 body {
   margin: 0;
   background: var(--bg);
@@ -27,7 +30,8 @@ body {
   font-size: 14.5px;
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  overflow: hidden;
+  overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -54,35 +58,52 @@ textarea {
   color: var(--text);
 }
 
-/* O protótipo vivia numa moldura de iPhone; aqui é a tela inteira do Android,
-   e num monitor grande a coluna apenas para de crescer e centraliza. */
+/* Casca de aplicativo: altura exata da tela, sem rolagem própria. Em cima o
+   cabeçalho fixo, no meio a única área que rola, embaixo o rodapé — os três
+   são filhos flex, então cabeçalho e rodapé têm altura e posição fixas por
+   construção, sem depender de "position: fixed".
+
+   Num monitor a coluna para de crescer na largura do Galaxy S23, para o que
+   se analisa no navegador bater com o que a mesa vê no celular. */
 .app {
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
-  max-width: 520px;
+  height: 100dvh;
+  max-width: var(--app-w);
   margin: 0 auto;
   background: var(--bg);
   position: relative;
+  overflow: hidden;
 }
 
 .app__scroll {
   flex: 1;
   min-height: 0;
-  /* .dock agora é "fixed" (fora do fluxo), então a lista precisa desse
-     respiro embaixo pra não ficar escondida atrás da barra de abas. */
-  padding: 0 16px calc(var(--nav-h) + 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 10px 16px 16px;
   display: flex;
   flex-direction: column;
   gap: 7px;
 }
 
-/* Nas abas com faixa de personagens, o respiro cresce pra caber ela também. */
-.app--switcher .app__scroll {
-  padding-bottom: calc(var(--nav-h) + var(--switcher-h) + 16px);
+/* Nas abas com botão flutuante, o fim da lista sobe o bastante para o último
+   item continuar visível quando a rolagem chega ao fim. */
+.app__scroll--fab {
+  padding-bottom: var(--fab-gutter);
 }
 
-@media (min-width: 520px) {
+/* A lista é um flex column de altura limitada: sem isto, quem esconde o que
+   transborda (as pastas da Biblioteca) é achatado para caber em vez de a
+   lista rolar. As telas agrupam com <section style="display: contents">, daí
+   o segundo seletor. */
+.app__scroll > *,
+.app__scroll > section > * {
+  flex-shrink: 0;
+}
+
+@media (min-width: 360px) {
   .app {
     box-shadow: 0 0 0 1px var(--line);
   }

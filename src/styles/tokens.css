@@ -59,9 +59,20 @@
 
   --font: -apple-system, system-ui, sans-serif;
 
-  /* Altura da barra de abas, usada para posicionar o botão flutuante */
-  --nav-h: 86px;
+  /* Largura de referência do layout: a tela de um Galaxy S23 (360 CSS px).
+     É o aparelho em que a mesa joga — num monitor a coluna para de crescer
+     aqui, para o que se vê no navegador ser o que se vê no celular. */
+  --app-w: 360px;
 
-  /* Altura da faixa de personagens acima da barra de abas (só Inventário/Loja) */
-  --switcher-h: 74px;
+  /* Altura da barra de abas (sem a área segura, somada à parte). */
+  --nav-h: 74px;
+
+  /* Altura total do rodapé preso embaixo. Fica exata porque .nav tem altura
+     declarada — é ela que ancora o flutuante e as folhas, então não pode ser
+     um chute. */
+  --dock-h: calc(var(--nav-h) + env(safe-area-inset-bottom));
+
+  /* Respiro embaixo da lista para o botão flutuante não cobrir o último item */
+  --fab-size: 52px;
+  --fab-gutter: calc(var(--fab-size) + 28px);
 }

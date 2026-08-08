@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
-import Header from './components/Header.jsx'
+import AppHeader, { HeaderCount, WalletPill } from './components/AppHeader.jsx'
+import CharacterPicker, { initialOf } from './components/CharacterPicker.jsx'
 import SendMoneySheet from './components/SendMoneySheet.jsx'
 import AdjustCoinsSheet from './components/AdjustCoinsSheet.jsx'
 import EditWalletSheet from './components/EditWalletSheet.jsx'
 import { SearchBox, FilterSelects, LevelPicker, EMPTY_FILTERS } from './components/ItemFilters.jsx'
 import SettingsSheet from './components/SettingsSheet.jsx'
-import { BagIcon, BookIcon, ChevronDown, CrownIcon, FilterIcon, ShopIcon } from './components/Icons.jsx'
+import { BagIcon, ChevronDown, CrownIcon, FilterIcon, GearIcon, ShopIcon } from './components/Icons.jsx'
 import InventoryScreen from './screens/InventoryScreen.jsx'
 import ShopScreen from './screens/ShopScreen.jsx'
 import LibraryScreen from './screens/LibraryScreen.jsx'
@@ -15,12 +16,59 @@ import { CATALOG } from './data/catalog.js'
 import { availableLevels, playerInventory, resolveItem } from './lib/items.js'
 import { plural } from './lib/text.js'
 
+/* Abas da barra de baixo. O primeiro botão da barra é o seletor de
+   personagem, que não é aba nenhuma — abre a folha de troca. */
 const TABS = [
   { id: 'inventory', label: 'Inventário', Icon: BagIcon },
   { id: 'shop', label: 'Loja', Icon: ShopIcon },
-  { id: 'library', label: 'Biblioteca', Icon: BookIcon },
   { id: 'gm', label: 'Mestre', Icon: CrownIcon },
 ]
+
+/* A Biblioteca não é aba: é uma tela filha do Mestre, com o mesmo cabeçalho
+   das outras e um botão de voltar. Daí o título vir daqui e não das abas. */
+const TITLES = {
+  inventory: 'Inventário',
+  shop: 'Loja',
+  gm: 'Mestre',
+  library: 'Biblioteca',
+}
+
+/**
+ * Faixa de busca do cabeçalho: campo + funil que revela os filtros embaixo.
+ * A Biblioteca só filtra por nível; as outras abas filtram tipo e nível.
+ */
+function FiltersBar({ filters, onChange, levels, open, onToggle, levelsOnly = false }) {
+  return (
+    <div className="filters">
+      <div className="filters__row">
+        <SearchBox value={filters.search} onChange={(search) => onChange({ ...filters, search })} />
+        <button
+          type="button"
+          className={`filters__toggle${open ? ' filters__toggle--on' : ''}`}
+          onClick={onToggle}
+          aria-expanded={open}
+          aria-label="Filtros"
+          title="Filtros"
+        >
+          <FilterIcon color={open ? 'var(--accent-ink)' : 'var(--text-muted)'} />
+        </button>
+      </div>
+      {open ? (
+        levelsOnly ? (
+          <div className="filters__row">
+            <LevelPicker
+              levels={levels}
+              value={filters.levels}
+              onChange={(next) => onChange({ ...filters, levels: next })}
+            />
+          </div>
+        ) : (
+          <FilterSelects value={filters} onChange={onChange} levels={levels} />
+        )
+      ) : null}
+    </div>
+  )
+}
 
 export default function App() {
   const { state, dispatch } = useStore()
@@ -33,16 +81,21 @@ export default function App() {
   const [sendMoneyOpen, setSendMoneyOpen] = useState(false)
   const [adjustCoinsOpen, setAdjustCoinsOpen] = useState(false)
   const [shopPickerOpen, setShopPickerOpen] = useState(false)
-  const [shopFiltersOpen, setShopFiltersOpen] = useState(false)
-  const [inventoryFiltersOpen, setInventoryFiltersOpen] = useState(false)
-  const [libraryFiltersOpen, setLibraryFiltersOpen] = useState(false)
+  const [charPickerOpen, setCharPickerOpen] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [editWalletOpen, setEditWalletOpen] = useState(false)
 
   const isInventory = tab === 'inventory'
   const isShop = tab === 'shop'
   const isLibrary = tab === 'library'
+  const isGm = tab === 'gm'
   const isCharacterTab = isInventory || isShop
+  // A Biblioteca é filha do Mestre: a aba Mestre segue acesa lá dentro.
+  const inGmSection = isGm || isLibrary
+  // Só o Mestre não tem botão flutuante — as outras telas precisam do respiro
+  // extra no fim da lista para o último item não ficar embaixo dele.
+  const hasFab = !isGm
 
   const shop = state.shops.find((current) => current.id === state.activeShopId) ?? state.shops[0]
 
@@ -68,23 +121,23 @@ export default function App() {
     setOpenId(null)
     setFilters(EMPTY_FILTERS)
     setShopPickerOpen(false)
-    setShopFiltersOpen(false)
-    setInventoryFiltersOpen(false)
-    setLibraryFiltersOpen(false)
+    setCharPickerOpen(false)
+    setFiltersOpen(false)
   }
 
   const toggleItem = (id) => setOpenId((current) => (current === id ? null : id))
 
   const subhead = isLibrary
-      ? `${state.campaignItems.length} da campanha · ${CATALOG.length} oficiais`
-      : tab === 'gm'
-        ? `${plural(state.players.length, 'jogador', 'jogadores')} · ${plural(state.shops.length, 'loja cadastrada', 'lojas cadastradas')}`
-        : ''
+    ? `${state.campaignItems.length} da campanha · ${CATALOG.length} oficiais`
+    : isGm
+      ? `${plural(state.players.length, 'jogador', 'jogadores')} · ${plural(state.shops.length, 'loja cadastrada', 'lojas cadastradas')}`
+      : ''
 
   return (
-    <div className={`app${isCharacterTab ? ' app--switcher' : ''}`}>
-      <Header
-        title={TABS.find((current) => current.id === tab).label}
+    <div className="app">
+      <AppHeader
+        title={TITLES[tab]}
+        onBack={isLibrary ? () => goTo('gm') : null}
         titleContent={
           isShop && shop ? (
             <>
@@ -121,99 +174,46 @@ export default function App() {
             </>
           ) : null
         }
-        player={isCharacterTab ? player : null}
-        showAdjust={isCharacterTab}
-        showSend={isCharacterTab && state.players.length > 1}
-        showSettings={tab === 'gm'}
-        onAdjust={() => setAdjustCoinsOpen(true)}
-        onSend={() => setSendMoneyOpen(true)}
-        onSettings={() => setSettingsOpen(true)}
-        onEditWallet={() => setEditWalletOpen(true)}
-      />
-
-      {subhead ? (
-        <div className="subhead">
-          <span className="subhead__label">{subhead}</span>
-        </div>
-      ) : null}
-
-      {isInventory ? (
-        <div className="filters">
-          <div className="filters__row">
-            <SearchBox
-              value={filters.search}
-              onChange={(search) => setFilters({ ...filters, search })}
-            />
+        actions={
+          isGm ? (
             <button
               type="button"
-              className={`filters__toggle${inventoryFiltersOpen ? ' filters__toggle--on' : ''}`}
-              onClick={() => setInventoryFiltersOpen((value) => !value)}
-              aria-expanded={inventoryFiltersOpen}
-              aria-label="Filtros"
-              title="Filtros"
+              className="header-icon-btn"
+              title="Configurações"
+              aria-label="Configurações"
+              onClick={() => setSettingsOpen(true)}
             >
-              <FilterIcon color={inventoryFiltersOpen ? 'var(--accent-ink)' : 'var(--text-muted)'} />
+              <GearIcon size={19} />
             </button>
-          </div>
-          {inventoryFiltersOpen ? (
-            <FilterSelects value={filters} onChange={setFilters} levels={levels} />
-          ) : null}
-        </div>
-      ) : null}
+          ) : null
+        }
+      >
+        {isCharacterTab ? (
+          <WalletPill
+            player={player}
+            showAdjust
+            showSend={state.players.length > 1}
+            onAdjust={() => setAdjustCoinsOpen(true)}
+            onSend={() => setSendMoneyOpen(true)}
+            onEditWallet={() => setEditWalletOpen(true)}
+          />
+        ) : null}
 
-      {isShop ? (
-        <div className="filters">
-          <div className="filters__row">
-            <SearchBox
-              value={filters.search}
-              onChange={(search) => setFilters({ ...filters, search })}
-            />
-            <button
-              type="button"
-              className={`filters__toggle${shopFiltersOpen ? ' filters__toggle--on' : ''}`}
-              onClick={() => setShopFiltersOpen((value) => !value)}
-              aria-expanded={shopFiltersOpen}
-              aria-label="Filtros"
-              title="Filtros"
-            >
-              <FilterIcon color={shopFiltersOpen ? 'var(--accent-ink)' : 'var(--text-muted)'} />
-            </button>
-          </div>
-          {shopFiltersOpen ? <FilterSelects value={filters} onChange={setFilters} levels={levels} /> : null}
-        </div>
-      ) : null}
+        {subhead ? <HeaderCount>{subhead}</HeaderCount> : null}
 
-      {isLibrary ? (
-        <div className="filters">
-          <div className="filters__row">
-            <SearchBox
-              value={filters.search}
-              onChange={(search) => setFilters({ ...filters, search })}
-            />
-            <button
-              type="button"
-              className={`filters__toggle${libraryFiltersOpen ? ' filters__toggle--on' : ''}`}
-              onClick={() => setLibraryFiltersOpen((value) => !value)}
-              aria-expanded={libraryFiltersOpen}
-              aria-label="Filtros"
-              title="Filtros"
-            >
-              <FilterIcon color={libraryFiltersOpen ? 'var(--accent-ink)' : 'var(--text-muted)'} />
-            </button>
-          </div>
-          {libraryFiltersOpen ? (
-            <div className="filters__row">
-              <LevelPicker
-                levels={libraryLevels}
-                value={filters.levels}
-                onChange={(levels) => setFilters({ ...filters, levels })}
-              />
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+        {isGm ? null : (
+          <FiltersBar
+            filters={filters}
+            onChange={setFilters}
+            levels={isLibrary ? libraryLevels : levels}
+            open={filtersOpen}
+            onToggle={() => setFiltersOpen((value) => !value)}
+            levelsOnly={isLibrary}
+          />
+        )}
+      </AppHeader>
 
-      <main className="app__scroll">
+      <main className={`app__scroll${hasFab ? ' app__scroll--fab' : ''}`}>
         {isInventory ? (
           <InventoryScreen player={player} filters={filters} openId={openId} onToggle={toggleItem} />
         ) : null}
@@ -229,49 +229,55 @@ export default function App() {
         {isLibrary ? (
           <LibraryScreen filters={filters} openId={openId} onToggle={toggleItem} />
         ) : null}
-        {tab === 'gm' ? <GmScreen /> : null}
+        {isGm ? <GmScreen onOpenLibrary={() => goTo('library')} /> : null}
       </main>
 
       <div className="dock">
-        {isCharacterTab ? (
-          <div className="char-switcher" role="tablist" aria-label="Escolher personagem">
-            {state.players.map((current) => (
-              <button
-                key={current.id}
-                type="button"
-                role="tab"
-                aria-selected={current.id === player.id}
-                className={`char-switcher__item${current.id === player.id ? ' char-switcher__item--on' : ''}`}
-                onClick={() => {
-                  dispatch({ type: 'SELECT_PLAYER', playerId: current.id })
-                  setOpenId(null)
-                }}
-              >
-                <span className="char-switcher__avatar" aria-hidden="true">
-                  {current.name.trim().charAt(0).toUpperCase()}
-                </span>
-                <span className="char-switcher__name">{current.name.trim().split(' ')[0]}</span>
-              </button>
-            ))}
-          </div>
-        ) : null}
-
         <nav className="nav" aria-label="Navegação principal">
-          {TABS.map(({ id, label, Icon }) => (
-            <button
-              key={id}
-              type="button"
-              className={`nav__tab${tab === id ? ' nav__tab--on' : ''}`}
-              aria-current={tab === id ? 'page' : undefined}
-              onClick={() => goTo(id)}
-            >
-              <Icon />
-              <span className="nav__label">{label}</span>
-            </button>
-          ))}
+          {/* Primeiro botão: quem está jogando. Não é aba — abre a troca. */}
+          <button
+            type="button"
+            className={`nav__tab${charPickerOpen ? ' nav__tab--on' : ''}`}
+            aria-haspopup="dialog"
+            aria-expanded={charPickerOpen}
+            aria-label={`Personagem: ${player.name}. Trocar de personagem`}
+            onClick={() => setCharPickerOpen(true)}
+          >
+            <span className="nav__avatar" aria-hidden="true">
+              {initialOf(player.name)}
+            </span>
+            <span className="nav__label">{player.name.trim().split(' ')[0]}</span>
+          </button>
+
+          {TABS.map(({ id, label, Icon }) => {
+            const on = id === 'gm' ? inGmSection : tab === id
+            return (
+              <button
+                key={id}
+                type="button"
+                className={`nav__tab${on ? ' nav__tab--on' : ''}`}
+                aria-current={on ? 'page' : undefined}
+                onClick={() => goTo(id)}
+              >
+                <span className="nav__icon">
+                  <Icon />
+                </span>
+                <span className="nav__label">{label}</span>
+              </button>
+            )
+          })}
         </nav>
       </div>
 
+      {charPickerOpen ? (
+        <CharacterPicker
+          activeId={player.id}
+          onClose={() => {
+            setCharPickerOpen(false)
+            setOpenId(null)
+          }}
+        />
+      ) : null}
       {sendMoneyOpen ? (
         <SendMoneySheet player={player} onClose={() => setSendMoneyOpen(false)} />
       ) : null}
