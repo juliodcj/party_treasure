@@ -1,4 +1,4 @@
-# PF2e Tunado — Party Treasure
+# PF2e — Party Treasure
 
 App web para gerenciar **inventário, dinheiro e lojas** de uma mesa presencial
 de Pathfinder 2e. O mestre roda o servidor no PC; os jogadores acessam pelo
