@@ -1,4 +1,4 @@
-import { addCoins, simplifyWallet, spendCopper, toCopper, withWalletCopper } from '../lib/money.js'
+import { addCoins, spendCopper, toCopper, withWalletCopper } from '../lib/money.js'
 import { makeId, normalizeItem, resolveItem } from '../lib/items.js'
 import { SELL_RATE } from '../config.js'
 
@@ -76,15 +76,6 @@ export function reducer(state, action) {
     }
 
     // ----------------------------------------------------------------- dinheiro
-
-    case 'SIMPLIFY_COINS':
-      return {
-        ...state,
-        players: mapPlayer(state.players, action.playerId, (player) => ({
-          ...player,
-          ...simplifyWallet(player),
-        })),
-      }
 
     case 'TRANSFER_COINS': {
       const from = state.players.find((player) => player.id === action.fromId)

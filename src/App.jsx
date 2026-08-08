@@ -75,9 +75,6 @@ export default function App() {
 
   const toggleItem = (id) => setOpenId((current) => (current === id ? null : id))
 
-  // O botão só aparece quando há moedas soltas o bastante para valer a pena.
-  const showSimplify = isCharacterTab && (player.silver >= 10 || player.copper >= 10)
-
   const subhead = isLibrary
       ? `${state.campaignItems.length} da campanha · ${CATALOG.length} oficiais`
       : tab === 'gm'
@@ -128,12 +125,10 @@ export default function App() {
         showAdjust={isCharacterTab}
         showSend={isCharacterTab && state.players.length > 1}
         showSettings={tab === 'gm'}
-        showSimplify={showSimplify}
         onAdjust={() => setAdjustCoinsOpen(true)}
         onSend={() => setSendMoneyOpen(true)}
         onSettings={() => setSettingsOpen(true)}
         onEditWallet={() => setEditWalletOpen(true)}
-        onSimplify={() => dispatch({ type: 'SIMPLIFY_COINS', playerId: player.id })}
       />
 
       {subhead ? (

@@ -41,26 +41,19 @@
   color: var(--accent-ink);
 }
 
-/* Cartão branco da bolsa: moedas (abre a edição), "simplificar" e a linha
-   de ações (ajustar / enviar). Igual no Inventário e na Loja. */
+/* Cartão branco da bolsa: moedas (abre a edição) à esquerda, ajustar/enviar
+   à direita, tudo na mesma linha. Igual no Inventário e na Loja. */
 .gold-pill {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   background: var(--surface);
   border: 1px solid rgba(0, 0, 0, 0.07);
   border-radius: var(--r-xl);
   padding: 6px 12px 7px;
   box-shadow: var(--shadow-pill);
   flex-shrink: 0;
-}
-
-/* Moedas à esquerda, botões de ação à direita, tudo na mesma linha. */
-.gold-pill__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
 }
 
 .gold-pill__wallet {
@@ -75,16 +68,6 @@
   font-size: 10.5px;
   font-weight: 700;
   color: var(--text-inactive);
-}
-
-.gold-pill__simplify {
-  align-self: flex-start;
-  margin-top: 6px;
-}
-
-/* Sem "simplificar" a pílula mantém exatamente a mesma altura. */
-.gold-pill__simplify--off {
-  visibility: hidden;
 }
 
 .gold-pill__actions {
@@ -161,9 +144,9 @@
   gap: 8px;
   width: 100%;
   text-align: left;
-  font-size: 26px;
+  font-size: 30px;
   font-weight: 700;
-  letter-spacing: -0.4px;
+  letter-spacing: -0.5px;
   line-height: 1.15;
   color: var(--text);
 }
@@ -218,7 +201,7 @@
   color: var(--accent-ink);
 }
 
-/* Linha entre o título e a lista: contagem + "Simplificar moedas" */
+/* Linha entre o título e a lista, com a contagem de itens/jogadores */
 .subhead {
   padding: 0 20px 12px;
   flex-shrink: 0;

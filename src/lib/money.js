@@ -92,8 +92,3 @@ export function spendCopper(wallet, amountCp) {
   if (owed > total) return null
   return withWalletCopper(wallet, total - owed)
 }
-
-/** Junta tudo e redistribui na menor quantidade de moedas. */
-export function simplifyWallet(wallet) {
-  return fromCopper(toCopper(wallet))
-}
