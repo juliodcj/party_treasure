@@ -16,20 +16,22 @@ export default function Header({
 }) {
   return (
     <header className="header">
-      <div className="header__title-slot">
-        {titleContent ?? <div className="header__title">{title}</div>}
+      <div className="header__row">
+        <div className="header__title-slot">
+          {titleContent ?? <div className="header__title">{title}</div>}
+        </div>
+        {showSettings ? (
+          <button
+            type="button"
+            className="header-icon-btn"
+            title="Configurações"
+            aria-label="Configurações"
+            onClick={onSettings}
+          >
+            <GearIcon />
+          </button>
+        ) : null}
       </div>
-      {showSettings ? (
-        <button
-          type="button"
-          className="header-icon-btn"
-          title="Configurações"
-          aria-label="Configurações"
-          onClick={onSettings}
-        >
-          <GearIcon />
-        </button>
-      ) : null}
       {player ? (
         <div className="gold-pill">
           <button

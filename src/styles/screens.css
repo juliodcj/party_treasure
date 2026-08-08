@@ -5,13 +5,20 @@
 .header {
   padding: calc(env(safe-area-inset-top) + 14px) 20px 6px;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  flex-direction: column;
   gap: 10px;
   flex-shrink: 0;
 }
 
-/* O título divide a linha com a pílula: ele encolhe e quebra, ela não. */
+/* Título (ou seletor de loja) e a engrenagem de Configurações, lado a lado */
+.header__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* O título divide a linha com a engrenagem: ele encolhe e quebra, ela não. */
 .header__title-slot {
   position: relative;
   flex: 1;
@@ -54,6 +61,7 @@
   padding: 6px 12px 7px;
   box-shadow: var(--shadow-pill);
   flex-shrink: 0;
+  align-self: flex-start;
 }
 
 .gold-pill__wallet {
@@ -65,7 +73,7 @@
 }
 
 .gold-pill__label {
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-inactive);
 }
@@ -668,25 +676,30 @@
 }
 
 /* Ações secundárias reveladas pelo "⋯": discretas, sem competir com o rodapé */
+/* Lista de opções (não mais botões soltos): uma linha por ação, com
+   divisória fina entre elas — igual ao menu de trocar de loja. */
 .item__menu {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
   margin-top: 10px;
-  padding: 8px;
   background: var(--surface-sunken);
   border-radius: var(--r-md);
+  overflow: hidden;
 }
 
 .item__menu-item {
-  font-size: 12.5px;
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--accent-ink);
-  background: var(--surface);
-  border: 1px solid var(--line-field);
-  border-radius: var(--r-pill);
-  padding: 6px 12px;
-  white-space: nowrap;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.item__menu-item:last-child {
+  border-bottom: none;
 }
 
 /* Renomear no lugar: campo + confirmar, sem abrir folha */
@@ -903,6 +916,7 @@
 /* Fica presa acima da barra de abas; some nas abas Biblioteca/Mestre. */
 .char-switcher {
   display: flex;
+  justify-content: center;
   gap: 14px;
   overflow-x: auto;
   padding: 8px 12px;
@@ -970,12 +984,19 @@
 
 /* ------------------------------------------------------------ barra de abas */
 
-/* Prende a faixa de personagens + a barra de abas juntas no rodapé. */
+/* Prende a faixa de personagens + a barra de abas juntas no rodapé.
+   É "fixed" (não "sticky"): no celular, "sticky" recalcula com atraso quando
+   a barra de endereço do navegador esconde/aparece ao rolar a tela, e por um
+   instante dá pra ver a barra "dobrada" (a antiga posição em branco por cima
+   da nova). "fixed" fica presa direto na viewport e não sofre esse salto. */
 .dock {
-  position: sticky;
+  position: fixed;
+  left: 50%;
   bottom: 0;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 520px;
   z-index: 20;
-  flex-shrink: 0;
 }
 
 .nav {
