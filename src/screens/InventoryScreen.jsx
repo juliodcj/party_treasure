@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import ItemRow from '../components/ItemRow.jsx'
 import Sheet, { SheetActions } from '../components/Sheet.jsx'
 import Stepper from '../components/Stepper.jsx'
+import { Price } from '../components/Coins.jsx'
 import ItemForm from '../components/ItemForm.jsx'
 import { SearchBox } from '../components/ItemFilters.jsx'
 import { EditIcon, MoreIcon, PlusIcon, TrashIcon } from '../components/Icons.jsx'
@@ -15,7 +16,6 @@ import {
   matchesSearch,
   playerInventory,
 } from '../lib/items.js'
-import { formatCopper } from '../lib/money.js'
 import { SELL_RATE } from '../config.js'
 
 export default function InventoryScreen({ player, filters, openId, onToggle }) {
@@ -104,7 +104,7 @@ export default function InventoryScreen({ player, filters, openId, onToggle }) {
         <Sheet center onClose={() => setSelling(null)}>
           <div className="sheet__question">
             Deseja vender {selling.qty}x {selling.item.name} por{' '}
-            {formatCopper(Math.floor(selling.item.priceCp * SELL_RATE) * selling.qty)}?
+            <Price totalCp={Math.floor(selling.item.priceCp * SELL_RATE) * selling.qty} size="sm" />?
           </div>
           <div className="sheet__center-row">
             <Stepper
@@ -423,7 +423,7 @@ function AddItemSheet({ player, onClose }) {
                 <div className="gm__grow">
                   <div className="gm__row-name">{item.name}</div>
                   <div className="gm__row-sub">
-                    Nv {item.level} · {formatCopper(item.priceCp)}
+                    Nv {item.level} · <Price totalCp={item.priceCp} size="sm" />
                   </div>
                 </div>
                 <button

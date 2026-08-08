@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import Sheet, { SheetActions } from './Sheet.jsx'
 import { CoinInputs } from './ItemForm.jsx'
+import { Price } from './Coins.jsx'
 import { useStore } from '../state/store.jsx'
-import { formatCopper, toCopper } from '../lib/money.js'
+import { toCopper } from '../lib/money.js'
 
 /**
  * Enviar dinheiro a outro personagem: dois passos, igual ao croqui —
@@ -44,7 +45,7 @@ export default function SendMoneySheet({ player, onClose }) {
     return (
       <Sheet center onClose={onClose}>
         <div className="sheet__question">
-          {player.name} quer enviar {formatCopper(amountCp)} para {target.name}?
+          {player.name} quer enviar <Price totalCp={amountCp} size="sm" /> para {target.name}?
         </div>
         <SheetActions
           onCancel={() => setStep('pick')}
@@ -81,7 +82,9 @@ export default function SendMoneySheet({ player, onClose }) {
       </div>
 
       {tooMuch ? (
-        <p className="form-error">Saldo insuficiente: você tem {formatCopper(totalCp)}.</p>
+        <p className="form-error">
+          Saldo insuficiente: você tem <Price totalCp={totalCp} size="sm" />.
+        </p>
       ) : null}
 
       <SheetActions

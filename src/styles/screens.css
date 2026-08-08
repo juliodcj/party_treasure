@@ -974,12 +974,6 @@
   min-width: 0;
 }
 
-.gm__check-price {
-  font-size: var(--t-meta);
-  color: var(--text-2);
-  white-space: nowrap;
-}
-
 /* --------------------------------------------------- trocar de personagem */
 
 /* Folha que o primeiro botão da barra abre. Substitui a faixa fixa que morava

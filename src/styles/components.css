@@ -273,10 +273,13 @@
    Antes eram três marcações à mão, com três tamanhos de ponto e três esquemas
    de cor para o mesmo dado. */
 
+/* inline-flex, não flex: precisa correr no meio de frase ("enviar 12 po para
+   Seelah?"), não quebrar linha como um bloco. */
 .coins {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   flex-shrink: 0;
+  vertical-align: middle;
 }
 
 .coins--sm {

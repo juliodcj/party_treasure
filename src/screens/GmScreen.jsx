@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import Sheet, { SheetActions } from '../components/Sheet.jsx'
 import Stepper from '../components/Stepper.jsx'
-import Coins from '../components/Coins.jsx'
+import Coins, { Price } from '../components/Coins.jsx'
 import { CoinInputs } from '../components/ItemForm.jsx'
 import { EMPTY_FILTERS, FiltersBar } from '../components/ItemFilters.jsx'
 import { ChevronRight, EditIcon, TrashIcon } from '../components/Icons.jsx'
@@ -17,7 +17,6 @@ import {
   matchesSearch,
   resolveItem,
 } from '../lib/items.js'
-import { formatCopper } from '../lib/money.js'
 import { plural } from '../lib/text.js'
 
 /* Quais seções ficam abertas. Mora fora do componente porque a aba Mestre é
@@ -632,7 +631,7 @@ function ShopCard({ shop, isOpen, onToggle, onDelete, onEdit }) {
               <div className="gm__row" key={item.id}>
                 <span className="gm__row-name">{item.name}</span>
                 <span className="item__level">Nv {item.level}</span>
-                <span className="gm__check-price">{formatCopper(item.priceCp)}</span>
+                <Price totalCp={item.priceCp} size="sm" />
                 <button
                   type="button"
                   className="icon-btn icon-btn--accent"

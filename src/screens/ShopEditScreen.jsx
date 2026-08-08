@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { SearchBox, FilterSelects, EMPTY_FILTERS } from '../components/ItemFilters.jsx'
 import { CheckIcon } from '../components/Icons.jsx'
+import { Price } from '../components/Coins.jsx'
 import { useStore } from '../state/store.jsx'
 import { availableLevels, libraryItems, matchesContent, matchesFilters, matchesSearch } from '../lib/items.js'
-import { formatCopper } from '../lib/money.js'
 import { plural } from '../lib/text.js'
 
 const LIST_LIMIT = 200
@@ -107,7 +107,7 @@ export default function ShopEditScreen({ shop = null, onClose }) {
                   {checked ? <CheckIcon /> : null}
                 </span>
                 <span className="gm__check-name">{item.name}</span>
-                <span className="gm__check-price">{formatCopper(item.priceCp)}</span>
+                <Price totalCp={item.priceCp} size="sm" />
               </button>
             )
           })}

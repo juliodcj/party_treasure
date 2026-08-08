@@ -150,6 +150,20 @@ Tamanhos: `sm` (12px, ponto 7) nas listas do Mestre e na troca de personagem ·
 `showZeros` mostra as três denominações mesmo zeradas — numa carteira o zero é
 informação ("não tenho cobre"), num preço é ruído.
 
+**Qualquer quantia na tela usa `<Coins>`/`<Price>` — nunca o texto "po/pp/pc".**
+`formatCopper` (`lib/money.js`) ainda existe, mas só para o que não pode ser um
+componente (o `toPriceInput` de um campo de texto editável, se algum dia for
+usado); toda vez que uma quantia aparece para o jogador ler, é o pontinho
+colorido, não abreviação de letra.
+
+Para caber no meio de uma frase ("Valeros quer enviar 3 po para Seelah?"),
+`.coins` é `display: inline-flex`, não `flex` — só assim ele corre ao lado do
+texto sem quebrar linha como bloco. Quando o `<Coins>` acaba sendo filho direto
+de outro flex container (a bolsa do cabeçalho, por exemplo), o navegador
+"blockifica" esse `inline-flex` de volta para `flex` sozinho — é o
+comportamento padrão de todo item de flex container, não uma regra à parte, e
+não muda nada visualmente.
+
 ### `<Stepper>` — `components/Stepper.jsx`
 
 O `−` cinza e o `+` azul dentro de uma **pílula tingida**, sempre. Dois tamanhos:
