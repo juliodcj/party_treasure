@@ -14,15 +14,21 @@ import { printStartupBanner } from '../server/net.js'
  */
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx'
 
 const children = []
 
-function start(command, args, name) {
-  const child = spawn(command, args, {
+/**
+ * Sempre `node <arquivo.js>`, nunca `npx` e nunca com `shell: true`.
+ *
+ * Com shell, o Windows junta os argumentos num texto só e quebra no primeiro
+ * espaço — num caminho como "C:\Users\Julio Carvalho\..." o comando vira
+ * "C:\Users\Julio" e o Node reclama de módulo inexistente. Chamando o binário
+ * do Vite direto, o espaço não é problema de ninguém.
+ */
+function start(args, name) {
+  const child = spawn(process.execPath, args, {
     cwd: ROOT,
     stdio: ['ignore', 'inherit', 'inherit'],
-    shell: process.platform === 'win32',
   })
   child.on('exit', (code) => {
     // Um caiu, o outro não serve para nada sozinho: derruba os dois.
@@ -46,8 +52,8 @@ function stop() {
 process.on('SIGINT', stop)
 process.on('SIGTERM', stop)
 
-start('node', [resolve(ROOT, 'server', 'index.js'), '--dev'], 'servidor')
-start(npx, ['vite', '--host', '--port', '3000'], 'vite')
+start([resolve(ROOT, 'server', 'index.js'), '--dev'], 'servidor')
+start([resolve(ROOT, 'node_modules', 'vite', 'bin', 'vite.js'), '--host', '--port', '3000'], 'vite')
 
 // O Vite imprime os endereços dele, mas sem contexto de qual usar na mesa.
 setTimeout(() => printStartupBanner(3000, { dev: true }), 1200).unref()
