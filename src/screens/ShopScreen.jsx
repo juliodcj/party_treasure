@@ -152,7 +152,16 @@ export default function ShopScreen({ player, shop, filters, openId, onToggle }) 
             className="cart__buy"
             disabled={!affordable}
             onClick={() => {
-              dispatch({ type: 'BUY_CART' })
+              // O carrinho é deste aparelho, então viaja junto com a ação; o
+              // preço não, que o servidor lê do catálogo. Só esvazia se a
+              // compra chegou a sair daqui — senão o carrinho espera a conexão.
+              const sent = dispatch({
+                type: 'BUY_CART',
+                playerId: player.id,
+                lines: lines.map(({ item, qty }) => ({ itemId: item.id, qty })),
+              })
+              if (!sent) return
+              dispatch({ type: 'CART_CLEAR' })
               setCartOpen(false)
             }}
             aria-label={`Comprar ${plural(itemCount, 'item', 'itens')}`}

@@ -2,6 +2,24 @@ import { addCoins, simplifyWallet, spendCopper, toCopper, withWalletCopper } fro
 import { makeId, normalizeItem, resolveItem } from '../lib/items.js'
 import { SELL_RATE } from '../config.js'
 
+/*
+ * As regras da mesa. Desde a Fase 3 quem roda este arquivo é o SERVIDOR, não o
+ * navegador: ele é o dono único do estado, aplica a ação e devolve o resultado
+ * para todos os aparelhos. Por isso duas coisas valem aqui:
+ *
+ * 1. Nada de ponto de vista. `activePlayerId`, `activeShopId` e `cart` são de
+ *    cada aparelho e vivem em `session.js`. Toda ação diz explicitamente em
+ *    quem ela mexe.
+ * 2. Nada de confiar em preço vindo do cliente. Vender e comprar consultam o
+ *    catálogo aqui dentro, com `resolveItem`.
+ */
+
+/** Garante que um item novo não vai colidir com um id que já existe na mesa. */
+function freshItemId(state, playerId, wanted, prefix) {
+  if (wanted && !resolveItem(state, wanted, playerId)) return wanted
+  return makeId(prefix)
+}
+
 /** Aplica `fn` a um jogador e devolve a lista nova, sem tocar nos outros. */
 function mapPlayer(players, playerId, fn) {
   return players.map((player) => (player.id === playerId ? fn(player) : player))
@@ -26,13 +44,6 @@ function withoutNote(itemNotes, itemId) {
 
 export function reducer(state, action) {
   switch (action.type) {
-    case 'SELECT_PLAYER':
-      // Trocar de personagem esvazia o carrinho: ele era da compra do anterior.
-      return { ...state, activePlayerId: action.playerId, cart: {} }
-
-    case 'SELECT_SHOP':
-      return { ...state, activeShopId: action.shopId, cart: {} }
-
     case 'SET_SETTINGS':
       // Config da mesa (livros possuídos, remaster/legado): mescla, não substitui.
       return { ...state, settings: { ...state.settings, ...action.settings } }
@@ -67,12 +78,11 @@ export function reducer(state, action) {
       }
 
     case 'REMOVE_PLAYER': {
-      // Sempre precisa sobrar pelo menos um personagem na mesa.
+      // Sempre precisa sobrar pelo menos um personagem na mesa. Quem estava
+      // olhando o excluído cai no primeiro da lista sozinho — é ponto de vista
+      // de cada aparelho, resolvido em `reconcileSession`.
       if (state.players.length <= 1) return state
-      const players = state.players.filter((player) => player.id !== action.playerId)
-      const activePlayerId =
-        state.activePlayerId === action.playerId ? players[0].id : state.activePlayerId
-      return { ...state, players, activePlayerId }
+      return { ...state, players: state.players.filter((player) => player.id !== action.playerId) }
     }
 
     // ----------------------------------------------------------------- dinheiro
@@ -272,7 +282,10 @@ export function reducer(state, action) {
 
     case 'ADD_CUSTOM_ITEM': {
       // Item avulso: vive no inventário de um jogador e não entra no catálogo.
-      const item = normalizeItem({ ...action.item, id: action.item.id ?? makeId('custom') })
+      const item = normalizeItem({
+        ...action.item,
+        id: freshItemId(state, action.playerId, action.item.id, 'custom'),
+      })
       return {
         ...state,
         players: mapPlayer(state.players, action.playerId, (player) => ({
@@ -330,19 +343,14 @@ export function reducer(state, action) {
 
     // ------------------------------------------------------------------- lojas
 
-    case 'CART_SET': {
-      const cart = { ...state.cart }
-      if (action.qty > 0) cart[action.itemId] = action.qty
-      else delete cart[action.itemId]
-      return { ...state, cart }
-    }
-
     case 'BUY_CART': {
-      const player = state.players.find((current) => current.id === state.activePlayerId)
+      // O carrinho é de cada aparelho, então vem na ação. O preço, não: é lido
+      // do catálogo aqui, senão um celular poderia comprar por 1 pc.
+      const player = state.players.find((current) => current.id === action.playerId)
       if (!player) return state
 
-      const lines = Object.entries(state.cart)
-        .map(([itemId, qty]) => ({ itemId, qty, item: resolveItem(state, itemId) }))
+      const lines = (action.lines ?? [])
+        .map(({ itemId, qty }) => ({ itemId, qty: Math.floor(qty), item: resolveItem(state, itemId) }))
         .filter((line) => line.item && line.qty > 0)
       if (!lines.length) return state
 
@@ -355,7 +363,6 @@ export function reducer(state, action) {
 
       return {
         ...state,
-        cart: {},
         players: mapPlayer(state.players, player.id, (current) => ({
           ...current,
           ...wallet,
@@ -384,12 +391,8 @@ export function reducer(state, action) {
         ),
       }
 
-    case 'REMOVE_SHOP': {
-      const shops = state.shops.filter((shop) => shop.id !== action.shopId)
-      const activeShopId =
-        state.activeShopId === action.shopId ? (shops[0]?.id ?? null) : state.activeShopId
-      return { ...state, shops, activeShopId }
-    }
+    case 'REMOVE_SHOP':
+      return { ...state, shops: state.shops.filter((shop) => shop.id !== action.shopId) }
 
     case 'TOGGLE_SHOP_ITEM':
       return {
@@ -408,11 +411,15 @@ export function reducer(state, action) {
 
     // ------------------------------------------------------------- biblioteca
 
-    case 'ADD_CAMPAIGN_ITEMS':
-      return {
-        ...state,
-        campaignItems: [...state.campaignItems, ...action.items.map((item) => normalizeItem(item))],
-      }
+    case 'ADD_CAMPAIGN_ITEMS': {
+      // Dois aparelhos podem importar o mesmo JSON ao mesmo tempo: o id vem
+      // pronto do importador, e aqui é o único lugar que enxerga a mesa
+      // inteira para saber se ele já está tomado.
+      const added = action.items.map((item) =>
+        normalizeItem({ ...item, id: freshItemId(state, null, item.id, 'camp') }),
+      )
+      return { ...state, campaignItems: [...state.campaignItems, ...added] }
+    }
 
     case 'UPDATE_CAMPAIGN_ITEM':
       return {

@@ -1126,3 +1126,13 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Bloco "Mesa" das Configurações: as ações que trocam a mesa inteira. Dois
+   botões largos empilhados precisam de respiro entre si — encostados, leem
+   como um controle segmentado, que é justamente o que não são. */
+.settings__table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}

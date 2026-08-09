@@ -1,12 +1,13 @@
 import { CATALOG } from '../data/catalog.js'
 
-/** Mesa de exemplo, usada na primeira vez que o app abre no aparelho. */
+/**
+ * Mesa de exemplo, usada na primeira vez que o servidor sobe (quando ainda não
+ * existe `data/mesa.json`). Só dado compartilhado: em qual personagem cada
+ * aparelho está olhando é sessão, não mesa — ver `state/session.js`.
+ */
 export function createInitialState() {
   return {
-    version: 4,
-    activePlayerId: 'p-valeros',
-    activeShopId: 'shop-smith',
-    cart: {},
+    version: 5,
     // Config da mesa: livros que o mestre possui + remaster/legado, persistida
     // e compartilhada por todas as telas (não é um filtro por aba, como os outros).
     settings: { ownedCategories: [], remasterFilter: 'all' },

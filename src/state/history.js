@@ -81,7 +81,7 @@ function describeAction(state, action) {
     case 'TRANSFER_ITEM':
       return `${playerName(state, action.fromId)} enviou ${itemName(state, action.itemId, action.fromId)} a ${playerName(state, action.toId)}`
     case 'BUY_CART':
-      return `${playerName(state, state.activePlayerId)} comprou itens na loja`
+      return `${playerName(state, action.playerId)} comprou itens na loja`
     case 'ADD_CUSTOM_ITEM':
       return `Adicionou o item avulso "${action.item.name}" a ${playerName(state, action.playerId)}`
     case 'UPDATE_CUSTOM_ITEM':
@@ -118,6 +118,9 @@ function describeAction(state, action) {
  * snapshot das fatias do estado que ela toca. `UNDO_TO` restaura o
  * snapshot de uma entrada e descarta ela e tudo que veio depois — é uma
  * pilha, não edição pontual (senão o estado fica inconsistente em cascata).
+ *
+ * As `slices` ficam só no servidor: são um retrato do estado anterior e não
+ * têm serventia nenhuma no celular, que recebe as entradas sem elas.
  */
 export function withHistory(reducer) {
   return function reducerWithHistory(state, action) {
@@ -127,7 +130,6 @@ export function withHistory(reducer) {
       return {
         ...state,
         ...state.history[index].slices,
-        cart: {},
         history: state.history.slice(0, index),
       }
     }
@@ -145,13 +147,17 @@ export function withHistory(reducer) {
     const shouldRecord = RECORD_WHEN[action.type]
     if (shouldRecord && !shouldRecord(state, next, action)) return next
 
-    const slices = { activePlayerId: state.activePlayerId, activeShopId: state.activeShopId }
+    const slices = {}
     for (const key of keys) slices[key] = state[key]
 
     const entry = {
       id: makeId('hist'),
       at: Date.now(),
       label: describeAction(state, action),
+      // De qual celular veio. Sem login, o autor é o personagem que estava
+      // selecionado no aparelho que agiu — é o que permite ao mestre saber
+      // quem mexeu, já que todo mundo pode mexer em tudo.
+      by: action.by ? playerName(state, action.by) : null,
       slices,
     }
 
