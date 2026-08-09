@@ -1072,6 +1072,24 @@
   color: var(--text-3);
 }
 
+/* Separa o personagem (quem) das três abas de tela (onde) — categorias
+   diferentes de botão na mesma barra. Traço curto e centrado, com respiro
+   em cima e embaixo — de ponta a ponta ficava pesado numa barra de 74px. */
+.nav__tab--char {
+  position: relative;
+}
+
+.nav__tab--char::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 28px;
+  background: var(--line-field);
+}
+
 /* Berço de altura fixa: o ícone de 22 e a inicial de 36 do personagem ficam
    no mesmo trilho, então os quatro rótulos saem alinhados. */
 .nav__icon {

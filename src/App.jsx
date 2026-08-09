@@ -209,10 +209,12 @@ export default function App() {
 
       <div className="dock">
         <nav className="nav" aria-label="Navegação principal">
-          {/* Primeiro botão: quem está jogando. Não é aba — abre a troca. */}
+          {/* Primeiro botão: quem está jogando. Não é aba — abre a troca. O
+              traço à direita separa "quem" (o personagem) de "onde" (as
+              três abas de tela), que são categorias diferentes de botão. */}
           <button
             type="button"
-            className={`nav__tab${charPickerOpen ? ' nav__tab--on' : ''}`}
+            className={`nav__tab nav__tab--char${charPickerOpen ? ' nav__tab--on' : ''}`}
             aria-haspopup="dialog"
             aria-expanded={charPickerOpen}
             aria-label={`Personagem: ${player.name}. Trocar de personagem`}
