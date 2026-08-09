@@ -22,7 +22,7 @@ export default function SettingsSheet({ onClose }) {
 
   return (
     <Sheet title="Configurações" onClose={onClose}>
-      <div className="content-filter__label">Filtrar conteúdo do catálogo</div>
+      <div className="label">Filtrar conteúdo do catálogo</div>
       <div className="content-filter__chips">
         {CONTENT_CATEGORIES.map(({ id, label }) => (
           <button
@@ -41,9 +41,7 @@ export default function SettingsSheet({ onClose }) {
         Inventário, Biblioteca e Mestre.
       </div>
 
-      <div className="content-filter__label" style={{ marginTop: 16 }}>
-        Regra
-      </div>
+      <div className="label content-filter__rule">Regra</div>
       <div className="seg">
         {[
           ['all', 'Todas'],
@@ -61,9 +59,11 @@ export default function SettingsSheet({ onClose }) {
         ))}
       </div>
 
-      <button type="button" className="btn btn--solid btn--block" style={{ marginTop: 16 }} onClick={onClose}>
-        Pronto
-      </button>
+      <div className="sheet__actions">
+        <button type="button" className="btn btn--solid btn--block" onClick={onClose}>
+          Pronto
+        </button>
+      </div>
     </Sheet>
   )
 }

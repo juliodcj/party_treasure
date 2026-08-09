@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import ItemRow from '../components/ItemRow.jsx'
 import Sheet from '../components/Sheet.jsx'
 import Stepper from '../components/Stepper.jsx'
-import { PriceBadges } from '../components/Coins.jsx'
+import { Price } from '../components/Coins.jsx'
 import { ArrowRightIcon, CartIcon } from '../components/Icons.jsx'
 import { useStore } from '../state/store.jsx'
 import { CATEGORY_ORDER, categoryLabel } from '../data/catalog.js'
@@ -60,7 +60,7 @@ export default function ShopScreen({ player, shop, filters, openId, onToggle }) 
       {CATEGORY_ORDER.map((id) =>
         grouped[id].length ? (
           <section className="list-group" key={id}>
-            <h2 className="list-group__title">{categoryLabel(id)}</h2>
+            <h2 className="label list-group__title">{categoryLabel(id)}</h2>
             <div className="list-rows">
               {grouped[id].map(({ item }) => {
                 const qty = state.cart[item.id] ?? 0
@@ -73,24 +73,17 @@ export default function ShopScreen({ player, shop, filters, openId, onToggle }) 
                     onToggle={() => onToggle(item.id)}
                     cart={
                       qty > 0 ? (
-                        <div className="item__cart-pill">
-                          <Stepper
-                            size={24}
-                            value={qty}
-                            canDec={qty > 0}
-                            onDec={() =>
-                              dispatch({ type: 'CART_SET', itemId: item.id, qty: qty - 1 })
-                            }
-                            onInc={() =>
-                              dispatch({ type: 'CART_SET', itemId: item.id, qty: qty + 1 })
-                            }
-                            label="itens no carrinho"
-                          />
-                        </div>
+                        <Stepper
+                          value={qty}
+                          canDec={qty > 0}
+                          onDec={() => dispatch({ type: 'CART_SET', itemId: item.id, qty: qty - 1 })}
+                          onInc={() => dispatch({ type: 'CART_SET', itemId: item.id, qty: qty + 1 })}
+                          label="itens no carrinho"
+                        />
                       ) : (
                         <button
                           type="button"
-                          className="item__add-btn"
+                          className="btn btn--tint"
                           onClick={() => dispatch({ type: 'CART_SET', itemId: item.id, qty: 1 })}
                         >
                           Comprar
@@ -128,9 +121,8 @@ export default function ShopScreen({ player, shop, filters, openId, onToggle }) 
             {lines.map(({ item, qty }) => (
               <div className="cart__line" key={item.id}>
                 <span className="cart__line-name">{item.name}</span>
-                <PriceBadges totalCp={item.priceCp * qty} />
+                <Price totalCp={item.priceCp * qty} />
                 <Stepper
-                  size={24}
                   value={qty}
                   canDec={qty > 0}
                   onDec={() => dispatch({ type: 'CART_SET', itemId: item.id, qty: qty - 1 })}
@@ -143,15 +135,15 @@ export default function ShopScreen({ player, shop, filters, openId, onToggle }) 
 
           <div className="cart__wallet">
             <div className="cart__wallet-col">
-              <div className="cart__label">Carteira</div>
-              <PriceBadges totalCp={walletCp} />
+              <div className="label cart__label">Carteira</div>
+              <Price totalCp={walletCp} />
             </div>
             <ArrowRightIcon />
             <div className="cart__wallet-col cart__wallet-col--right">
-              <div className={`cart__label${affordable ? '' : ' cart__label--danger'}`}>
+              <div className={`label cart__label${affordable ? '' : ' cart__label--danger'}`}>
                 Depois da compra
               </div>
-              <PriceBadges totalCp={Math.max(0, walletCp - totalCp)} />
+              <Price totalCp={Math.max(0, walletCp - totalCp)} />
             </div>
           </div>
 
@@ -166,7 +158,7 @@ export default function ShopScreen({ player, shop, filters, openId, onToggle }) 
             aria-label={`Comprar ${plural(itemCount, 'item', 'itens')}`}
           >
             <span className="cart__buy-label">Comprar {plural(itemCount, 'item', 'itens')}</span>
-            <PriceBadges totalCp={totalCp} />
+            <Price totalCp={totalCp} />
           </button>
         </Sheet>
       ) : null}

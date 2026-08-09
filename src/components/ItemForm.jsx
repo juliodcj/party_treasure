@@ -39,79 +39,75 @@ export default function ItemForm({ item = null, onSubmit, onCancel, submitLabel 
 
   return (
     <>
-      <input
-        className="input"
-        style={{ marginBottom: 8 }}
-        placeholder="Nome do item"
-        value={name}
-        onChange={(event) => setName(event.target.value)}
-        aria-label="Nome do item"
-      />
-
-      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+      <div className="form">
         <input
           className="input"
-          type="number"
-          inputMode="numeric"
-          placeholder="Nível"
-          value={level}
-          onChange={(event) => setLevel(event.target.value)}
-          style={{ flex: 1, minWidth: 0 }}
-          aria-label="Nível"
+          placeholder="Nome do item"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          aria-label="Nome do item"
         />
+
+        <div className="form__row">
+          <input
+            className="input"
+            type="number"
+            inputMode="numeric"
+            placeholder="Nível"
+            value={level}
+            onChange={(event) => setLevel(event.target.value)}
+            aria-label="Nível"
+          />
+          <input
+            className="input"
+            placeholder="Bulk"
+            value={bulk}
+            onChange={(event) => setBulk(event.target.value)}
+            aria-label="Bulk"
+          />
+        </div>
+
+        <select
+          className="input"
+          value={category}
+          onChange={(event) => setCategory(event.target.value)}
+          aria-label="Tipo"
+        >
+          {Object.entries(CATEGORIES).map(([id, meta]) => (
+            <option key={id} value={id}>
+              {meta.label}
+            </option>
+          ))}
+        </select>
+
         <input
           className="input"
-          placeholder="Bulk"
-          value={bulk}
-          onChange={(event) => setBulk(event.target.value)}
-          style={{ flex: 1, minWidth: 0 }}
-          aria-label="Bulk"
+          placeholder="Traços (separados por vírgula)"
+          value={traits}
+          onChange={(event) => setTraits(event.target.value)}
+          aria-label="Traços"
         />
+
+        <textarea
+          className="textarea"
+          placeholder="Descrição"
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+          aria-label="Descrição"
+        />
+
+        <div>
+          <div className="field-label">Valor</div>
+          <CoinInputs
+            gold={gold}
+            silver={silver}
+            copper={copper}
+            onGold={setGold}
+            onSilver={setSilver}
+            onCopper={setCopper}
+          />
+        </div>
       </div>
-
-      <select
-        className="input"
-        style={{ marginBottom: 8 }}
-        value={category}
-        onChange={(event) => setCategory(event.target.value)}
-        aria-label="Tipo"
-      >
-        {Object.entries(CATEGORIES).map(([id, meta]) => (
-          <option key={id} value={id}>
-            {meta.label}
-          </option>
-        ))}
-      </select>
-
-      <input
-        className="input"
-        style={{ marginBottom: 8 }}
-        placeholder="Traços (separados por vírgula)"
-        value={traits}
-        onChange={(event) => setTraits(event.target.value)}
-        aria-label="Traços"
-      />
-
-      <textarea
-        className="textarea"
-        style={{ marginBottom: 10 }}
-        placeholder="Descrição"
-        value={description}
-        onChange={(event) => setDescription(event.target.value)}
-        aria-label="Descrição"
-      />
-
-      <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text-faint)', marginBottom: 6 }}>
-        Valor
-      </div>
-      <CoinInputs
-        gold={gold}
-        silver={silver}
-        copper={copper}
-        onGold={setGold}
-        onSilver={setSilver}
-        onCopper={setCopper}
-      />
 
       <SheetActions
         onCancel={onCancel}
@@ -131,7 +127,7 @@ export function CoinInputs({ gold, silver, copper, onGold, onSilver, onCopper, s
     ['copper', 'Cobre', copper, onCopper],
   ]
   return (
-    <div style={{ display: 'flex', gap: 8 }}>
+    <div className="coin-fields">
       {fields.map(([coin, label, value, onChange]) => (
         <div className="coin-field" key={coin}>
           <input
@@ -144,7 +140,7 @@ export function CoinInputs({ gold, silver, copper, onGold, onSilver, onCopper, s
             onChange={(event) => onChange(event.target.value)}
             aria-label={label}
           />
-          <span className={`coin-dot coin-dot--lg coin-dot--${coin}`} />
+          <span className={`coin-dot coin-dot--${coin}`} />
         </div>
       ))}
     </div>

@@ -37,12 +37,25 @@ export default function AdjustCoinsSheet({ player, onClose }) {
         onSilver={setSilver}
         onCopper={setCopper}
       />
+      {/* Duas confirmações, não um aceitar/cancelar: as duas fazem alguma coisa.
+          A que soma vem primeiro, como no par confirmar/cancelar do resto do
+          aplicativo — a ação positiva é sempre a da esquerda. */}
       <div className="sheet__actions">
-        <button type="button" className="btn btn--danger btn--wide" onClick={() => apply(-1)}>
-          − Remover
-        </button>
-        <button type="button" className="btn btn--solid btn--wide" onClick={() => apply(1)}>
+        <button
+          type="button"
+          className="btn btn--solid btn--wide"
+          disabled={!amountCp}
+          onClick={() => apply(1)}
+        >
           + Adicionar
+        </button>
+        <button
+          type="button"
+          className="btn btn--danger btn--wide"
+          disabled={!amountCp}
+          onClick={() => apply(-1)}
+        >
+          − Remover
         </button>
       </div>
     </Sheet>

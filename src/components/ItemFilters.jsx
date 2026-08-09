@@ -2,11 +2,14 @@ import { useState } from 'react'
 import { FilterIcon, SearchIcon } from './Icons.jsx'
 import { CATEGORIES } from '../data/catalog.js'
 
-/** Caixa de busca com a lupa dentro, como no protótipo. */
-export function SearchBox({ value, onChange, placeholder = 'Buscar item...', sunken = false, small = false }) {
+/**
+ * Caixa de busca com a lupa dentro. `sunken` só troca o fundo — o corpo do
+ * texto é o mesmo em toda parte, porque campo de busca é sempre campo de busca.
+ */
+export function SearchBox({ value, onChange, placeholder = 'Buscar item...', sunken = false }) {
   return (
     <div className={`search${sunken ? ' search--sunken' : ''}`}>
-      <SearchIcon size={small ? 14 : 15} />
+      <SearchIcon />
       <input
         className="search__input"
         value={value}
@@ -19,21 +22,29 @@ export function SearchBox({ value, onChange, placeholder = 'Buscar item...', sun
 }
 
 /** Botão que abre um popover de checkboxes — só os níveis presentes na lista atual. */
-export function LevelPicker({ levels = [], value = [], onChange, small = false }) {
+export function LevelPicker({ levels = [], value = [], onChange }) {
   const [open, setOpen] = useState(false)
 
   const label =
-    value.length === 0 ? 'Todos os níveis' : value.length === 1 ? `Nível ${value[0]}` : `${value.length} níveis`
+    value.length === 0
+      ? 'Todos os níveis'
+      : value.length === 1
+        ? `Nível ${value[0]}`
+        : `${value.length} níveis`
 
   const toggle = (level) => {
-    onChange(value.includes(level) ? value.filter((current) => current !== level) : [...value, level].sort((a, b) => a - b))
+    onChange(
+      value.includes(level)
+        ? value.filter((current) => current !== level)
+        : [...value, level].sort((a, b) => a - b),
+    )
   }
 
   return (
     <div className="level-picker">
       <button
         type="button"
-        className={`select${small ? ' select--sm' : ''}`}
+        className="select"
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
       >
@@ -44,11 +55,11 @@ export function LevelPicker({ levels = [], value = [], onChange, small = false }
           <div className="level-picker__scrim" onClick={() => setOpen(false)} />
           <div className="level-picker__menu">
             <div className="level-picker__head">
-              <button type="button" className="link link--muted" onClick={() => onChange([])}>
-                Todos
-              </button>
               <button type="button" className="link" onClick={() => setOpen(false)}>
                 Fechar
+              </button>
+              <button type="button" className="link link--muted" onClick={() => onChange([])}>
+                Todos
               </button>
             </div>
             {levels.length === 0 ? (
@@ -76,12 +87,11 @@ export function LevelPicker({ levels = [], value = [], onChange, small = false }
 }
 
 /** Tipo e nível (tickável) — o filtro de conteúdo mora em Configurações, na aba Mestre. */
-export function FilterSelects({ value, onChange, levels = [], small = false }) {
-  const cls = `select${small ? ' select--sm' : ''}`
+export function FilterSelects({ value, onChange, levels = [] }) {
   return (
     <div className="filters__row">
       <select
-        className={cls}
+        className="select"
         value={value.category}
         onChange={(event) => onChange({ ...value, category: event.target.value })}
         aria-label="Filtrar por tipo"
@@ -97,7 +107,6 @@ export function FilterSelects({ value, onChange, levels = [], small = false }) {
         levels={levels}
         value={value.levels}
         onChange={(levels) => onChange({ ...value, levels })}
-        small={small}
       />
     </div>
   )
@@ -117,14 +126,12 @@ export function FiltersBar({
   open,
   onToggle,
   levelsOnly = false,
-  small = false,
   placeholder,
 }) {
   return (
     <div className="filters">
       <div className="filters__row">
         <SearchBox
-          small={small}
           value={filters.search}
           onChange={(search) => onChange({ ...filters, search })}
           {...(placeholder ? { placeholder } : {})}
@@ -137,7 +144,7 @@ export function FiltersBar({
           aria-label="Filtros"
           title="Filtros"
         >
-          <FilterIcon color={open ? 'var(--accent-ink)' : 'var(--text-muted)'} />
+          <FilterIcon />
         </button>
       </div>
       {open ? (
@@ -147,11 +154,10 @@ export function FiltersBar({
               levels={levels}
               value={filters.levels}
               onChange={(next) => onChange({ ...filters, levels: next })}
-              small={small}
             />
           </div>
         ) : (
-          <FilterSelects value={filters} onChange={onChange} levels={levels} small={small} />
+          <FilterSelects value={filters} onChange={onChange} levels={levels} />
         )
       ) : null}
     </div>

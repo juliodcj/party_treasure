@@ -1,49 +1,44 @@
 import { StepperMinus, StepperPlus } from './Icons.jsx'
 
 /**
- * Passo redondo do protótipo: o "−" cinza e o "+" azul.
- * O tamanho muda conforme o lugar — 22 nas listas do mestre, 24 no carrinho,
- * 30 dentro do item aberto, 34 no diálogo de venda.
+ * O "−" cinza e o "+" azul dentro de uma pílula tingida — um desenho só, em
+ * dois tamanhos: `sm` na linha de lista, `lg` no diálogo em que a quantidade
+ * é a decisão principal da tela.
+ *
+ * Antes havia quatro tamanhos (22, 24, 30, 34) e só a Loja tinha a pílula,
+ * então a operação mais repetida do aplicativo parecia uma coisa diferente em
+ * cada aba. Tamanho, vão e corpo do número agora saem do CSS, não de contas
+ * aqui dentro.
  */
 export default function Stepper({
   value,
   onDec,
   onInc,
-  size = 30,
+  size = 'sm',
   canDec = true,
   canInc = true,
-  valueSize,
-  gap,
   label = 'quantidade',
 }) {
-  const glyph = Math.round(size * 0.36)
   return (
-    <div className="stepper" style={{ gap: gap ?? (size >= 30 ? 10 : 6) }}>
+    <div className={`stepper stepper--${size}`}>
       <button
         type="button"
         className="step step--minus"
-        style={{ width: size, height: size }}
         onClick={onDec}
         disabled={!canDec}
         aria-label={`Diminuir ${label}`}
       >
-        <StepperMinus width={glyph} />
+        <StepperMinus />
       </button>
-      <span
-        className="stepper__value"
-        style={{ fontSize: valueSize ?? (size >= 30 ? 16 : 13), minWidth: size >= 30 ? 16 : 14 }}
-      >
-        {value}
-      </span>
+      <span className="stepper__value">{value}</span>
       <button
         type="button"
         className="step step--plus"
-        style={{ width: size, height: size }}
         onClick={onInc}
         disabled={!canInc}
         aria-label={`Aumentar ${label}`}
       >
-        <StepperPlus size={glyph} />
+        <StepperPlus />
       </button>
     </div>
   )

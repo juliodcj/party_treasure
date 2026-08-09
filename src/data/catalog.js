@@ -8,6 +8,11 @@ import RAW_CATALOG from './catalog.equipment.json' with { type: 'json' }
 /**
  * Categorias reais do PF2e: o proprio `type` de cada item nos packs do
  * Foundry, sem agrupamento artificial. A ordem aqui e a ordem de exibicao.
+ *
+ * Os rotulos ficam em ingles de proposito, iguais ao `type` do Foundry — e a
+ * unica forma de bater o olho no rotulo e reconhecer o `type` bruto de um
+ * item novo na hora de importar mais packs, sem depender de traducao nossa
+ * que pode ficar desatualizada ou ambigua.
  */
 export const CATEGORIES = {
   weapon: { label: 'Weapon' },

@@ -19,16 +19,17 @@ export default function TraitList({ traits = [] }) {
 
       {selected ? (
         <Sheet center onClose={() => setSelected(null)}>
-          <div style={{ fontSize: 16, fontWeight: 700 }}>{traitLabel(selected)}</div>
+          <div className="sheet__title">{traitLabel(selected)}</div>
           <div className="sheet__body">{traitDescription(selected)}</div>
-          <button
-            type="button"
-            className="btn btn--solid btn--block"
-            style={{ marginTop: 16, fontSize: 14, padding: 10, borderRadius: 10 }}
-            onClick={() => setSelected(null)}
-          >
-            Fechar
-          </button>
+          <div className="sheet__actions">
+            <button
+              type="button"
+              className="btn btn--solid btn--block"
+              onClick={() => setSelected(null)}
+            >
+              Fechar
+            </button>
+          </div>
         </Sheet>
       ) : null}
     </>

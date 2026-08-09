@@ -35,7 +35,14 @@ export default function Sheet({ title, onClose, center = false, children }) {
   )
 }
 
-/** Par Cancelar / confirmar, o rodapé padrão dos diálogos. */
+/**
+ * Par de ações — o rodapé padrão de todo aceitar/cancelar do aplicativo.
+ *
+ * Confirmar fica à ESQUERDA e cancelar à direita. É a ordem de leitura: a ação
+ * que a pessoa veio fazer vem primeiro, e a saída fica depois. Vale para
+ * diálogo, painel do Mestre e rodapé de tela cheia — se em algum lugar aparecer
+ * um par invertido, é bug.
+ */
 export function SheetActions({
   onCancel,
   onConfirm,
@@ -46,9 +53,6 @@ export function SheetActions({
 }) {
   return (
     <div className="sheet__actions">
-      <button type="button" className="btn btn--neutral btn--wide" onClick={onCancel}>
-        {cancelLabel}
-      </button>
       <button
         type="button"
         className={`btn btn--${confirmVariant} btn--wide`}
@@ -56,6 +60,9 @@ export function SheetActions({
         disabled={disabled}
       >
         {confirmLabel}
+      </button>
+      <button type="button" className="btn btn--neutral btn--wide" onClick={onCancel}>
+        {cancelLabel}
       </button>
     </div>
   )

@@ -348,9 +348,22 @@ tesouro entre o grupo.
 
 - Comentários e commits em português; nomes de código em inglês.
 - Dados do PF2e ficam em inglês no banco — não bloquear tradução futura no schema.
+- Na interface, **moldura nossa é traduzida** (categoria, botão, mensagem);
+  **dado do pack não é** (nome de item, ficha técnica, traço).
 - `npm run dev` com hot reload; **testar em celular Android real na LAN** antes
   de considerar qualquer coisa pronta.
 - Não commitar `vendor/` nem os packs baixados.
+
+### Sistema visual
+
+Cor, tipografia, botões, espaçamento e ordem das ações são regidos por
+**[docs/design-system.md](docs/design-system.md)**, e as regras que valem em toda
+sessão de código estão no **[CLAUDE.md](CLAUDE.md)**.
+
+A regra que resume as outras: **nenhum valor visual literal fora de
+`src/styles/tokens.css`** — sem tamanho de fonte solto, sem `#hex`, sem raio
+cravado, sem `style={{}}` de aparência. Foi assim que o projeto acumulou 12
+tamanhos de fonte e 8 cinzas de texto para os mesmos poucos papéis.
 
 ## 9. Licenciamento
 
@@ -385,6 +398,9 @@ exemplo.
 ### Estrutura
 
 ```
+CLAUDE.md             regras obrigatórias de código e de estilo
+docs/
+  design-system.md    cor, tipografia, componentes, ordem das ações
 src/
   main.jsx            entrada
   App.jsx             abas e navegação

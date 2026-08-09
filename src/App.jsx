@@ -13,7 +13,7 @@ import LibraryScreen from './screens/LibraryScreen.jsx'
 import GmScreen from './screens/GmScreen.jsx'
 import { useActivePlayer, useStore } from './state/store.jsx'
 import { CATALOG } from './data/catalog.js'
-import { availableLevels, playerInventory, resolveItem } from './lib/items.js'
+import { availableLevels, matchesContent, playerInventory, resolveItem } from './lib/items.js'
 import { plural } from './lib/text.js'
 
 /* Abas da barra de baixo. O primeiro botão da barra é o seletor de
@@ -73,6 +73,17 @@ export default function App() {
     () => availableLevels([...state.campaignItems, ...CATALOG]),
     [state.campaignItems],
   )
+  // A contagem some do "X oficiais" no cabeçalho e no botão do Mestre —
+  // precisa refletir o mesmo filtro de conteúdo que a lista de verdade usa,
+  // senão o número não bate com o que a Biblioteca mostra.
+  const officialCount = useMemo(
+    () => CATALOG.filter((item) => matchesContent(item, state.settings)).length,
+    [state.settings],
+  )
+  const campaignCount = useMemo(
+    () => state.campaignItems.filter((item) => matchesContent(item, state.settings)).length,
+    [state.campaignItems, state.settings],
+  )
   const levels = isShop
     ? availableLevels(shopStock)
     : isInventory
@@ -91,7 +102,7 @@ export default function App() {
   const toggleItem = (id) => setOpenId((current) => (current === id ? null : id))
 
   const subhead = isLibrary
-    ? `${state.campaignItems.length} da campanha · ${CATALOG.length} oficiais`
+    ? `${campaignCount} da campanha · ${officialCount} oficiais`
     : isGm
       ? `${plural(state.players.length, 'jogador', 'jogadores')} · ${plural(state.shops.length, 'loja cadastrada', 'lojas cadastradas')}`
       : ''
@@ -198,10 +209,12 @@ export default function App() {
 
       <div className="dock">
         <nav className="nav" aria-label="Navegação principal">
-          {/* Primeiro botão: quem está jogando. Não é aba — abre a troca. */}
+          {/* Primeiro botão: quem está jogando. Não é aba — abre a troca. O
+              traço à direita separa "quem" (o personagem) de "onde" (as
+              três abas de tela), que são categorias diferentes de botão. */}
           <button
             type="button"
-            className={`nav__tab${charPickerOpen ? ' nav__tab--on' : ''}`}
+            className={`nav__tab nav__tab--char${charPickerOpen ? ' nav__tab--on' : ''}`}
             aria-haspopup="dialog"
             aria-expanded={charPickerOpen}
             aria-label={`Personagem: ${player.name}. Trocar de personagem`}

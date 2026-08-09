@@ -1,3 +1,4 @@
+import Coins from './Coins.jsx'
 import { PaperPlaneIcon } from './Icons.jsx'
 import { canSimplify } from '../lib/money.js'
 
@@ -74,21 +75,16 @@ export function WalletPill({
         onClick={onEditWallet}
         aria-label={`Editar moedas de ${player.name}`}
       >
-        <span className="gold-pill__label">Bolsa de {player.name}</span>
-        <span className="gold-pill__coins">
-          <span className="gold-pill__coin">
-            <span className="gold-pill__value gold-pill__value--gold">{player.gold}</span>
-            <span className="coin-dot coin-dot--gold" />
-          </span>
-          <span className="gold-pill__coin">
-            <span className="gold-pill__value gold-pill__value--silver">{player.silver}</span>
-            <span className="coin-dot coin-dot--silver" />
-          </span>
-          <span className="gold-pill__coin">
-            <span className="gold-pill__value gold-pill__value--copper">{player.copper}</span>
-            <span className="coin-dot coin-dot--copper" />
-          </span>
-        </span>
+        <span className="label gold-pill__label">Bolsa de {player.name}</span>
+        {/* A bolsa mostra as três denominações mesmo zeradas: aqui o zero é
+            informação ("não tenho cobre"), diferente de um preço. */}
+        <Coins
+          gold={player.gold}
+          silver={player.silver}
+          copper={player.copper}
+          size="lg"
+          showZeros
+        />
       </button>
 
       {/* Fora do botão da bolsa de propósito: um botão não pode morar dentro
@@ -96,7 +92,7 @@ export function WalletPill({
       {showSimplify ? (
         <button
           type="button"
-          className="gold-pill__simplify"
+          className="link link--muted gold-pill__simplify"
           onClick={onSimplify}
           title="Trocar as moedas miúdas pelas graúdas"
           aria-label={`Simplificar as moedas de ${player.name}`}
@@ -110,7 +106,7 @@ export function WalletPill({
           {showAdjust ? (
             <button
               type="button"
-              className="gold-pill__action"
+              className="icon-btn gold-pill__action"
               title="Ajustar moedas"
               aria-label="Ajustar moedas"
               onClick={onAdjust}
@@ -121,7 +117,7 @@ export function WalletPill({
           {showSend ? (
             <button
               type="button"
-              className="gold-pill__action"
+              className="icon-btn gold-pill__action"
               title="Enviar dinheiro"
               aria-label="Enviar dinheiro"
               onClick={onSend}

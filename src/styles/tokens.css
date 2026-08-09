@@ -1,63 +1,107 @@
-/* Tokens visuais extraídos do protótipo do Claude Design.
-   Paleta clara, linguagem iOS. Tudo que for cor, espaço ou raio sai daqui. */
+/* Sistema visual do aplicativo. Paleta clara, linguagem iOS.
+   Tudo que for cor, tamanho de texto, espaço ou raio sai daqui.
+
+   REGRA: nenhum valor visual literal fora deste arquivo. Se você precisa de um
+   cinza, um tamanho de fonte ou um raio que não está aqui, o certo quase sempre
+   é usar o degrau vizinho — e, quando não for, o degrau novo entra aqui com
+   nome e motivo, nunca cravado no componente.
+   A referência completa está em docs/design-system.md. */
 
 :root {
-  /* Superfícies */
+  /* ------------------------------------------------------------ superfícies
+
+     Dois níveis, e só dois. Antes eram quatro, com pares separados por 0,01 de
+     opacidade — diferença que ninguém enxerga e que só criava chance de errar. */
   --bg: oklch(97% 0.004 90);
   --surface: #fff;
-  --surface-sunken: rgba(0, 0, 0, 0.02);
-  --surface-field: rgba(0, 0, 0, 0.03);
-  --surface-muted: rgba(0, 0, 0, 0.05);
-  --surface-button: rgba(0, 0, 0, 0.06);
+  --surface-sunken: rgba(0, 0, 0, 0.03); /* campo, painel, item aberto */
+  --surface-raised: rgba(0, 0, 0, 0.06); /* botão neutro, pastilha, avatar */
 
-  /* Traços */
+  /* ---------------------------------------------------------------- traços */
   --line: rgba(0, 0, 0, 0.06);
   --line-field: rgba(0, 0, 0, 0.08);
   --line-input: rgba(0, 0, 0, 0.1);
   --line-check: rgba(0, 0, 0, 0.2);
 
-  /* Texto */
-  --text: #1c1c1e;
-  --text-body: rgba(28, 28, 30, 0.75);
-  --text-muted: rgba(60, 60, 67, 0.6);
-  --text-soft: rgba(60, 60, 67, 0.55);
-  --text-faint: rgba(60, 60, 67, 0.5);
-  --text-fainter: rgba(60, 60, 67, 0.45);
-  --text-inactive: rgba(60, 60, 67, 0.4);
-  --text-chevron: rgba(60, 60, 67, 0.3);
+  /* ----------------------------------------------------------------- texto
 
-  /* Azul de ação */
+     Quatro níveis de tinta. Qualquer cinza de texto fora destes é regressão. */
+  --text: #1c1c1e; /* nome, valor, título, item ativo */
+  --text-body: rgba(28, 28, 30, 0.75); /* texto corrido: descrição, parágrafo */
+  --text-2: rgba(60, 60, 67, 0.6); /* secundário: metadado, sobrancelha, contagem */
+  --text-3: rgba(60, 60, 67, 0.4); /* terciário: unidade, fonte, aba inativa */
+
+  /* Traço de ícone decorativo (chevron, seta). Não é cor de texto: é ornamento,
+     e vive separado justamente para não ser usado como quinto cinza. */
+  --ornament: rgba(60, 60, 67, 0.3);
+
+  /* -------------------------------------------------------- azul de ação */
   --accent: oklch(58% 0.14 258);
   --accent-ink: oklch(50% 0.14 258);
   --accent-tint: oklch(58% 0.14 258 / 0.1);
 
-  /* Vermelho destrutivo */
+  /* --------------------------------------------------- vermelho destrutivo
+
+     Reservado ao botão largo (.btn--danger) dentro do diálogo de confirmação
+     de algo que não se desfaz: "Excluir" em <SheetActions
+     confirmVariant="danger">, "− Remover" em ajustar moedas. Botão-ícone de
+     linha (excluir item, jogador, loja) fica no --accent do resto das ações
+     da linha — ver docs/design-system.md, seção 2. */
   --danger: oklch(55% 0.16 25);
   --danger-ink: oklch(50% 0.16 25);
   --danger-tint: oklch(55% 0.16 25 / 0.1);
 
-  /* Moedas */
+  /* ---------------------------------------------------------------- moedas */
   --gold: oklch(58% 0.14 80);
-  --gold-ink: oklch(40% 0.1 80);
   --silver: oklch(75% 0.01 260);
   --copper: oklch(55% 0.1 40);
-  --copper-ink: oklch(45% 0.08 40);
 
-  /* Sombras */
+  /* --------------------------------------------------------------- sombras */
   --shadow-pill: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-float: 0 6px 18px rgba(0, 0, 0, 0.2);
   --shadow-modal: 0 10px 30px rgba(0, 0, 0, 0.2);
   --shadow-menu: 0 8px 24px rgba(0, 0, 0, 0.15);
 
-  /* Formas */
-  --r-sm: 8px;
-  --r-md: 10px;
-  --r-lg: 12px;
-  --r-xl: 14px;
-  --r-2xl: 16px;
+  /* ----------------------------------------------------------- tipografia
+
+     Seis degraus, cada um com um papel. Meio pixel não é hierarquia: antes
+     havia doze tamanhos, seis deles espremidos entre 12 e 14,5px. */
+  --t-label: 11px; /* sobrancelha de seção, rótulo de aba, contador */
+  --t-meta: 12px; /* metadado, rótulo de campo, botão pequeno */
+  --t-sm: 13px; /* texto secundário, botão, chip, campo compacto */
+  --t-body: 14.5px; /* corpo, nome de item, campo de texto */
+  --t-lg: 16px; /* título de folha e de tela cheia */
+  --t-title: 26px; /* título de tela */
+
+  /* Três alturas de linha, conforme o texto seja título, rótulo ou leitura. */
+  --lh-tight: 1.15; /* títulos de tela */
+  --lh-snug: 1.35; /* nomes e rótulos em linha */
+  --lh-text: 1.5; /* texto corrido */
+
+  /* Espacejamento: um valor para sobrancelha em caixa alta, um para título. */
+  --track-label: 0.5px;
+  --track-title: -0.5px;
+
+  /* ---------------------------------------------------------------- formas
+
+     Quatro raios. O que era 5, 7, 9, 10 e 14 cravado no componente cai aqui. */
+  --r-sm: 8px; /* botão pequeno, campo compacto, caixa de seleção */
+  --r-md: 12px; /* campo, painel, botão largo, menu embutido */
+  --r-lg: 16px; /* folha, menu flutuante, tela modal */
   --r-pill: 999px;
 
+  /* Uma opacidade de desabilitado para todo controle. */
+  --disabled: 0.4;
+
   --font: -apple-system, system-ui, sans-serif;
+
+  /* ------------------------------------------------------------- toque
+
+     Botão-ícone em dois tamanhos. O menor é o que cabe numa linha de lista; o
+     maior é o do cabeçalho e dos diálogos. Ambos com área clicável estendida
+     por padding no componente, para o alvo ser maior que o desenho. */
+  --tap-sm: 28px;
+  --tap-md: 36px;
 
   /* Largura de referência do layout: a tela de um Galaxy S23 (360 CSS px).
      É o aparelho em que a mesa joga — num monitor a coluna para de crescer

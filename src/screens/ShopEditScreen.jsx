@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { SearchBox, FilterSelects, EMPTY_FILTERS } from '../components/ItemFilters.jsx'
 import { CheckIcon } from '../components/Icons.jsx'
+import { Price } from '../components/Coins.jsx'
 import { useStore } from '../state/store.jsx'
 import { availableLevels, libraryItems, matchesContent, matchesFilters, matchesSearch } from '../lib/items.js'
-import { formatCopper } from '../lib/money.js'
 import { plural } from '../lib/text.js'
 
 const LIST_LIMIT = 200
@@ -82,7 +82,7 @@ export default function ShopEditScreen({ shop = null, onClose }) {
           {plural(itemIds.size, 'item selecionado', 'itens selecionados')}
         </div>
 
-        <div className="filters" style={{ padding: '10px 0' }}>
+        <div className="filters screen-modal__filters">
           <SearchBox
             sunken
             value={filters.search}
@@ -107,11 +107,13 @@ export default function ShopEditScreen({ shop = null, onClose }) {
                   {checked ? <CheckIcon /> : null}
                 </span>
                 <span className="gm__check-name">{item.name}</span>
-                <span className="gm__check-price">{formatCopper(item.priceCp)}</span>
+                <Price totalCp={item.priceCp} size="sm" />
               </button>
             )
           })}
-          {matches.length === 0 ? <div className="empty">Nenhum item encontrado.</div> : null}
+          {matches.length === 0 ? (
+            <div className="empty empty--inline">Nenhum item encontrado.</div>
+          ) : null}
           {matches.length > LIST_LIMIT ? (
             <div className="screen-modal__more">
               Mostrando {LIST_LIMIT} de {matches.length} — refine a busca para ver mais.
@@ -121,11 +123,11 @@ export default function ShopEditScreen({ shop = null, onClose }) {
       </div>
 
       <div className="screen-modal__foot">
-        <button type="button" className="btn btn--neutral btn--wide" onClick={onClose}>
-          Cancelar
-        </button>
         <button type="button" className="btn btn--solid btn--wide" onClick={save}>
           Salvar
+        </button>
+        <button type="button" className="btn btn--neutral btn--wide" onClick={onClose}>
+          Cancelar
         </button>
       </div>
     </div>
