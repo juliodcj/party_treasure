@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Sheet, { SheetActions } from '../components/Sheet.jsx'
 import Stepper from '../components/Stepper.jsx'
 import Coins, { Price } from '../components/Coins.jsx'
@@ -176,7 +176,12 @@ function HistorySection({ open, onOpenChange }) {
                 <div className="gm__row gm__row--list" key={entry.id}>
                   <div className="gm__grow">
                     <div className="gm__row-name">{entry.label}</div>
-                    <div className="gm__row-sub">{formatHistoryTime(entry.at)}</div>
+                    {/* De qual celular veio: sem login, o autor é o personagem
+                        que estava selecionado no aparelho que fez a alteração. */}
+                    <div className="gm__row-sub">
+                      {formatHistoryTime(entry.at)}
+                      {entry.by ? ` · por ${entry.by}` : ''}
+                    </div>
                   </div>
                   <button
                     type="button"
@@ -353,6 +358,49 @@ function GroupGivePanel({ onDone }) {
   )
 }
 
+/**
+ * Nome do personagem, digitado aqui e valendo para a mesa inteira.
+ *
+ * O nome vem do servidor, então não dá para mandar uma ação por tecla: a
+ * resposta chegaria depois da tecla seguinte e o cursor pularia para o fim a
+ * cada letra. Digita-se num rascunho local e o nome sobe quando o campo perde
+ * o foco (ou no Enter) — uma ação só, e um registro só no histórico.
+ */
+function PlayerNameField({ player }) {
+  const { dispatch } = useStore()
+  const [draft, setDraft] = useState(player.name)
+  const [editing, setEditing] = useState(false)
+
+  // Outro aparelho pode ter renomeado enquanto ninguém mexia aqui.
+  useEffect(() => {
+    if (!editing) setDraft(player.name)
+  }, [player.name, editing])
+
+  const commit = () => {
+    setEditing(false)
+    const name = draft.trim()
+    if (!name) {
+      setDraft(player.name) // nome vazio não é renomear, é apagar o personagem
+      return
+    }
+    if (name !== player.name) dispatch({ type: 'RENAME_PLAYER', playerId: player.id, name })
+  }
+
+  return (
+    <input
+      className="inline-input"
+      value={draft}
+      onChange={(event) => setDraft(event.target.value)}
+      onFocus={() => setEditing(true)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') event.currentTarget.blur()
+      }}
+      aria-label="Nome do personagem"
+    />
+  )
+}
+
 function PlayerCard({ player, canDelete, onDelete }) {
   const { state, dispatch } = useStore()
   const [panel, setPanel] = useState(null) // 'coins' | 'items'
@@ -384,14 +432,7 @@ function PlayerCard({ player, canDelete, onDelete }) {
     <div>
       <div className="gm__card-head">
         <div className="gm__grow">
-          <input
-            className="inline-input"
-            value={player.name}
-            onChange={(event) =>
-              dispatch({ type: 'RENAME_PLAYER', playerId: player.id, name: event.target.value })
-            }
-            aria-label="Nome do personagem"
-          />
+          <PlayerNameField player={player} />
           <button
             type="button"
             className="gm__wallet-btn"

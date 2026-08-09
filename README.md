@@ -44,7 +44,10 @@ Criar `.gitignore` cobrindo: `node_modules/`, `vendor/`, `*.sqlite`,
 
 ---
 
-## 1. Estado atual: protótipo do Claude Design
+## 1. Ponto de partida: o protótipo do Claude Design
+
+*(Registro de onde o projeto saiu. As Fases 1 a 3 já resolveram o que está
+descrito aqui — ver o roadmap na seção 7.)*
 
 O protótipo existe e a **UI está do jeito que eu quero** — preservar a
 aparência e os fluxos. O problema é tudo que está por baixo.
@@ -104,7 +107,7 @@ implemente por conta própria.
 
 ---
 
-## 3. Arquitetura alvo
+## 3. Arquitetura
 
 ```
 ┌─────────────────────────────────┐
@@ -112,7 +115,7 @@ implemente por conta própria.
 │  Node.js + Express + Socket.IO  │
 │  ├── serve o frontend           │
 │  ├── WebSocket: estado da mesa  │
-│  └── SQLite: itens + campanha   │
+│  └── data/mesa.json: a mesa     │
 └──────────────┬──────────────────┘
                │ Wi-Fi local — http://192.168.x.x:3000
      ┌─────────┼─────────┬─────────┐
@@ -136,8 +139,11 @@ implemente por conta própria.
 | Frontend | React (do protótipo), refatorado em arquivos |
 | Servidor | Node.js + Express |
 | Tempo real | Socket.IO |
-| Banco | SQLite (`better-sqlite3`) |
-| Ingestão | script Node standalone (`npm run ingest`) |
+| Persistência | arquivo JSON atômico (`data/mesa.json`) — ver seção 6 |
+| Ingestão | scripts Node standalone que geram `src/data/` |
+
+Nenhuma dependência nativa em lugar nenhum: `npm install` não tem como pedir
+compilador no PC do mestre.
 
 ---
 
@@ -295,42 +301,55 @@ O importador atual é frágil. Tratar: traits ausentes, `bulk` como `"L"` ou
 
 ---
 
-## 6. Sincronização em tempo real
+## 6. Sincronização em tempo real — **feito**
 
-Estado compartilhado via Socket.IO:
+O servidor no PC do mestre é o **dono único** da mesa. Cada celular é uma tela:
+despacha a ação, o servidor aplica e devolve o resultado para todos. Ninguém
+aplica nada sozinho, então não existe aparelho com a contagem errada.
 
-- Inventário e carteira de cada jogador
-- Itens de campanha e catálogo
-- Estoque e composição das lojas
-- Log de transações
+Compartilhado (mora no servidor): jogadores com carteira e mochila, itens de
+campanha, lojas, filtro de conteúdo e o histórico.
+Do aparelho (mora no `localStorage` de cada um): em qual personagem se está
+olhando, em qual loja, e o carrinho. Se fossem compartilhados, trocar de
+personagem num celular trocaria a tela de todos e dois jogadores dividiriam o
+mesmo carrinho.
 
-Modelo: estado em memória no servidor, broadcast a cada mudança, persistência
-em SQLite para sobreviver a restart.
+Protocolo: `action` do celular para o servidor (com confirmação), `table:full`
+na conexão e `table:patch` com só as fatias que mudaram, numerados em sequência
+— número fora de ordem faz o celular pedir a mesa inteira de novo.
 
-**Papéis reais**: hoje a aba "Mestre" é só uma tela que qualquer um abre.
-Precisa de separação de verdade — o mestre entra por um caminho distinto
-(URL/PIN simples), o jogador escolhe seu personagem ao entrar e só enxerga o
-próprio inventário. Sem login formal: é a minha mesa.
+Persistência em **arquivo JSON** (`data/mesa.json`), gravado de forma atômica
+com cópia de segurança. Não virou SQLite: o dado mutável de uma mesa são dezenas
+de KB, o catálogo de 5.700 itens já vem pronto no bundle, e módulo nativo seria
+risco de `npm install` que não compila.
+
+**Sem papéis e sem login**, por decisão: é uma mesa de amigos. Qualquer aparelho
+troca de personagem, edita qualquer um e abre a aba Mestre. O histórico registra
+de qual celular veio cada alteração ("por Ezren"), que é o que resolve na
+prática — saber quem mexeu, não impedir.
 
 ---
 
 ## 7. Roadmap
 
-**Fase 1 — Fundação**
+**Fase 1 — Fundação** ✔
 Quebrar o componente de ~2000 linhas em arquivos. Sair da moldura de iPhone
 para layout responsivo Android. Persistência local mínima. Preservar a UI.
 
-**Fase 2 — Ingestão**
-Script idempotente (`npm run ingest`) que lê os packs, sanitiza e popula o
-SQLite. Reportar contagens por tipo ao final.
+**Fase 2 — Ingestão** ✔
+`scripts/build-catalog.mjs` e `scripts/build-traits.mjs` leem os packs,
+sanitizam e geram o catálogo que vai junto com o app. Não virou banco: o
+catálogo é imutável, então ser um arquivo pronto é mais simples e mais rápido.
 
-**Fase 3 — Servidor**
-Express + Socket.IO, estado compartilhado, papéis mestre/jogador, API de busca
-e filtro (tipo, nível, traço, fonte).
+**Fase 3 — Servidor** ✔
+Express + Socket.IO, mesa compartilhada em tempo real, persistência em arquivo.
+Sem papéis, por decisão (ver seção 6). Falta ainda a API de busca e filtro no
+servidor — hoje o catálogo inteiro vai no bundle e a busca é no próprio celular,
+o que funciona bem e evita uma ida à rede por tecla digitada.
 
 **Fase 4 — PWA**
-Manifest, service worker, cache offline. Script de start que imprime o IP da
-LAN e um QR code para os jogadores escanearem.
+Manifest, service worker, cache offline para "Adicionar à tela inicial".
+(O IP da LAN e o QR code já saem no `npm start`.)
 
 **Fase 5 — Regras e economia**
 Cálculo de Bulk conforme as regras (com limite de carga), estoque finito nas
@@ -374,7 +393,7 @@ das licenças, não só zelo.
 
 ---
 
-## 10. Como rodar (estado atual — Fase 1)
+## 10. Como rodar
 
 Precisa do [Node.js](https://nodejs.org) instalado no PC. Uma vez só:
 
@@ -382,18 +401,36 @@ Precisa do [Node.js](https://nodejs.org) instalado no PC. Uma vez só:
 npm install
 ```
 
-Para usar na mesa:
+### Na mesa
+
+Um comando, no PC que vai ficar ligado durante a sessão:
 
 ```bash
-npm run dev
+npm start
 ```
 
-O terminal imprime dois endereços. O que começa com `http://192.168.` é o que
-os jogadores digitam no Chrome do celular, com todo mundo no mesmo Wi-Fi.
+O terminal imprime o endereço e um **QR code**. Os jogadores apontam a câmera do
+celular para ele, ou digitam no Chrome o endereço que começa com
+`http://192.168.` — todo mundo no mesmo Wi-Fi.
 
-Os dados ficam salvos no navegador de cada aparelho (Fase 1 ainda não tem
-servidor). Limpar os dados do site zera a mesa e volta aos personagens de
-exemplo.
+Na primeira vez o Windows pergunta se libera o Node.js na rede: **aceite em
+"redes privadas"**, senão os celulares não enxergam o PC.
+
+A mesa fica salva em `data/mesa.json`, no PC. `Ctrl+C` encerra sem perder nada,
+e `npm start` de novo continua de onde parou. Se algum dia o arquivo corromper,
+existe um `data/mesa.bak.json` com a versão anterior.
+
+Enquanto o servidor estiver no ar, o que um aparelho faz aparece nos outros na
+hora. Se o Wi-Fi cair, o celular avisa em vermelho e para de aceitar alterações
+até voltar — melhor não acontecer nada do que um item que some sozinho depois.
+
+### Para mexer no código
+
+```bash
+npm run dev     # o mesmo endereço, com recarga automática ao salvar
+npm run smoke   # prova que a sincronização entre dois aparelhos funciona
+npm run build   # só compila
+```
 
 ### Estrutura
 
@@ -401,13 +438,23 @@ exemplo.
 CLAUDE.md             regras obrigatórias de código e de estilo
 docs/
   design-system.md    cor, tipografia, componentes, ordem das ações
+server/
+  index.js            Express + Socket.IO, serve o app e imprime o QR
+  table.js            a mesa: estado autoritativo, ordem das ações, patches
+  storage.js          data/mesa.json — gravação atômica com backup
+  net.js              endereço da LAN e o QR code do terminal
+scripts/
+  dev.mjs             sobe Vite e servidor juntos
+  smoke-sync.mjs      dois clientes de mentira provando a sincronização
+  build-catalog.mjs   gera o catálogo a partir dos packs do Foundry
 src/
   main.jsx            entrada
   App.jsx             abas e navegação
   config.js           taxa de venda e chave de armazenamento
-  data/               catálogo semente e verbetes de traços
+  data/               catálogo e verbetes de traços, já prontos
   lib/                moeda, bulk, itens, importador do Foundry, texto
-  state/              estado da mesa (reducer + contexto + persistência)
+  state/              regras da mesa (rodam no servidor), sessão e a
+                      ponte com o servidor (store.jsx)
   components/         peças reutilizadas pelas telas
   screens/            Inventário, Loja, Biblioteca, Mestre
   styles/             tokens e folhas de estilo

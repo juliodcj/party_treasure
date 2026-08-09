@@ -6,6 +6,7 @@ import AdjustCoinsSheet from './components/AdjustCoinsSheet.jsx'
 import EditWalletSheet from './components/EditWalletSheet.jsx'
 import { EMPTY_FILTERS, FiltersBar } from './components/ItemFilters.jsx'
 import SettingsSheet from './components/SettingsSheet.jsx'
+import ConnectionBanner from './components/ConnectionBanner.jsx'
 import { BagIcon, ChevronDown, CrownIcon, GearIcon, ShopIcon } from './components/Icons.jsx'
 import InventoryScreen from './screens/InventoryScreen.jsx'
 import ShopScreen from './screens/ShopScreen.jsx'
@@ -34,7 +35,7 @@ const TITLES = {
 }
 
 export default function App() {
-  const { state, dispatch } = useStore()
+  const { state, dispatch, ready } = useStore()
   const player = useActivePlayer()
 
   const [tab, setTab] = useState('inventory')
@@ -107,8 +108,23 @@ export default function App() {
       ? `${plural(state.players.length, 'jogador', 'jogadores')} · ${plural(state.shops.length, 'loja cadastrada', 'lojas cadastradas')}`
       : ''
 
+  // Antes da primeira resposta do servidor não há mesa nenhuma para desenhar —
+  // e sem personagem em foco metade da tela quebraria. O aviso explica o que
+  // está acontecendo e some sozinho quando a mesa chega.
+  if (!ready || !player) {
+    return (
+      <div className="app">
+        <ConnectionBanner />
+        <div className="empty">
+          Procurando a mesa…{'\n'}O PC do mestre precisa estar ligado e no mesmo Wi-Fi.
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="app">
+      <ConnectionBanner />
       <AppHeader
         title={TITLES[tab]}
         onBack={isLibrary ? () => goTo('gm') : null}

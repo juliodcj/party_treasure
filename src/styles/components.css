@@ -754,3 +754,24 @@
     transition: none;
   }
 }
+
+/* ------------------------------------------------------- aviso de conexão
+
+   A mesa vive no servidor do PC do mestre. Quando o celular perde contato com
+   ele, esta faixa aparece como primeiro filho de .app — empurrando cabeçalho,
+   lista e barra de abas para baixo em vez de cobrir qualquer coisa. Quem está
+   sem conexão precisa ler o aviso, não espiar por baixo dele.
+
+   Vermelho porque é do mesmo tipo que o vermelho do resto do aplicativo: o
+   que está feito não se desfaz, e aqui o que a pessoa tentar fazer não vai
+   acontecer. */
+.conn {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  background: var(--danger-tint);
+  color: var(--danger-ink);
+  font-size: var(--t-sm);
+  font-weight: 700;
+  line-height: var(--lh-snug);
+  text-align: center;
+}

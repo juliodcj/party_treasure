@@ -14,3 +14,6 @@ dist/
 
 # Configuracao local do Claude Code
 /.claude/
+
+# Mesa de verdade, gravada pelo servidor. E dado seu, nao codigo.
+/data/
