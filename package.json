@@ -8,7 +8,8 @@
     "start": "vite build && node server/index.js",
     "dev": "node scripts/dev.mjs",
     "server": "node server/index.js",
-    "build": "vite build",
+    "build": "npm run lint:visual && vite build",
+    "lint:visual": "node scripts/lint-visual.mjs",
     "smoke": "node scripts/smoke-sync.mjs"
   },
   "dependencies": {

@@ -103,6 +103,76 @@ Raios: `--r-sm` (8) botão pequeno e campo compacto · `--r-md` (12) campo, pain
 botão largo · `--r-lg` (16) folha e menu flutuante · `--r-pill`.
 Desabilitado: sempre `var(--disabled)`.
 
+## Ficha de personagem
+
+A ficha PF2e está sendo implementada na branch de trabalho da sessão
+(`claude/execute-prompt-with-files-04lj69`), que sai da `main` e volta para ela.
+Espec: `docs/ESPEC_Ficha.md`. Tarefa da sessão: `docs/ficha/fase-NN.md`.
+
+**Não abra uma sessão de trabalho sem ler o arquivo da fase.** Ele diz quais
+arquivos tocar, o que não fazer e quando a fase está pronta.
+
+### Regras que valem em toda sessão
+
+**Escopo.** Este programa não é um character builder. É uma ficha melhorada do
+Pathbuilder, com gestão de inventário, loja e ações do mestre. Não implemente
+level-up, escolha de feat, distribuição de atributo, rolagem de dado, iniciativa
+ou controle de combate. Ideia fora disso: anote como sugestão e siga em frente.
+
+**Zero placeholder.** Nenhum texto de regra, nome, descrição ou número de jogo é
+escrito à mão no código. Tudo vem dos packs do Foundry ou do JSON do Pathbuilder.
+Dado que não existe na fonte não aparece na tela — não se preenche com
+aproximação. O protótipo `Ficha PF2e.dc.html` é referência de layout, nunca de
+conteúdo.
+
+**Idioma.** Dado de pack fica em inglês (`Frightened` continua `Frightened`).
+Moldura nossa é traduzida: rótulo, título, botão, mensagem.
+
+**Identidade visual.** A ficha não traz sistema visual próprio. Vale
+`docs/design-system.md` inteiro. Nenhum valor visual literal fora de
+`src/styles/tokens.css` — o protótipo escreve `oklch()` e `px`, e todos viram
+token. `npm run lint:visual` prova isso.
+
+**`player.sheet` pode ser nulo.** Personagem sem ficha importada é caso de
+primeira classe: tem inventário e carteira, funciona como antes, e não mostra
+cálculo nem controle de equipar. Todo código que lê `sheet` trata `null`.
+
+**Item que sai do inventário sai do slot.** `SELL_ITEM`, `TRANSFER_ITEM`,
+`DROP_ITEM` e `CHANGE_ITEM_QTY` para zero precisam desequipar o item e limpar
+`favorites` e `itemMods`. Slot apontando para item inexistente é bônus fantasma
+na CA.
+
+**Nada regride.** O app é usado hoje. Nenhuma mudança pode quebrar comprar,
+vender, transferir ou a Loja. Migração de schema nunca descarta mesa.
+
+**Errar em silêncio é o único erro inaceitável.** Slug que não resolve, nome que
+não casa, chave desconhecida no JSON: aparece na tela com o nome que veio, entra
+no log, e segue. Nunca sumir.
+
+**Estado calculável não se guarda; fato de mesa não se recalcula.** HP é fato
+(persiste, todos veem). CA é cálculo (sai do que está vestido agora). Na dúvida:
+foi decidido ou foi derivado?
+
+**Onde o app não sabe, ele admite.** O motor não acerta Giant Instinct, weapon
+specialization nem Rage. A saída é o modificador manual com rótulo do jogador,
+aparecendo no breakdown — nunca chutar.
+
+**Prefira a decisão que apaga trabalho.** Quando duas opções servem, ganha a que
+remove código.
+
+### Git
+
+Branch de trabalho saindo de `main`. Commit ao fim de cada fase concluída,
+não a cada arquivo. Push logo após o commit. PR para `main` na fase 12.
+Conflito: resolva você; se for decisão de produto, pergunte em português simples.
+Nunca `push --force`, `reset --hard` em coisa não commitada, nem reescrita de
+histórico já enviado.
+
+### Se estiver ambíguo
+
+Pergunte antes de implementar. Perguntas em aberto conhecidas estão no fim de
+`docs/ESPEC_Ficha.md`. Não decida sozinho o que estiver listado lá.
+
 ## Antes de dar uma tarefa por pronta
 
 1. `npm run build` passa.

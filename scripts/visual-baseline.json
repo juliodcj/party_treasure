@@ -1,0 +1,10 @@
+{
+  "comentario": "Violações que já existiam quando o lint:visual nasceu. Esta lista só pode encolher — não acrescente nada à mão.",
+  "atualizadoEm": "2026-08-13",
+  "violations": [
+    "src/styles/components.css\tcolor-fn\tbackground: rgba(0, 0, 0, 0.35);",
+    "src/styles/components.css\thex\tcolor: #fff;",
+    "src/styles/screens.css\tcolor-fn\tbox-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);",
+    "src/styles/screens.css\thex\tcolor: #fff;"
+  ]
+}

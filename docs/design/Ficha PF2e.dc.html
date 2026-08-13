@@ -1,0 +1,2011 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="viewport" content="width=device-width, initial-scale=1"><style>
+body{margin:0;background:oklch(93% 0.004 90);font-family:-apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+*,*::before,*::after{box-sizing:border-box}
+a{color:oklch(50% 0.14 258);text-decoration:none}
+a:hover{color:oklch(44% 0.14 258)}
+button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer;text-align:inherit}
+input{font-family:inherit;color:#1c1c1e}
+.pt-scroll::-webkit-scrollbar{width:0;height:0}
+</style></helmet>
+
+<div style="min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:28px 16px 40px;gap:24px">
+<div style="width:360px;height:812px;display:flex;flex-direction:column;background:oklch(97% 0.004 90);color:#1c1c1e;font-size:14.5px;line-height:1.35;box-shadow:0 0 0 1px rgba(0,0,0,0.06),0 18px 50px rgba(0,0,0,0.14);overflow:hidden;position:relative;border-radius:6px">
+
+  <header style="flex-shrink:0;position:relative;z-index:10;display:flex;flex-direction:column;gap:8px;padding:14px 16px 10px;background:#fff;border-bottom:1px solid rgba(0,0,0,0.06);box-shadow:0 3px 10px rgba(0,0,0,0.05)">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <div style="flex:1;min-width:0">
+        <h1 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-0.5px;line-height:1.15">{{ screenTitle }}</h1>
+      </div>
+      <sc-if value="{{ isFicha }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <span style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6);background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.08);border-radius:999px;padding:5px 10px">Nv 1</span>
+        </div>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ isFicha }}" hint-placeholder-val="{{ true }}">
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:-2px;margin-bottom:8px">
+          <span style="font-size:13px;color:rgba(60,60,67,0.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Rurik · Dwarf (Dromaar) · Barbarian · Sailor</span>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button type="button" onClick="{{ goResumo }}" style="flex:1;text-align:center;padding:9px 4px;border-radius:8px;font-size:13px;font-weight:600;background:{{ segResumoBg }};color:{{ segResumoFg }}">Resumo</button>
+          <button type="button" onClick="{{ goAtaques }}" style="flex:1;text-align:center;padding:9px 4px;border-radius:8px;font-size:13px;font-weight:600;background:{{ segAtaquesBg }};color:{{ segAtaquesFg }}">Ataques</button>
+          <button type="button" onClick="{{ goMagias }}" style="flex:1;text-align:center;padding:9px 4px;border-radius:8px;font-size:13px;font-weight:600;background:{{ segMagiasBg }};color:{{ segMagiasFg }}">Magias</button>
+          <button type="button" onClick="{{ goFeats }}" style="flex:1;text-align:center;padding:9px 4px;border-radius:8px;font-size:13px;font-weight:600;background:{{ segFeatsBg }};color:{{ segFeatsFg }}">Feats</button>
+          <button type="button" onClick="{{ goAcoes }}" style="flex:1;text-align:center;padding:9px 4px;border-radius:8px;font-size:13px;font-weight:600;background:{{ segAcoesBg }};color:{{ segAcoesFg }}">Ações</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isInventory }}">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;align-self:stretch">
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0">
+          <span style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">Bolsa de Rurik</span>
+          <span style="display:inline-flex;align-items:center;gap:10px">
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:999px;background:oklch(58% 0.14 80)"></span><span style="font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums">11</span></span>
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:999px;background:oklch(75% 0.01 260)"></span><span style="font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums">0</span></span>
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:999px;background:oklch(55% 0.1 40)"></span><span style="font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums">0</span></span>
+          </span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;padding-left:6px">
+          <span style="width:28px;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.03);color:oklch(50% 0.14 258);font-size:14.5px;font-weight:700">±</span>
+          <span style="width:28px;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.03);color:oklch(50% 0.14 258)">
+            <svg width="15" height="15" viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10l16-7-6 16-2.5-6.5L2 10z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"></path></svg>
+          </span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:stretch;gap:8px">
+          <div style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.03);border:1px solid transparent;border-radius:12px;padding:8px 12px;color:rgba(60,60,67,0.6)">
+            <svg width="15" height="15" viewBox="0 0 15 15" style="flex-shrink:0" aria-hidden="true"><circle cx="6.5" cy="6.5" r="5" fill="none" stroke="currentColor" stroke-width="1.6"></circle><line x1="10.3" y1="10.3" x2="14" y2="14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></line></svg>
+            <span style="flex:1;min-width:0;font-size:14.5px;color:rgba(60,60,67,0.6)">Buscar item...</span>
+          </div>
+          <span style="width:38px;border-radius:12px;background:rgba(0,0,0,0.03);border:1px solid transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgba(60,60,67,0.6)">
+            <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><line x1="2" y1="4.5" x2="14" y2="4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></line><line x1="2" y1="11.5" x2="14" y2="11.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></line><circle cx="10" cy="4.5" r="2.4" fill="#fff" stroke="currentColor" stroke-width="1.7"></circle><circle cx="5.5" cy="11.5" r="2.4" fill="#fff" stroke="currentColor" stroke-width="1.7"></circle></svg>
+          </span>
+        </div>
+      </div>
+    </sc-if>
+  </header>
+
+  <main class="pt-scroll" style="flex:1;min-height:0;overflow-y:auto;padding:0 16px 24px;display:flex;flex-direction:column;gap:7px">
+
+    <!-- ================= RESUMO ================= -->
+    <sc-if value="{{ showResumo }}" hint-placeholder-val="{{ true }}">
+      <section style="display:flex;flex-direction:column;gap:7px;margin-top:10px">
+
+        <div style="margin:0 -16px;background:#fff;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06);padding:12px 16px 14px">
+          <div style="display:flex;align-items:stretch;gap:12px">
+            <div style="flex:0 0 152px;display:flex;flex-direction:column;gap:8px">
+              <button type="button" onClick="{{ openHp }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0">
+                <span style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6)">Pontos de vida</span>
+                <span style="display:flex;align-items:baseline;gap:4px">
+                  <span style="font-size:26px;font-weight:700;letter-spacing:-0.5px;line-height:1.15;font-variant-numeric:tabular-nums">{{ hp }}</span>
+                  <span style="font-size:14.5px;font-weight:600;color:rgba(60,60,67,0.4);font-variant-numeric:tabular-nums">/ 24</span>
+                  <sc-if value="{{ hasTemp }}"><span style="font-size:12px;font-weight:700;color:oklch(50% 0.14 258);background:oklch(58% 0.14 258 / 0.1);border-radius:999px;padding:2px 6px;margin-left:2px">+{{ temp }}</span></sc-if>
+                </span>
+              </button>
+              <div style="height:8px;border-radius:999px;background:rgba(0,0,0,0.06);overflow:hidden">
+                <div style="height:100%;border-radius:999px;background:{{ hpBarColor }};width:{{ hpPct }}"></div>
+              </div>
+              <button type="button" onClick="{{ openHp }}" style="align-self:flex-start;font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px;color:oklch(50% 0.14 258);background:oklch(58% 0.14 258 / 0.1);white-space:nowrap">Dano / Cura</button>
+            </div>
+            <button type="button" onClick="{{ openCond }}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding-left:12px;border-left:1px solid rgba(0,0,0,0.06);text-align:left">
+              <span style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6)">Condições</span>
+              <sc-if value="{{ noConditions }}" hint-placeholder-val="{{ true }}">
+                <span style="font-size:13px;color:rgba(60,60,67,0.4)">Nenhuma ativa</span>
+              </sc-if>
+              <sc-if value="{{ hasConditions }}">
+                <span style="display:flex;flex-wrap:wrap;gap:5px">
+                  <sc-for list="{{ condChips }}" as="c" hint-placeholder-count="0">
+                    <span style="font-size:12px;font-weight:600;color:oklch(50% 0.16 25);background:oklch(55% 0.16 25 / 0.1);padding:3px 9px;border-radius:999px">{{ c.label }}</span>
+                  </sc-for>
+                </span>
+              </sc-if>
+              <span style="font-size:11px;font-weight:700;color:oklch(50% 0.14 258)">Gerenciar</span>
+            </button>
+          </div>
+        </div>
+
+        <sc-if value="{{ showAbilities }}" hint-placeholder-val="{{ true }}">
+        <div style="margin:0 -16px">
+          <div style="padding:7px 16px 6px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6)">Atributos</div>
+          <div style="background:#fff;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06);display:grid;grid-template-columns:repeat(6,1fr)">
+            <div style="padding:8px 2px 9px;text-align:center;"><div style="font-size:10px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:rgba(60,60,67,0.6)">Str</div><div style="font-size:17px;font-weight:700;line-height:1.2;margin-top:1px;font-variant-numeric:tabular-nums">+4</div></div>
+            <div style="padding:8px 2px 9px;text-align:center;border-left:1px solid rgba(0,0,0,0.06)"><div style="font-size:10px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:rgba(60,60,67,0.6)">Dex</div><div style="font-size:17px;font-weight:700;line-height:1.2;margin-top:1px;font-variant-numeric:tabular-nums">+2</div></div>
+            <div style="padding:8px 2px 9px;text-align:center;border-left:1px solid rgba(0,0,0,0.06)"><div style="font-size:10px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:rgba(60,60,67,0.6)">Con</div><div style="font-size:17px;font-weight:700;line-height:1.2;margin-top:1px;font-variant-numeric:tabular-nums">+2</div></div>
+            <div style="padding:8px 2px 9px;text-align:center;border-left:1px solid rgba(0,0,0,0.06)"><div style="font-size:10px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:rgba(60,60,67,0.6)">Int</div><div style="font-size:17px;font-weight:700;line-height:1.2;margin-top:1px;font-variant-numeric:tabular-nums">+0</div></div>
+            <div style="padding:8px 2px 9px;text-align:center;border-left:1px solid rgba(0,0,0,0.06)"><div style="font-size:10px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:rgba(60,60,67,0.6)">Wis</div><div style="font-size:17px;font-weight:700;line-height:1.2;margin-top:1px;font-variant-numeric:tabular-nums">+1</div></div>
+            <div style="padding:8px 2px 9px;text-align:center;border-left:1px solid rgba(0,0,0,0.06)"><div style="font-size:10px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:rgba(60,60,67,0.6)">Cha</div><div style="font-size:17px;font-weight:700;line-height:1.2;margin-top:1px;font-variant-numeric:tabular-nums">+0</div></div>
+          </div>
+        </div>
+        </sc-if>
+
+        <div style="margin:0 -16px">
+          <div style="padding:7px 16px 6px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6)">Defesas</div>
+          <div style="background:#fff;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06)">
+            <div style="display:flex;align-items:stretch;gap:10px;padding:10px 16px 11px">
+              <button type="button" onClick="{{ acCell.open }}" style="flex:0 0 72px;border:1px solid rgba(0,0,0,0.12);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 4px 8px">
+                <span style="font-size:11px;font-weight:700;color:rgba(60,60,67,0.6)">CA</span>
+                <span style="font-size:26px;font-weight:700;letter-spacing:-0.5px;line-height:1.15;font-variant-numeric:tabular-nums;color:{{ acCell.color }}">{{ acCell.value }}</span>
+              </button>
+              <div style="flex:1;min-width:0;border:1px solid rgba(0,0,0,0.12);border-radius:10px;overflow:hidden;display:flex;flex-direction:column">
+                <div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:rgba(0,0,0,0.04);border-bottom:1px solid rgba(0,0,0,0.10)">
+                  <span style="font-size:9.5px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:rgba(60,60,67,0.6)">Escudo</span>
+                  <span style="flex:1;min-width:0;font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Steel Shield</span>
+                  <button type="button" onClick="{{ toggleRaise }}" style="flex-shrink:0;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:{{ raiseBg }};color:{{ raiseFg }}">{{ raiseLabel }}</button>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);flex:1">
+              <div style="padding:5px 3px 6px;text-align:center;"><div style="font-size:9.5px;font-weight:700;letter-spacing:0.3px;text-transform:uppercase;color:rgba(60,60,67,0.6)">+CA</div><div style="font-size:14px;font-weight:700;line-height:1.25;font-variant-numeric:tabular-nums">+2</div></div>
+              <div style="padding:5px 3px 6px;text-align:center;border-left:1px solid rgba(0,0,0,0.10)"><div style="font-size:9.5px;font-weight:700;letter-spacing:0.3px;text-transform:uppercase;color:rgba(60,60,67,0.6)">Dureza</div><div style="font-size:14px;font-weight:700;line-height:1.25;font-variant-numeric:tabular-nums">5</div></div>
+              <div style="padding:5px 2px 6px;text-align:center;border-left:1px solid rgba(0,0,0,0.10)">
+                    <div style="font-size:9.5px;font-weight:700;letter-spacing:0.3px;text-transform:uppercase;color:rgba(60,60,67,0.6)">PV</div>
+                    <div style="display:flex;align-items:center;justify-content:center;gap:1px">
+                      <button type="button" onClick="{{ shieldMinus }}" style="width:18px;height:34px;margin:-9px 0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;line-height:1;color:rgba(60,60,67,0.5)">−</button>
+                      <span style="font-size:14px;font-weight:700;line-height:1.25;font-variant-numeric:tabular-nums;min-width:16px">{{ shieldHp }}</span>
+                      <button type="button" onClick="{{ shieldPlus }}" style="width:18px;height:34px;margin:-9px 0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;line-height:1;color:rgba(60,60,67,0.5)">+</button>
+                    </div>
+                  </div>
+              <div style="padding:5px 3px 6px;text-align:center;border-left:1px solid rgba(0,0,0,0.10)"><div style="font-size:9.5px;font-weight:700;letter-spacing:0.3px;text-transform:uppercase;color:rgba(60,60,67,0.6)">VT</div><div style="font-size:14px;font-weight:700;line-height:1.25;font-variant-numeric:tabular-nums">6</div></div>
+                </div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid rgba(0,0,0,0.06)">
+            <button type="button" onClick="{{ fortCell.open }}" style="padding:10px 8px;text-align:center"><div style="font-size:11px;font-weight:700;color:rgba(60,60,67,0.6)">Fortitude</div><div style="font-size:20px;font-weight:700;line-height:1.2;margin-top:2px;font-variant-numeric:tabular-nums;color:{{ fortCell.color }}">{{ fortCell.value }}</div><div style="font-size:10.5px;color:rgba(60,60,67,0.4);margin-top:1px">Expert</div></button>
+            <button type="button" onClick="{{ refCell.open }}" style="padding:10px 8px;text-align:center"><div style="font-size:11px;font-weight:700;color:rgba(60,60,67,0.6)">Reflex</div><div style="font-size:20px;font-weight:700;line-height:1.2;margin-top:2px;font-variant-numeric:tabular-nums;color:{{ refCell.color }}">{{ refCell.value }}</div><div style="font-size:10.5px;color:rgba(60,60,67,0.4);margin-top:1px">Trained</div></button>
+            <button type="button" onClick="{{ willCell.open }}" style="padding:10px 8px;text-align:center"><div style="font-size:11px;font-weight:700;color:rgba(60,60,67,0.6)">Will</div><div style="font-size:20px;font-weight:700;line-height:1.2;margin-top:2px;font-variant-numeric:tabular-nums;color:{{ willCell.color }}">{{ willCell.value }}</div><div style="font-size:10.5px;color:rgba(60,60,67,0.4);margin-top:1px">Expert</div></button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin:0 -16px">
+          <div style="padding:7px 16px 6px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6)">Outras estatísticas</div>
+          <div style="background:#fff;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06);display:grid;grid-template-columns:1fr 1fr 1fr">
+            <button type="button" onClick="{{ percCell.open }}" style="padding:9px 6px 11px;text-align:center;border-bottom:1px solid rgba(0,0,0,0.06)"><div style="font-size:11px;font-weight:700;color:rgba(60,60,67,0.6)">Percepção</div><div style="font-size:20px;font-weight:700;line-height:1.2;margin-top:1px;font-variant-numeric:tabular-nums;color:{{ percCell.color }}">{{ percCell.value }}</div><div style="font-size:10.5px;color:rgba(60,60,67,0.4);margin-top:1px">Expert</div></button>
+            <div style="padding:9px 6px 11px;text-align:center;border-left:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06)"><div style="font-size:11px;font-weight:700;color:rgba(60,60,67,0.6)">Velocidade</div><div style="font-size:20px;font-weight:700;line-height:1.2;margin-top:1px;font-variant-numeric:tabular-nums">20<span style="font-size:11px;font-weight:600;color:rgba(60,60,67,0.4)"> ft</span></div></div>
+            <div style="padding:9px 6px 11px;text-align:center;border-left:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06)"><div style="font-size:11px;font-weight:700;color:rgba(60,60,67,0.6)">Tamanho</div><div style="font-size:20px;font-weight:700;line-height:1.2;margin-top:1px;font-variant-numeric:tabular-nums"><span style="font-size:15px">Média</span></div></div>
+            <button type="button" onClick="{{ classDcCell.open }}" style="padding:9px 6px 11px;text-align:center;"><div style="font-size:11px;font-weight:700;color:rgba(60,60,67,0.6)">DC Classe</div><div style="font-size:20px;font-weight:700;line-height:1.2;margin-top:1px;font-variant-numeric:tabular-nums;color:{{ classDcCell.color }}">{{ classDcCell.value }}</div><div style="font-size:10.5px;color:rgba(60,60,67,0.4);margin-top:1px">Trained</div></button>
+            <div style="padding:9px 6px 11px;text-align:center;border-left:1px solid rgba(0,0,0,0.06)"><div style="font-size:11px;font-weight:700;color:rgba(60,60,67,0.6)">DC Magia</div><div style="font-size:20px;font-weight:700;line-height:1.2;margin-top:1px;font-variant-numeric:tabular-nums"><span style="color:rgba(60,60,67,0.3)">—</span></div><div style="font-size:10.5px;color:rgba(60,60,67,0.4);margin-top:1px">Untrained</div></div>
+            <div style="padding:9px 6px 11px;text-align:center;border-left:1px solid rgba(0,0,0,0.06)"><div style="font-size:11px;font-weight:700;color:rgba(60,60,67,0.6)">Atq Magia</div><div style="font-size:20px;font-weight:700;line-height:1.2;margin-top:1px;font-variant-numeric:tabular-nums"><span style="color:rgba(60,60,67,0.3)">—</span></div><div style="font-size:10.5px;color:rgba(60,60,67,0.4);margin-top:1px">Untrained</div></div>
+          </div>
+        </div>
+
+        <div style="margin:0 -16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 16px 6px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6)">
+            <span>Perícias</span>
+            <span style="color:rgba(60,60,67,0.4);font-variant-numeric:tabular-nums">{{ skillsCount }}</span>
+          </div>
+          <div style="background:#fff;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06);padding:4px 0;display:grid;grid-template-columns:1fr 1fr">
+            <sc-for list="{{ skills }}" as="s" hint-placeholder-count="8">
+              <button type="button" onClick="{{ s.open }}" style="display:flex;align-items:center;gap:6px;padding:7px 10px 7px {{ s.padLeft }};min-height:34px;border-left:{{ s.divider }}">
+                <span style="flex:1;min-width:0;font-size:13px;font-weight:600;color:{{ s.nameColor }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.name }}</span>
+                <span style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:{{ s.rankColor }}">{{ s.rank }}</span>
+                <span style="font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;min-width:24px;text-align:right;color:{{ s.bonusColor }}">{{ s.bonus }}</span>
+              </button>
+            </sc-for>
+          </div>
+          <div style="padding:6px 16px 0;font-size:10.5px;line-height:1.4;color:rgba(60,60,67,0.45);text-wrap:pretty">U destreinado · T treinado · E expert · M mestre · L lendário</div>
+        </div>
+
+        <div style="margin:0 -16px">
+          <div style="padding:7px 16px 6px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6)">Proficiências</div>
+          <div style="background:#fff;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06);display:grid;grid-template-columns:1fr 1fr"><div style="padding:7px 12px 8px 16px;display:flex;flex-direction:column;gap:3px;"><div style="font-size:9.5px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:rgba(60,60,67,0.4);margin-bottom:1px">Armas</div><div style="display:flex;align-items:center;gap:6px"><span style="flex:1;min-width:0;font-size:12px;font-weight:600;color:rgba(0,0,0,0.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Sem arma</span><span style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:oklch(45% 0.12 258)">T</span></div><div style="display:flex;align-items:center;gap:6px"><span style="flex:1;min-width:0;font-size:12px;font-weight:600;color:rgba(0,0,0,0.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Simples</span><span style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:oklch(45% 0.12 258)">T</span></div><div style="display:flex;align-items:center;gap:6px"><span style="flex:1;min-width:0;font-size:12px;font-weight:600;color:rgba(0,0,0,0.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Marciais</span><span style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:oklch(45% 0.12 258)">T</span></div><div style="display:flex;align-items:center;gap:6px"><span style="flex:1;min-width:0;font-size:12px;font-weight:600;color:rgba(60,60,67,0.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Avançadas</span><span style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.3)">U</span></div></div><div style="padding:7px 12px 8px 16px;display:flex;flex-direction:column;gap:3px;padding:7px 16px 8px 12px;border-left:1px solid rgba(0,0,0,0.06)"><div style="font-size:9.5px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:rgba(60,60,67,0.4);margin-bottom:1px">Armaduras</div><div style="display:flex;align-items:center;gap:6px"><span style="flex:1;min-width:0;font-size:12px;font-weight:600;color:rgba(0,0,0,0.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Sem armadura</span><span style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:oklch(45% 0.12 258)">T</span></div><div style="display:flex;align-items:center;gap:6px"><span style="flex:1;min-width:0;font-size:12px;font-weight:600;color:rgba(0,0,0,0.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Leve</span><span style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:oklch(45% 0.12 258)">T</span></div><div style="display:flex;align-items:center;gap:6px"><span style="flex:1;min-width:0;font-size:12px;font-weight:600;color:rgba(0,0,0,0.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Média</span><span style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:oklch(45% 0.12 258)">T</span></div><div style="display:flex;align-items:center;gap:6px"><span style="flex:1;min-width:0;font-size:12px;font-weight:600;color:rgba(60,60,67,0.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Pesada</span><span style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.3)">U</span></div></div></div>
+        </div>
+
+        <div style="margin:0 -16px">
+          <div style="padding:7px 16px 6px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6)">Outros</div>
+          <div style="background:#fff;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06)">
+            <div style="display:flex;align-items:center;gap:10px;padding:11px 16px;min-height:44px;border-bottom:1px solid rgba(0,0,0,0.06)">
+              <span style="flex:1;font-size:13px;font-weight:600;color:rgba(60,60,67,0.6)">Resistências</span>
+              <span style="font-size:13px;color:rgba(60,60,67,0.4)">Nenhuma</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:11px 16px;min-height:44px;border-bottom:1px solid rgba(0,0,0,0.06)">
+              <span style="flex:1;font-size:13px;font-weight:600;color:rgba(60,60,67,0.6)">Sentidos</span>
+              <span style="font-size:13px;font-weight:600">Darkvision</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:11px 16px;min-height:44px">
+              <span style="flex:1;font-size:13px;font-weight:600;color:rgba(60,60,67,0.6)">Idiomas</span>
+              <span style="font-size:13px;color:rgba(60,60,67,0.4)">Nenhum selecionado</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0 0">
+          <span style="font-size:12px;color:rgba(60,60,67,0.4)">Importada do Pathbuilder · id 462959</span>
+          <button type="button" style="font-size:12px;font-weight:600;color:rgba(60,60,67,0.6);text-decoration:underline;text-underline-offset:2px">Atualizar</button>
+        </div>
+      </section>
+    </sc-if>
+
+    <!-- ================= ATAQUES ================= -->
+    <sc-if value="{{ showAtaques }}">
+      <section style="display:flex;flex-direction:column;gap:7px">
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          <button type="button" onClick="{{ expandAtk }}" style="font-size:11.5px;font-weight:600;color:rgba(60,60,67,0.6);padding:3px 9px;border-radius:999px;background:rgba(0,0,0,0.05)">Expandir</button>
+          <button type="button" onClick="{{ collapseAtk }}" style="font-size:11.5px;font-weight:600;color:rgba(60,60,67,0.6);padding:3px 9px;border-radius:999px;background:rgba(0,0,0,0.05)">Recolher</button>
+        </div>
+
+        <sc-if value="{{ hasFavAttacks }}">
+          <div style="margin:0 -16px;display:flex;flex-direction:column">
+            <div style="padding:7px 16px 6px;background:oklch(97% 0.004 90);font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6)">Favoritos</div>
+            <div style="background:#fff;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06)">
+              <sc-for list="{{ favAttacks }}" as="a" hint-placeholder-count="1">
+                <div style="display:flex;align-items:center;gap:8px;padding:0 8px 0 16px;min-height:42px;border-top:{{ a.border }}">
+                  <span style="flex:1;min-width:0;display:flex;align-items:baseline;gap:7px;overflow:hidden">
+                    <span style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.name }}</span>
+                    <span style="font-size:12px;color:rgba(60,60,67,0.6);flex-shrink:0;white-space:nowrap">{{ a.dmg }}</span>
+                  </span>
+                  <button type="button" onClick="{{ a.openMods }}" style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0;white-space:nowrap;color:{{ a.modsColor }}">{{ a.mods }}</button>
+                  <button type="button" onClick="{{ a.toggleFav }}" style="flex-shrink:0;width:30px;height:40px;display:flex;align-items:center;justify-content:center">
+                    <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.6l1.9 4 4.4.6-3.2 3.1.8 4.4L8 11.6l-3.9 2.1.8-4.4L1.7 6.2l4.4-.6z" fill="{{ a.starFill }}" stroke="{{ a.starStroke }}" stroke-width="1.2" stroke-linejoin="round"></path></svg>
+                  </button>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="margin:0 -16px;display:flex;flex-direction:column">
+          <button type="button" onClick="{{ atkMeleeToggle }}" style="display:flex;align-items:center;gap:8px;padding:7px 16px 6px;background:oklch(97% 0.004 90);font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6);text-align:left">
+            <svg width="9" height="9" viewBox="0 0 10 10" style="transform:{{ atkMeleeCaret }};transition:transform 120ms;color:rgba(60,60,67,0.45);flex-shrink:0" aria-hidden="true"><path d="M1 3l4 4 4-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span>Corpo a corpo</span>
+          </button>
+          <sc-if value="{{ atkMeleeOpen }}" hint-placeholder-val="{{ true }}">
+          <div style="background:#fff;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06)">
+            <div style="background:{{ pickBg }}">
+              <div style="display:flex;align-items:center;gap:8px;padding:5px 8px 5px 16px;min-height:42px">
+                <button type="button" onClick="{{ togglePick }}" style="flex:1;min-width:0;display:flex;align-items:baseline;gap:7px;overflow:hidden">
+                  <span style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Large Greatpick</span>
+                  <span style="font-size:12px;color:rgba(60,60,67,0.6);flex-shrink:0;white-space:nowrap">1d10+4 P</span>
+                </button>
+                <button type="button" onClick="{{ atkPick.open }}" style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0;white-space:nowrap;color:{{ atkPick.color }}">{{ atkPick.m1 }}<span style="color:rgba(60,60,67,0.25);font-weight:600"> / </span>{{ atkPick.m2 }}<span style="color:rgba(60,60,67,0.25);font-weight:600"> / </span>{{ atkPick.m3 }}</button>
+                <button type="button" onClick="{{ starPick.toggleFav }}" style="flex-shrink:0;width:30px;height:40px;display:flex;align-items:center;justify-content:center">
+                    <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.6l1.9 4 4.4.6-3.2 3.1.8 4.4L8 11.6l-3.9 2.1.8-4.4L1.7 6.2l4.4-.6z" fill="{{ starPick.starFill }}" stroke="{{ starPick.starStroke }}" stroke-width="1.2" stroke-linejoin="round"></path></svg>
+                  </button>
+              </div>
+              <sc-if value="{{ pickOpen }}">
+                <div style="padding:2px 16px 12px;border-top:1px solid rgba(0,0,0,0.06)">
+                  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+                    <span style="font-size:12px;font-weight:600;color:rgba(60,60,67,0.6);background:rgba(0,0,0,0.06);padding:4px 10px;border-radius:999px">fatal d12</span>
+                    <span style="font-size:12px;font-weight:600;color:rgba(60,60,67,0.6);background:rgba(0,0,0,0.06);padding:4px 10px;border-radius:999px">large</span>
+                  </div>
+                  <dl style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin:10px 0 0;padding:10px 12px;background:rgba(0,0,0,0.03);border-radius:12px">
+                    <div><dt style="font-size:12px;font-weight:700;color:rgba(60,60,67,0.6)">Attack</dt><dd style="margin:2px 0 0;font-size:13px;font-weight:600;color:{{ atkPick.color }}">{{ atkPick.m1 }}</dd></div>
+                    <div><dt style="font-size:12px;font-weight:700;color:rgba(60,60,67,0.6)">Damage</dt><dd style="margin:2px 0 0;font-size:13px;font-weight:600">1d10+4 P</dd></div>
+                    <div><dt style="font-size:12px;font-weight:700;color:rgba(60,60,67,0.6)">Category</dt><dd style="margin:2px 0 0;font-size:13px;font-weight:600">Martial</dd></div>
+                    <div><dt style="font-size:12px;font-weight:700;color:rgba(60,60,67,0.6)">Hands</dt><dd style="margin:2px 0 0;font-size:13px;font-weight:600">2</dd></div>
+                    <div><dt style="font-size:12px;font-weight:700;color:rgba(60,60,67,0.6)">Type</dt><dd style="margin:2px 0 0;font-size:13px;font-weight:600">Melee</dd></div>
+                    <div><dt style="font-size:12px;font-weight:700;color:rgba(60,60,67,0.6)">2º / 3º ataque</dt><dd style="margin:2px 0 0;font-size:13px;font-weight:600;color:{{ atkPick.color }}">{{ atkPick.map }}</dd></div>
+                  </dl>
+                </div>
+              </sc-if>
+            </div>
+            <div style="border-top:1px solid rgba(0,0,0,0.06);display:flex;align-items:center;gap:8px;padding:5px 8px 5px 16px;min-height:42px">
+              <div style="flex:1;min-width:0;display:flex;align-items:baseline;gap:7px;overflow:hidden">
+                <span style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Unarmed Strike</span>
+                <span style="font-size:12px;color:rgba(60,60,67,0.6);flex-shrink:0;white-space:nowrap">1d4+4 B</span>
+              </div>
+              <button type="button" onClick="{{ atkUnarmed.open }}" style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0;white-space:nowrap;color:{{ atkUnarmed.color }}">{{ atkUnarmed.m1 }}<span style="color:rgba(60,60,67,0.25);font-weight:600"> / </span>{{ atkUnarmed.m2 }}<span style="color:rgba(60,60,67,0.25);font-weight:600"> / </span>{{ atkUnarmed.m3 }}</button>
+              <button type="button" onClick="{{ starUnarmed.toggleFav }}" style="flex-shrink:0;width:30px;height:40px;display:flex;align-items:center;justify-content:center">
+                    <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.6l1.9 4 4.4.6-3.2 3.1.8 4.4L8 11.6l-3.9 2.1.8-4.4L1.7 6.2l4.4-.6z" fill="{{ starUnarmed.starFill }}" stroke="{{ starUnarmed.starStroke }}" stroke-width="1.2" stroke-linejoin="round"></path></svg>
+                  </button>
+            </div>
+          </div>
+          </sc-if>
+        </div>
+
+        <div style="margin:0 -16px;display:flex;flex-direction:column">
+          <button type="button" onClick="{{ atkRangedToggle }}" style="display:flex;align-items:center;gap:8px;padding:7px 16px 6px;background:oklch(97% 0.004 90);font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6);text-align:left">
+            <svg width="9" height="9" viewBox="0 0 10 10" style="transform:{{ atkRangedCaret }};transition:transform 120ms;color:rgba(60,60,67,0.45);flex-shrink:0" aria-hidden="true"><path d="M1 3l4 4 4-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span>À distância</span>
+          </button>
+          <sc-if value="{{ atkRangedOpen }}" hint-placeholder-val="{{ true }}">
+          <div style="background:#fff;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06)">
+            <div style="background:{{ javBg }}">
+              <div style="display:flex;align-items:center;gap:8px;padding:5px 8px 5px 16px;min-height:42px">
+                <button type="button" onClick="{{ toggleJav }}" style="flex:1;min-width:0;display:flex;align-items:baseline;gap:7px;overflow:hidden">
+                  <span style="font-size:14px;font-weight:600;flex:0 0 auto;white-space:nowrap">Javelin</span>
+                  <span style="font-size:12px;color:rgba(60,60,67,0.6);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">1d6+4 P</span>
+                </button>
+                <span style="display:flex;align-items:center;flex-shrink:0;background:oklch(58% 0.14 258 / 0.1);border-radius:999px;padding:2px;gap:2px">
+                  <button type="button" onClick="{{ javMinus }}" style="width:22px;height:22px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.06);opacity:{{ javMinusOpacity }}">
+                    <svg viewBox="0 0 12 2" style="width:42%" aria-hidden="true"><rect width="12" height="2" rx="1" fill="currentColor"></rect></svg>
+                  </button>
+                  <span style="font-size:13px;font-weight:700;min-width:14px;text-align:center;font-variant-numeric:tabular-nums">{{ javelins }}</span>
+                  <button type="button" onClick="{{ javPlus }}" style="width:22px;height:22px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:oklch(58% 0.14 258);color:#fff">
+                    <svg viewBox="0 0 12 12" style="width:42%" aria-hidden="true"><rect x="5" width="2" height="12" rx="1" fill="currentColor"></rect><rect y="5" width="12" height="2" rx="1" fill="currentColor"></rect></svg>
+                  </button>
+                </span>
+                <button type="button" onClick="{{ atkJav.open }}" style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0;white-space:nowrap;color:{{ atkJav.color }}">{{ atkJav.m1 }}<span style="color:rgba(60,60,67,0.25);font-weight:600"> / </span>{{ atkJav.m2 }}<span style="color:rgba(60,60,67,0.25);font-weight:600"> / </span>{{ atkJav.m3 }}</button>
+                <button type="button" onClick="{{ starJav.toggleFav }}" style="flex-shrink:0;width:30px;height:40px;display:flex;align-items:center;justify-content:center">
+                    <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.6l1.9 4 4.4.6-3.2 3.1.8 4.4L8 11.6l-3.9 2.1.8-4.4L1.7 6.2l4.4-.6z" fill="{{ starJav.starFill }}" stroke="{{ starJav.starStroke }}" stroke-width="1.2" stroke-linejoin="round"></path></svg>
+                  </button>
+              </div>
+              <sc-if value="{{ javOpen }}">
+                <div style="padding:2px 16px 12px;border-top:1px solid rgba(0,0,0,0.06)">
+                  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+                    <span style="font-size:12px;font-weight:600;color:rgba(60,60,67,0.6);background:rgba(0,0,0,0.06);padding:4px 10px;border-radius:999px">thrown 30 ft</span>
+                  </div>
+                  <dl style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin:10px 0 0;padding:10px 12px;background:rgba(0,0,0,0.03);border-radius:12px">
+                    <div><dt style="font-size:12px;font-weight:700;color:rgba(60,60,67,0.6)">Attack</dt><dd style="margin:2px 0 0;font-size:13px;font-weight:600;color:{{ atkJav.color }}">{{ atkJav.m1 }}</dd></div>
+                    <div><dt style="font-size:12px;font-weight:700;color:rgba(60,60,67,0.6)">Damage</dt><dd style="margin:2px 0 0;font-size:13px;font-weight:600">1d6+4 P</dd></div>
+                    <div><dt style="font-size:12px;font-weight:700;color:rgba(60,60,67,0.6)">Category</dt><dd style="margin:2px 0 0;font-size:13px;font-weight:600">Simple</dd></div>
+                    <div><dt style="font-size:12px;font-weight:700;color:rgba(60,60,67,0.6)">Hands</dt><dd style="margin:2px 0 0;font-size:13px;font-weight:600">1</dd></div>
+                    <div><dt style="font-size:12px;font-weight:700;color:rgba(60,60,67,0.6)">Range</dt><dd style="margin:2px 0 0;font-size:13px;font-weight:600">30 ft</dd></div>
+                    <div><dt style="font-size:12px;font-weight:700;color:rgba(60,60,67,0.6)">Quantidade</dt><dd style="margin:2px 0 0;font-size:13px;font-weight:600">{{ javelins }}</dd></div>
+                    <div><dt style="font-size:12px;font-weight:700;color:rgba(60,60,67,0.6)">2º / 3º ataque</dt><dd style="margin:2px 0 0;font-size:13px;font-weight:600">±0 / −5</dd></div>
+                  </dl>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+          </sc-if>
+        </div>
+
+        <div style="margin:0 -16px;display:flex;flex-direction:column">
+          <button type="button" onClick="{{ atkSpellToggle }}" style="display:flex;align-items:center;gap:8px;padding:7px 16px 6px;background:oklch(97% 0.004 90);font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6);text-align:left">
+            <svg width="9" height="9" viewBox="0 0 10 10" style="transform:{{ atkSpellCaret }};transition:transform 120ms;color:rgba(60,60,67,0.45);flex-shrink:0" aria-hidden="true"><path d="M1 3l4 4 4-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span>Magias</span>
+          </button>
+          <sc-if value="{{ atkSpellOpen }}" hint-placeholder-val="{{ true }}">
+            <div style="background:#fff;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06);padding:24px 16px;text-align:center;font-size:13px;line-height:1.5;color:rgba(60,60,67,0.6)">
+              Nenhuma magia de ataque equipada.
+            </div>
+          </sc-if>
+        </div>
+      </section>
+    </sc-if>
+
+    <!-- ================= MAGIAS ================= -->
+    <sc-if value="{{ showMagias }}">
+      <section style="display:flex;flex-direction:column;gap:7px">
+        <div style="margin:0 -16px">
+          <div style="padding:7px 16px 6px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6)">Conjuração</div>
+          <div style="background:#fff;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06);padding:11px 16px 12px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <span style="flex:1;min-width:0;font-size:14.5px;font-weight:600">Arcana · preparada</span>
+              <span style="font-size:12px"><span style="color:rgba(60,60,67,0.6)">DC</span> <span style="font-weight:700">17</span></span>
+              <span style="font-size:12px"><span style="color:rgba(60,60,67,0.6)">Ataque</span> <span style="font-weight:700">+7</span></span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="display:flex;align-items:baseline;gap:4px;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,0.05);white-space:nowrap">
+                <span style="font-size:10.5px;font-weight:600;color:rgba(60,60,67,0.6)">Truques</span>
+                <span style="font-size:11px;font-weight:700;font-variant-numeric:tabular-nums">{{ cantripCount }}</span>
+              </span>
+              <span style="display:flex;align-items:baseline;gap:4px;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,0.05);white-space:nowrap">
+                <span style="font-size:10.5px;font-weight:600;color:rgba(60,60,67,0.6)">Foco</span>
+                <span style="font-size:11px;font-weight:700;font-variant-numeric:tabular-nums">{{ focusCount }}</span>
+              </span>
+              <button type="button" onClick="{{ resetPrepared }}" style="margin-left:auto;flex-shrink:0;font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:999px;color:oklch(50% 0.14 258);background:oklch(58% 0.14 258 / 0.1)">Descansar</button>
+            </div>
+            <div style="border:1px solid rgba(0,0,0,0.1);border-radius:8px;overflow:hidden">
+              <div style="display:grid;grid-template-columns:repeat(9,1fr)">
+                <sc-for list="{{ slotTable }}" as="t" hint-placeholder-count="9">
+                  <div style="text-align:center;border-left:{{ t.border }}">
+                    <div style="font-size:9.5px;font-weight:700;padding:2px 0 1px;color:rgba(60,60,67,0.55);background:rgba(0,0,0,0.04);border-bottom:1px solid rgba(0,0,0,0.07)">{{ t.rank }}</div>
+                    <div style="font-size:11.5px;font-weight:700;padding:4px 0 5px;font-variant-numeric:tabular-nums;color:{{ t.fg }}">{{ t.value }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          <button type="button" onClick="{{ expandMag }}" style="font-size:11.5px;font-weight:600;color:rgba(60,60,67,0.6);padding:3px 9px;border-radius:999px;background:rgba(0,0,0,0.05)">Expandir</button>
+          <button type="button" onClick="{{ collapseMag }}" style="font-size:11.5px;font-weight:600;color:rgba(60,60,67,0.6);padding:3px 9px;border-radius:999px;background:rgba(0,0,0,0.05)">Recolher</button>
+        </div>
+        <div style="margin:0 -16px">
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 16px 6px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6)">
+            <button type="button" onClick="{{ focusToggle }}" style="display:flex;align-items:center;gap:6px;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit">
+              <svg width="9" height="9" viewBox="0 0 10 10" style="transform:{{ focusCaret }};transition:transform 120ms;color:rgba(60,60,67,0.45);flex-shrink:0" aria-hidden="true"><path d="M1 3l4 4 4-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <span>Magias de foco</span>
+            </button>
+            <span style="display:flex;align-items:center;gap:5px;margin-left:auto">
+              <sc-for list="{{ focusDots }}" as="d" hint-placeholder-count="3">
+                <button type="button" onClick="{{ d.set }}" style="width:22px;height:22px;display:flex;align-items:center;justify-content:center">
+                  <span style="width:12px;height:12px;border-radius:999px;border:1.5px solid {{ d.border }};background:{{ d.bg }}"></span>
+                </button>
+              </sc-for>
+            </span>
+          </div>
+          <sc-if value="{{ focusOpen }}" hint-placeholder-val="{{ true }}">
+            <div style="background:#fff;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06)">
+              <sc-for list="{{ focusRows }}" as="fr" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:8px;padding:0 12px 0 16px;min-height:40px;border-top:{{ fr.border }}">
+                  <button type="button" onClick="{{ fr.open }}" style="flex:1;min-width:0;display:flex;align-items:center;gap:7px;height:40px;text-align:left">
+                    <span style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ fr.name }}</span>
+                    <span style="font-size:11.5px;letter-spacing:0.5px;color:rgba(60,60,67,0.62);flex-shrink:0;white-space:nowrap">{{ fr.act }}</span>
+                  </button>
+                  <button type="button" onClick="{{ fr.remove }}" style="flex-shrink:0;width:28px;height:40px;display:flex;align-items:center;justify-content:center;color:rgba(60,60,67,0.35)">
+                    <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
+                  </button>
+                </div>
+              </sc-for>
+              <button type="button" onClick="{{ openFocusSheet }}" style="width:100%;text-align:center;padding:10px 16px;min-height:44px;border-top:1px solid rgba(0,0,0,0.06);font-size:13px;font-weight:700;color:oklch(50% 0.14 258)">Incluir magia de foco</button>
+            </div>
+          </sc-if>
+        </div>
+
+        <sc-for list="{{ prepGroups }}" as="g" hint-placeholder-count="2">
+          <div style="margin:0 -16px">
+            <button type="button" onClick="{{ g.toggle }}" style="width:100%;display:flex;align-items:center;gap:8px;padding:7px 16px 6px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6);text-align:left">
+              <svg width="9" height="9" viewBox="0 0 10 10" style="transform:{{ g.caret }};transition:transform 120ms;color:rgba(60,60,67,0.45);flex-shrink:0" aria-hidden="true"><path d="M1 3l4 4 4-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <span>Preparadas · {{ g.title }}</span>
+              <span style="margin-left:auto;color:rgba(60,60,67,0.4);text-transform:none;letter-spacing:0;font-variant-numeric:tabular-nums">{{ g.count }}</span>
+            </button>
+            <sc-if value="{{ g.open }}" hint-placeholder-val="{{ true }}">
+                        <div style="background:#fff;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06)">
+              <sc-for list="{{ g.rows }}" as="p" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:8px;padding:0 12px 0 {{ p.padLeft }};min-height:40px;border-top:1px solid rgba(0,0,0,0.06);opacity:{{ p.opacity }}">
+                  <sc-if value="{{ p.canUse }}" hint-placeholder-val="{{ true }}">
+                    <button type="button" onClick="{{ p.toggle }}" style="flex-shrink:0;width:32px;height:40px;display:flex;align-items:center;justify-content:center">
+                      <span style="width:18px;height:18px;border-radius:5px;border:1.5px solid {{ p.boxBorder }};background:{{ p.boxBg }};color:#fff;display:flex;align-items:center;justify-content:center">
+                        <svg width="10" height="8" viewBox="0 0 10 8" style="opacity:{{ p.checkOpacity }}" aria-hidden="true"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                      </span>
+                    </button>
+                  </sc-if>
+                  <button type="button" onClick="{{ p.open }}" style="flex:1;min-width:0;display:flex;align-items:center;gap:7px;height:40px;text-align:left">
+                    <span style="font-size:14px;font-weight:600;text-decoration:{{ p.deco }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</span>
+                    <span style="font-size:11.5px;letter-spacing:0.5px;color:rgba(60,60,67,0.62);flex-shrink:0;white-space:nowrap">{{ p.act }}</span>
+                  </button>
+                  <button type="button" onClick="{{ p.remove }}" style="flex-shrink:0;width:28px;height:40px;display:flex;align-items:center;justify-content:center;color:rgba(60,60,67,0.35)">
+                    <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
+                  </button>
+                </div>
+              </sc-for>
+              <sc-if value="{{ g.canAdd }}" hint-placeholder-val="{{ false }}">
+                <button type="button" onClick="{{ g.add }}" style="width:100%;text-align:center;padding:10px 16px;min-height:44px;border-top:1px solid rgba(0,0,0,0.06);font-size:13px;font-weight:700;color:oklch(50% 0.14 258)">Adicionar magia</button>
+              </sc-if>
+              <sc-for list="{{ g.emptyRows }}" as="e" hint-placeholder-count="0">
+                <button type="button" onClick="{{ e.pick }}" style="width:100%;display:flex;align-items:center;gap:8px;padding:0 16px;min-height:40px;border-top:{{ e.border }};text-align:left">
+                  <span style="width:18px;height:18px;border-radius:5px;border:1.5px dashed rgba(0,0,0,0.2);flex-shrink:0"></span>
+                  <span style="flex:1;font-size:13px;font-weight:600;color:rgba(60,60,67,0.4)">Slot vazio</span>
+                  <span style="font-size:11.5px;font-weight:700;color:oklch(50% 0.14 258)">Preparar</span>
+                </button>
+              </sc-for>
+            </div>
+            </sc-if>
+          </div>
+        </sc-for>
+
+        <div style="margin:0 -16px">
+          <button type="button" onClick="{{ bookToggle }}" style="width:100%;display:flex;align-items:center;gap:8px;padding:7px 16px 6px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6);text-align:left">
+            <svg width="9" height="9" viewBox="0 0 10 10" style="transform:{{ bookCaret }};transition:transform 120ms;color:rgba(60,60,67,0.45);flex-shrink:0" aria-hidden="true"><path d="M1 3l4 4 4-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span>Grimório</span>
+            <span style="margin-left:auto;color:rgba(60,60,67,0.4);text-transform:none;letter-spacing:0">{{ bookCount }}</span>
+          </button>
+          <sc-if value="{{ bookOpen }}" hint-placeholder-val="{{ true }}">
+          <div style="background:#fff;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06)">
+            <sc-for list="{{ bookRows }}" as="b" hint-placeholder-count="8">
+              <div style="display:flex;align-items:center;gap:8px;padding:0 12px 0 16px;min-height:42px;border-top:{{ b.border }}">
+                <button type="button" onClick="{{ b.open }}" style="flex:1;min-width:0;display:flex;align-items:center;gap:7px;height:42px;text-align:left">
+                  <span style="font-size:11px;font-weight:700;color:rgba(60,60,67,0.4);min-width:32px;flex-shrink:0">{{ b.rankTag }}</span>
+                  <span style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ b.name }}</span>
+                  <span style="font-size:11.5px;letter-spacing:0.5px;color:rgba(60,60,67,0.62);flex-shrink:0;white-space:nowrap">{{ b.act }}</span>
+                </button>
+                <button type="button" onClick="{{ b.prepare }}" style="flex-shrink:0;font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:999px;background:{{ b.bg }};color:{{ b.fg }}">{{ b.label }}</button>
+              </div>
+            </sc-for>
+                        <button type="button" onClick="{{ openBookSheet }}" style="width:100%;text-align:center;padding:12px 16px;min-height:48px;border-top:1px solid rgba(0,0,0,0.06);font-size:13px;font-weight:700;color:oklch(50% 0.14 258)">Adicionar do compêndio</button>
+          </div>
+          </sc-if>
+        </div>
+
+      </section>
+    </sc-if>
+
+    <!-- ================= AÇÕES ================= -->
+    <sc-if value="{{ isActions }}">
+      <section style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+        <div style="display:flex;gap:3px;background:rgba(0,0,0,0.05);border-radius:10px;padding:3px">
+          <sc-for list="{{ actSegs }}" as="t" hint-placeholder-count="4">
+            <button type="button" onClick="{{ t.pick }}" style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:7px 4px;border-radius:8px;font-size:12.5px;font-weight:600;background:{{ t.bg }};color:{{ t.fg }};box-shadow:{{ t.shadow }}">{{ t.label }}</button>
+          </sc-for>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid rgba(0,0,0,0.1);border-radius:10px;padding:0 10px;min-height:38px">
+          <span style="font-size:11px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:rgba(60,60,67,0.5);flex-shrink:0">Traço</span>
+          <select onChange="{{ pickTrait }}" value="{{ actTraitValue }}" style="flex:1;min-width:0;border:none;background:transparent;font-size:13.5px;font-weight:600;color:#1c1c1e;padding:8px 0;appearance:none">
+            <sc-for list="{{ actTraitOptions }}" as="o" hint-placeholder-count="8">
+              <option value="{{ o.value }}">{{ o.label }}</option>
+            </sc-for>
+          </select>
+          <span style="font-size:10px;color:rgba(60,60,67,0.45);flex-shrink:0">▼</span>
+        </label>
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          <button type="button" onClick="{{ expandAllActions }}" style="font-size:11.5px;font-weight:600;color:rgba(60,60,67,0.6);padding:3px 9px;border-radius:999px;background:rgba(0,0,0,0.05)">Expandir</button>
+          <button type="button" onClick="{{ collapseAllActions }}" style="font-size:11.5px;font-weight:600;color:rgba(60,60,67,0.6);padding:3px 9px;border-radius:999px;background:rgba(0,0,0,0.05)">Recolher</button>
+        </div>
+        <sc-if value="{{ actionsEmpty }}">
+          <div style="padding:24px 0;text-align:center;font-size:13px;color:rgba(60,60,67,0.45)">Nada aqui com esse filtro.</div>
+        </sc-if>
+        <div style="margin:0 -16px;display:flex;flex-direction:column">
+          <sc-for list="{{ actionGroups }}" as="g" hint-placeholder-count="3">
+            <div style="display:flex;flex-direction:column">
+              <sc-if value="{{ g.hasTitle }}">
+                <button type="button" onClick="{{ g.toggle }}" style="display:flex;align-items:center;gap:6px;width:100%;text-align:left;padding:9px 16px 5px">
+                  <span style="flex:1;min-width:0;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6)">{{ g.title }}</span>
+                  <span style="font-size:11px;color:rgba(60,60,67,0.4)">{{ g.count }}</span>
+                  <span style="font-size:9px;color:rgba(60,60,67,0.4)">{{ g.caret }}</span>
+                </button>
+              </sc-if>
+              <sc-if value="{{ g.open }}" hint-placeholder-val="{{ true }}">
+                <div style="background:#fff;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06)">
+                  <sc-for list="{{ g.rows }}" as="a" hint-placeholder-count="5">
+                    <div style="border-top:{{ a.border }}">
+                      <div style="display:flex;align-items:center;gap:8px;padding:0 10px 0 16px;min-height:46px">
+                        <button type="button" onClick="{{ a.toggle }}" style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;min-height:46px;text-align:left">
+                          <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+                            <span style="display:flex;align-items:center;gap:7px;min-width:0">
+                              <span style="font-size:14.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.name }}</span>
+                              <span style="font-size:11.5px;letter-spacing:0.5px;flex-shrink:0;white-space:nowrap;color:{{ a.actColor }}">{{ a.act }}</span>
+                            </span>
+                            <span style="font-size:11.5px;color:rgba(60,60,67,0.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.meta }}</span>
+                          </span>
+                        </button>
+                        <button type="button" onClick="{{ a.toggleFav }}" style="flex-shrink:0;width:34px;height:44px;display:flex;align-items:center;justify-content:center;font-size:16px;color:{{ a.starColor }}">{{ a.star }}</button>
+                      </div>
+                      <sc-if value="{{ a.open }}">
+                        <div style="padding:0 16px 12px;font-size:13px;line-height:1.5;color:rgba(60,60,67,0.75);text-wrap:pretty">{{ a.desc }}</div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </sc-if>
+
+    <!-- ================= FEATS ================= -->
+    <sc-if value="{{ showFeats }}">
+      <section style="display:flex;flex-direction:column;gap:7px">
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          <button type="button" onClick="{{ expandFeats }}" style="font-size:11.5px;font-weight:600;color:rgba(60,60,67,0.6);padding:3px 9px;border-radius:999px;background:rgba(0,0,0,0.05)">Expandir</button>
+          <button type="button" onClick="{{ collapseFeats }}" style="font-size:11.5px;font-weight:600;color:rgba(60,60,67,0.6);padding:3px 9px;border-radius:999px;background:rgba(0,0,0,0.05)">Recolher</button>
+        </div>
+
+        <sc-if value="{{ hasFavFeats }}">
+          <div style="margin:0 -16px;display:flex;flex-direction:column">
+            <div style="padding:7px 16px 6px;background:oklch(97% 0.004 90);font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6)">Favoritos</div>
+            <div style="background:#fff;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06)">
+              <sc-for list="{{ favFeats }}" as="ff" hint-placeholder-count="1">
+                <div style="display:flex;align-items:center;gap:8px;padding:0 8px 0 16px;min-height:44px;border-top:{{ ff.border }}">
+                  <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+                    <span style="display:flex;align-items:center;gap:6px">
+                      <span style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ ff.name }}</span>
+                      <sc-if value="{{ ff.hasAct }}" hint-placeholder-val="{{ true }}"><span style="font-size:11.5px;letter-spacing:0.5px;color:rgba(60,60,67,0.62);flex-shrink:0;white-space:nowrap">{{ ff.act }}</span></sc-if>
+                    </span>
+                    <span style="font-size:11.5px;color:rgba(60,60,67,0.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ ff.source }}</span>
+                  </span>
+                  <span style="font-size:11px;color:rgba(60,60,67,0.6);white-space:nowrap;flex-shrink:0">{{ ff.level }}</span>
+                  <button type="button" onClick="{{ ff.toggleFav }}" style="flex-shrink:0;width:30px;height:40px;display:flex;align-items:center;justify-content:center">
+                    <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.6l1.9 4 4.4.6-3.2 3.1.8 4.4L8 11.6l-3.9 2.1.8-4.4L1.7 6.2l4.4-.6z" fill="{{ ff.starFill }}" stroke="{{ ff.starStroke }}" stroke-width="1.2" stroke-linejoin="round"></path></svg>
+                  </button>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-for list="{{ featGroups }}" as="g" hint-placeholder-count="4">
+          <div style="margin:0 -16px;display:flex;flex-direction:column">
+            <button type="button" onClick="{{ g.toggle }}" style="display:flex;align-items:center;gap:8px;padding:7px 16px 6px;background:oklch(97% 0.004 90);font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6);text-align:left">
+              <svg width="9" height="9" viewBox="0 0 10 10" style="transform:{{ g.caret }};transition:transform 120ms;color:rgba(60,60,67,0.45);flex-shrink:0" aria-hidden="true"><path d="M1 3l4 4 4-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <span>{{ g.title }}</span>
+              <span style="margin-left:auto;color:rgba(60,60,67,0.4);font-variant-numeric:tabular-nums">{{ g.count }}</span>
+            </button>
+            <sc-if value="{{ g.open }}" hint-placeholder-val="{{ true }}">
+              <div style="background:#fff;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06)">
+                <sc-for list="{{ g.items }}" as="ft" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:8px;padding:0 8px 0 16px;min-height:44px;border-top:{{ ft.border }}">
+                  <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+                    <span style="display:flex;align-items:center;gap:6px">
+                      <span style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ ft.name }}</span>
+                      <sc-if value="{{ ft.hasAct }}" hint-placeholder-val="{{ true }}"><span style="font-size:11.5px;letter-spacing:0.5px;color:rgba(60,60,67,0.62);flex-shrink:0;white-space:nowrap">{{ ft.act }}</span></sc-if>
+                    </span>
+                    <span style="font-size:11.5px;color:rgba(60,60,67,0.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ ft.source }}</span>
+                  </span>
+                  <span style="font-size:11px;color:rgba(60,60,67,0.6);white-space:nowrap;flex-shrink:0">{{ ft.level }}</span>
+                  <button type="button" onClick="{{ ft.toggleFav }}" style="flex-shrink:0;width:30px;height:40px;display:flex;align-items:center;justify-content:center">
+                    <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.6l1.9 4 4.4.6-3.2 3.1.8 4.4L8 11.6l-3.9 2.1.8-4.4L1.7 6.2l4.4-.6z" fill="{{ ft.starFill }}" stroke="{{ ft.starStroke }}" stroke-width="1.2" stroke-linejoin="round"></path></svg>
+                  </button>
+                </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+        <p style="margin:6px 0 0;font-size:12px;line-height:1.5;color:rgba(60,60,67,0.4)">A descrição de cada feat vem do pack do Foundry na importação — aqui a lista serve para conferência do que o Pathbuilder trouxe.</p>
+      </section>
+    </sc-if>
+
+    <!-- ================= INVENTÁRIO ================= -->
+    <sc-if value="{{ showInventory }}">
+      <section style="display:flex;flex-direction:column;gap:7px">
+        <sc-for list="{{ invGroups }}" as="g" hint-placeholder-count="3">
+          <div style="margin:0 -16px;display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 16px 6px;background:oklch(97% 0.004 90);font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:rgba(60,60,67,0.6)">
+              <span>{{ g.title }}</span>
+              <span style="color:rgba(60,60,67,0.4);font-variant-numeric:tabular-nums">{{ g.count }}</span>
+            </div>
+            <div style="background:#fff;border-top:1px solid rgba(0,0,0,0.06);border-bottom:1px solid rgba(0,0,0,0.06)">
+              <sc-for list="{{ g.items }}" as="i" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:8px;padding:5px 8px 5px 16px;min-height:42px;border-top:{{ i.border }}">
+                  <span style="flex:1;min-width:0;display:flex;align-items:baseline;gap:6px;overflow:hidden">
+                    <span style="font-size:14.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ i.name }}</span>
+                    <span style="font-size:11px;color:rgba(60,60,67,0.6);white-space:nowrap;flex-shrink:0">{{ i.level }}</span>
+                  </span>
+                  <span style="font-size:11px;font-weight:700;color:rgba(60,60,67,0.6);background:rgba(0,0,0,0.06);padding:1px 6px;border-radius:999px;flex-shrink:0">{{ i.qty }}</span>
+                  <span style="width:28px;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:rgba(60,60,67,0.3)">
+                    <svg width="7" height="12" viewBox="0 0 7 12" aria-hidden="true"><path d="M1 1l5 5-5 5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                  </span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </section>
+      <div style="height:56px;flex-shrink:0"></div>
+    </sc-if>
+
+    <sc-if value="{{ showOther }}">
+      <div style="padding:60px 20px;text-align:center;font-size:13px;line-height:1.5;color:rgba(60,60,67,0.6);white-space:pre-line">Tela existente do Party Treasure.
+Não faz parte desta proposta de ficha.</div>
+    </sc-if>
+  </main>
+
+  <sc-if value="{{ isInventory }}">
+    <span style="position:absolute;right:16px;bottom:90px;z-index:30;width:52px;height:52px;border-radius:999px;background:oklch(58% 0.14 258);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,0.2)">
+      <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><rect x="9" width="2" height="20" rx="1" fill="currentColor"></rect><rect y="9" width="20" height="2" rx="1" fill="currentColor"></rect></svg>
+    </span>
+  </sc-if>
+
+  <sc-if value="{{ hpSheetOpen }}">
+    <div onClick="{{ closeSheets }}" style="position:absolute;inset:0;background:rgba(0,0,0,0.35);z-index:40"></div>
+    <div style="position:absolute;left:16px;right:16px;bottom:106px;z-index:41;background:#fff;border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.2);display:flex;flex-direction:column">
+      <div style="font-size:16px;font-weight:700;line-height:1.35;margin-bottom:10px">Pontos de vida de Rurik</div>
+      <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:14px">
+        <span style="font-size:26px;font-weight:700;letter-spacing:-0.5px;font-variant-numeric:tabular-nums">{{ hp }}</span>
+        <span style="font-size:14.5px;font-weight:600;color:rgba(60,60,67,0.4)">/ 24</span>
+        <sc-if value="{{ hasTemp }}"><span style="font-size:12px;font-weight:700;color:oklch(50% 0.14 258);background:oklch(58% 0.14 258 / 0.1);border-radius:999px;padding:2px 8px">+{{ temp }} temp</span></sc-if>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:rgba(60,60,67,0.6);margin-bottom:6px">Quanto?</div>
+      <input type="number" inputmode="numeric" value="{{ hpInput }}" onChange="{{ setHpInput }}" placeholder="0" style="width:100%;border:1px solid rgba(0,0,0,0.1);border-radius:12px;padding:10px 12px;font-size:14.5px;background:#fff;font-variant-numeric:tabular-nums"></input>
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button type="button" onClick="{{ doHeal }}" style="flex:1;text-align:center;font-size:14.5px;font-weight:700;padding:12px;border-radius:12px;color:#fff;background:oklch(58% 0.14 258)">Acrescentar</button>
+        <button type="button" onClick="{{ doDamage }}" style="flex:1;text-align:center;font-size:14.5px;font-weight:700;padding:12px;border-radius:12px;color:#fff;background:oklch(55% 0.16 25)">Reduzir</button>
+      </div>
+      <div style="margin-top:16px;padding:12px;border-radius:12px;background:oklch(58% 0.14 258 / 0.07);display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="flex:1;font-size:12px;font-weight:700;color:rgba(60,60,67,0.6)">HP temporário</span>
+          <span style="font-size:13px;font-weight:700;color:oklch(50% 0.14 258);font-variant-numeric:tabular-nums">atual: {{ temp }}</span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <input type="number" inputmode="numeric" value="{{ tempInput }}" onChange="{{ setTempInput }}" placeholder="0" style="flex:1;min-width:0;border:1px solid rgba(0,0,0,0.1);border-radius:10px;padding:9px 12px;font-size:14px;background:#fff;font-variant-numeric:tabular-nums"></input>
+          <button type="button" onClick="{{ doTemp }}" style="flex-shrink:0;font-size:13px;font-weight:700;padding:9px 16px;border-radius:10px;color:#fff;background:oklch(58% 0.14 258)">Definir</button>
+        </div>
+      </div>
+      <button type="button" onClick="{{ closeSheets }}" style="margin-top:14px;width:100%;text-align:center;font-size:14.5px;font-weight:700;padding:12px;border-radius:12px;background:rgba(0,0,0,0.06)">Fechar</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ condSheetOpen }}">
+    <div onClick="{{ closeSheets }}" style="position:absolute;inset:0;background:rgba(0,0,0,0.35);z-index:40"></div>
+    <div style="position:absolute;left:16px;right:16px;bottom:90px;z-index:41;background:#fff;border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.2);max-height:62%;overflow:hidden;display:flex;flex-direction:column">
+      <div style="font-size:16px;font-weight:700;line-height:1.35;margin-bottom:10px">Condições</div>
+      <div style="flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column">
+        <sc-for list="{{ condRows }}" as="c" hint-placeholder-count="8">
+          <div style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid rgba(0,0,0,0.06)">
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+              <span style="font-size:13px;font-weight:600;color:{{ c.color }}">{{ c.name }}</span>
+              <span style="font-size:11.5px;line-height:1.35;color:rgba(60,60,67,0.6);text-wrap:pretty">{{ c.desc }}</span>
+            </span>
+            <sc-if value="{{ c.valued }}" hint-placeholder-val="{{ true }}">
+              <span style="display:flex;align-items:center;background:oklch(58% 0.14 258 / 0.1);border-radius:999px;padding:4px;gap:6px">
+                <button type="button" onClick="{{ c.dec }}" style="width:24px;height:24px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.06);opacity:{{ c.decOpacity }}">
+                  <svg viewBox="0 0 12 2" style="width:42%" aria-hidden="true"><rect width="12" height="2" rx="1" fill="currentColor"></rect></svg>
+                </button>
+                <span style="font-size:13px;font-weight:700;min-width:16px;text-align:center;font-variant-numeric:tabular-nums">{{ c.value }}</span>
+                <button type="button" onClick="{{ c.inc }}" style="width:24px;height:24px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:oklch(58% 0.14 258);color:#fff">
+                  <svg viewBox="0 0 12 12" style="width:42%" aria-hidden="true"><rect x="5" width="2" height="12" rx="1" fill="currentColor"></rect><rect y="5" width="12" height="2" rx="1" fill="currentColor"></rect></svg>
+                </button>
+              </span>
+            </sc-if>
+            <sc-if value="{{ c.toggleable }}">
+              <button type="button" onClick="{{ c.toggle }}" style="width:20px;height:20px;border-radius:8px;border:1.5px solid {{ c.boxBorder }};background:{{ c.boxBg }};color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <svg width="10" height="8" viewBox="0 0 10 8" style="opacity:{{ c.checkOpacity }}" aria-hidden="true"><path d="M1 4l3 3 5-6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </button>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+      <button type="button" onClick="{{ toggleCondMore }}" style="margin-top:12px;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;font-size:13px;font-weight:700;padding:10px;border-radius:12px;background:rgba(0,0,0,0.04);color:oklch(58% 0.14 258)">
+        <span>{{ condMoreLabel }}</span>
+        <span style="font-size:10px">{{ condMoreCaret }}</span>
+      </button>
+      <div style="display:flex;gap:10px;margin-top:12px">
+        <button type="button" onClick="{{ closeSheets }}" style="flex:1;text-align:center;font-size:14.5px;font-weight:700;padding:12px;border-radius:12px;color:#fff;background:oklch(58% 0.14 258)">Pronto</button>
+        <button type="button" onClick="{{ clearConds }}" style="flex:1;text-align:center;font-size:14.5px;font-weight:700;padding:12px;border-radius:12px;background:rgba(0,0,0,0.06)">Limpar</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ bdOpen }}">
+    <div onClick="{{ closeBd }}" style="position:absolute;inset:0;background:rgba(0,0,0,0.35);z-index:44"></div>
+    <div style="position:absolute;left:16px;right:16px;bottom:90px;z-index:45;background:#fff;border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.2);max-height:62%;overflow:auto;display:flex;flex-direction:column">
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px">
+        <span style="flex:1;min-width:0;font-size:16px;font-weight:700;line-height:1.35">{{ bdTitle }}</span>
+        <span style="font-size:24px;font-weight:700;letter-spacing:-0.5px;font-variant-numeric:tabular-nums">{{ bdTotal }}</span>
+      </div>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{ bdParts }}" as="p" hint-placeholder-count="3">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:{{ p.border }}">
+            <span style="flex:1;min-width:0;font-size:13px;font-weight:600;color:{{ p.color }}">{{ p.label }}</span>
+            <span style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ p.color }}">{{ p.value }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <sc-if value="{{ bdAltered }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:10px;font-size:12px;line-height:1.45;color:oklch(50% 0.16 25)">Valor alterado por condições ativas.</div>
+      </sc-if>
+      <button type="button" onClick="{{ closeBd }}" style="margin-top:14px;width:100%;text-align:center;font-size:14.5px;font-weight:700;padding:12px;border-radius:12px;background:rgba(0,0,0,0.06)">Fechar</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ specialPickOpen }}">
+    <div onClick="{{ closeSpecialPick }}" style="position:absolute;inset:0;background:rgba(0,0,0,0.35);z-index:40"></div>
+    <div style="position:absolute;left:16px;right:16px;bottom:90px;z-index:41;background:#fff;border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.2);max-height:62%;overflow:auto;display:flex;flex-direction:column">
+      <div style="font-size:16px;font-weight:700;line-height:1.35;margin-bottom:4px">Adicionar à lista especial</div>
+      <div style="font-size:12px;color:rgba(60,60,67,0.6);margin-bottom:8px">Lista livre, sem limite de slots. Use para magias de item, ritual ou concessão do mestre.</div>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{ specialAddRows }}" as="r" hint-placeholder-count="6">
+          <div style="display:flex;align-items:center;gap:8px;min-height:44px;border-top:{{ r.border }}">
+            <span style="font-size:11px;font-weight:700;color:rgba(60,60,67,0.4);min-width:38px;flex-shrink:0">{{ r.rankTag }}</span>
+            <span style="flex:1;min-width:0;display:flex;align-items:center;gap:7px">
+              <span style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.name }}</span>
+              <span style="font-size:11.5px;letter-spacing:0.5px;color:rgba(60,60,67,0.62);flex-shrink:0;white-space:nowrap">{{ r.act }}</span>
+            </span>
+            <button type="button" onClick="{{ r.add }}" style="flex-shrink:0;font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:999px;background:oklch(58% 0.14 258 / 0.1);color:oklch(50% 0.14 258)">Adicionar</button>
+          </div>
+        </sc-for>
+      </div>
+      <button type="button" onClick="{{ closeSpecialPick }}" style="margin-top:14px;width:100%;text-align:center;font-size:14.5px;font-weight:700;padding:12px;border-radius:12px;background:rgba(0,0,0,0.06)">Fechar</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ focusSheetOpen }}">
+    <div onClick="{{ closeFocusSheet }}" style="position:absolute;inset:0;background:rgba(0,0,0,0.35);z-index:40"></div>
+    <div style="position:absolute;left:16px;right:16px;bottom:90px;z-index:41;background:#fff;border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.2);max-height:62%;overflow:auto;display:flex;flex-direction:column">
+      <div style="font-size:16px;font-weight:700;line-height:1.35;margin-bottom:4px">Magias de foco</div>
+      <div style="font-size:12px;color:rgba(60,60,67,0.6);margin-bottom:8px">Não ocupam slots nem são preparadas: gastam pontos de foco na hora do uso.</div>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{ focusPickRows }}" as="r" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:8px;min-height:44px;border-top:{{ r.border }}">
+            <span style="flex:1;min-width:0;display:flex;align-items:center;gap:7px">
+              <span style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.name }}</span>
+              <span style="font-size:11.5px;letter-spacing:0.5px;color:rgba(60,60,67,0.62);flex-shrink:0;white-space:nowrap">{{ r.act }}</span>
+            </span>
+            <button type="button" onClick="{{ r.add }}" style="flex-shrink:0;font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:999px;background:{{ r.bg }};color:{{ r.fg }}">{{ r.label }}</button>
+          </div>
+        </sc-for>
+      </div>
+      <button type="button" onClick="{{ closeFocusSheet }}" style="margin-top:14px;width:100%;text-align:center;font-size:14.5px;font-weight:700;padding:12px;border-radius:12px;color:#fff;background:oklch(58% 0.14 258)">Pronto</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ detailOpen }}">
+    <div onClick="{{ closeDetail }}" style="position:absolute;inset:0;background:rgba(0,0,0,0.35);z-index:44"></div>
+    <div style="position:absolute;left:16px;right:16px;bottom:90px;z-index:45;background:#fff;border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.2);max-height:66%;overflow:auto">
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <span style="flex:1;min-width:0;font-size:17px;font-weight:700;line-height:1.3">{{ detailName }}</span>
+        <span style="font-size:12px;letter-spacing:0.5px;color:rgba(60,60,67,0.5);flex-shrink:0">{{ detailAct }}</span>
+      </div>
+      <div style="font-size:12px;font-weight:600;color:rgba(60,60,67,0.6);margin-top:2px">{{ detailRank }}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:10px">
+        <sc-for list="{{ detailTraits }}" as="t" hint-placeholder-count="3">
+          <span style="font-size:10.5px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:#fff;background:oklch(42% 0.06 20);padding:3px 8px;border-radius:4px">{{ t.label }}</span>
+        </sc-for>
+      </div>
+      <p style="margin:12px 0 0;font-size:13.5px;line-height:1.55;color:rgba(0,0,0,0.78);text-wrap:pretty">{{ detailDesc }}</p>
+      <button type="button" onClick="{{ closeDetail }}" style="margin-top:16px;width:100%;text-align:center;font-size:14.5px;font-weight:700;padding:12px;border-radius:12px;background:rgba(0,0,0,0.06)">Fechar</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ pickOpenSpell }}">
+    <div onClick="{{ closeSpellSheets }}" style="position:absolute;inset:0;background:rgba(0,0,0,0.35);z-index:40"></div>
+    <div style="position:absolute;left:16px;right:16px;bottom:90px;z-index:41;background:#fff;border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.2);max-height:62%;overflow:auto;display:flex;flex-direction:column">
+      <div style="font-size:16px;font-weight:700;line-height:1.35;margin-bottom:4px">{{ pickTitle }}</div>
+      <div style="font-size:12px;color:rgba(60,60,67,0.6);margin-bottom:8px">{{ pickHint }}</div>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{ pickRows }}" as="r" hint-placeholder-count="4">
+          <button type="button" onClick="{{ r.pick }}" style="display:flex;align-items:center;gap:8px;min-height:44px;border-top:{{ r.border }};text-align:left;opacity:{{ r.opacity }}">
+            <span style="flex:1;min-width:0;display:flex;align-items:center;gap:7px">
+              <span style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.name }}</span>
+              <span style="font-size:11.5px;letter-spacing:0.5px;color:rgba(60,60,67,0.62);flex-shrink:0;white-space:nowrap">{{ r.act }}</span>
+            </span>
+            <span style="font-size:11.5px;font-weight:700;color:{{ r.fg }};flex-shrink:0">{{ r.label }}</span>
+          </button>
+        </sc-for>
+      </div>
+            <button type="button" onClick="{{ closeSpellSheets }}" style="margin-top:14px;width:100%;text-align:center;font-size:14.5px;font-weight:700;padding:12px;border-radius:12px;background:rgba(0,0,0,0.06)">Cancelar</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ bookSheetOpen }}">
+    <div onClick="{{ closeSpellSheets }}" style="position:absolute;inset:0;background:rgba(0,0,0,0.35);z-index:40"></div>
+    <div style="position:absolute;left:16px;right:16px;top:76px;bottom:90px;z-index:41;background:#fff;border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.2);overflow:hidden;display:flex;flex-direction:column">
+      <div style="font-size:16px;font-weight:700;line-height:1.35;margin-bottom:4px">Compêndio arcano</div>
+      <div style="display:flex;gap:5px;margin-bottom:6px">
+        <sc-for list="{{ compTradChips }}" as="c" hint-placeholder-count="4">
+          <button type="button" onClick="{{ c.pick }}" style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11.5px;font-weight:700;padding:6px 4px;border-radius:999px;background:{{ c.bg }};color:{{ c.fg }}">{{ c.label }}</button>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:5px;margin-bottom:8px">
+        <sc-for list="{{ compRankChips }}" as="c" hint-placeholder-count="5">
+          <button type="button" onClick="{{ c.pick }}" style="flex:1;min-width:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11.5px;font-weight:700;padding:6px 4px;border-radius:999px;background:{{ c.bg }};color:{{ c.fg }}">{{ c.label }}</button>
+        </sc-for>
+      </div>
+      <sc-if value="{{ compEmpty }}">
+        <div style="padding:18px 0;text-align:center;font-size:13px;color:rgba(60,60,67,0.45)">Nenhuma magia com esses filtros.</div>
+      </sc-if>
+      <div style="flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column">
+        <sc-for list="{{ compendiumRows }}" as="r" hint-placeholder-count="8">
+          <div style="display:flex;align-items:center;gap:8px;min-height:44px;border-top:{{ r.border }}">
+            <button type="button" onClick="{{ r.openDetail }}" style="flex:1;min-width:0;display:flex;align-items:center;gap:7px;text-align:left;min-height:44px">
+              <span style="font-size:11px;font-weight:700;color:rgba(60,60,67,0.4);min-width:32px;flex-shrink:0">{{ r.rankTag }}</span>
+              <span style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.name }}</span>
+              <span style="font-size:11.5px;letter-spacing:0.5px;color:rgba(60,60,67,0.62);flex-shrink:0;white-space:nowrap">{{ r.act }}</span>
+            </button>
+            <button type="button" onClick="{{ r.add }}" style="flex-shrink:0;font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:999px;background:{{ r.bg }};color:{{ r.fg }}">{{ r.label }}</button>
+          </div>
+        </sc-for>
+      </div>
+      <button type="button" onClick="{{ closeSpellSheets }}" style="margin-top:14px;width:100%;text-align:center;font-size:14.5px;font-weight:700;padding:12px;border-radius:12px;color:#fff;background:oklch(58% 0.14 258)">Pronto</button>
+    </div>
+  </sc-if>
+
+  <div style="flex-shrink:0;z-index:20">
+    <nav style="height:74px;display:flex;align-items:stretch;padding:0 6px;background:#fff;border-top:1px solid rgba(0,0,0,0.06)">
+      <button type="button" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:rgba(60,60,67,0.4);position:relative">
+        <span style="width:36px;height:36px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;background:oklch(58% 0.14 258);color:#fff">R</span>
+        <span style="font-size:11px;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Rurik</span>
+        <span style="position:absolute;top:50%;right:0;transform:translateY(-50%);width:1px;height:28px;background:rgba(0,0,0,0.08)"></span>
+      </button>
+      <button type="button" onClick="{{ tabFicha }}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:{{ navFichaColor }}">
+        <span style="height:36px;display:flex;align-items:center;justify-content:center">
+          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="3" width="15" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"></rect><line x1="8" y1="8" x2="16" y2="8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></line><line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></line><line x1="8" y1="16" x2="13" y2="16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></line></svg>
+        </span>
+        <span style="font-size:11px;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Ficha</span>
+      </button>
+      <button type="button" onClick="{{ tabInventory }}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:{{ navInvColor }}">
+        <span style="height:36px;display:flex;align-items:center;justify-content:center">
+          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l2.5-4h13L21 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path><rect x="3" y="8" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"></rect><line x1="3" y1="8" x2="21" y2="8" stroke="currentColor" stroke-width="1.8"></line></svg>
+        </span>
+        <span style="font-size:11px;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Inventário</span>
+      </button>
+      <button type="button" onClick="{{ tabShop }}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:{{ navShopColor }}">
+        <span style="height:36px;display:flex;align-items:center;justify-content:center">
+          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l1.5-5h15L21 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path><path d="M3 9v10a1 1 0 001 1h16a1 1 0 001-1V9" fill="none" stroke="currentColor" stroke-width="1.8"></path><line x1="9" y1="20" x2="9" y2="13" stroke="currentColor" stroke-width="1.8"></line><line x1="15" y1="20" x2="15" y2="13" stroke="currentColor" stroke-width="1.8"></line></svg>
+        </span>
+        <span style="font-size:11px;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Loja</span>
+      </button>
+      <button type="button" onClick="{{ tabGm }}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:{{ navGmColor }}">
+        <span style="height:36px;display:flex;align-items:center;justify-content:center">
+          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h16M5 18l1-8 3 3 3-6 3 6 3-3 1 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"></path></svg>
+        </span>
+        <span style="font-size:11px;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Mestre</span>
+      </button>
+    </nav>
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;skillsMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;todas&quot;,&quot;treinadas&quot;],&quot;default&quot;:&quot;todas&quot;,&quot;tsType&quot;:&quot;'todas' | 'treinadas'&quot;,&quot;section&quot;:&quot;Resumo&quot;},&quot;showAbilityScores&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Resumo&quot;}}">
+const ACCENT = 'oklch(58% 0.14 258)'
+const ACCENT_INK = 'oklch(50% 0.14 258)'
+const DANGER = 'oklch(55% 0.16 25)'
+const TEXT = '#1c1c1e'
+const TEXT_3 = 'rgba(60,60,67,0.4)'
+const TEXT_2 = 'rgba(60,60,67,0.6)'
+const RAISED = 'rgba(0,0,0,0.06)'
+
+const LEVEL = 1
+const ABIL = { Str: 4, Dex: 2, Con: 2, Int: 0, Wis: 1, Cha: 0 }
+const PROF = { 0: 'destreinado', 2: 'treinado', 4: 'expert', 6: 'mestre', 8: 'lendário' }
+const sgn = (n) => (n > 0 ? '+' + n : n < 0 ? '\u2212' + Math.abs(n) : '\u00B10')
+
+/* Perícias derivadas do JSON do Pathbuilder: mod do atributo + grau + nível.
+   Grau 2 = trained, 4 = expert (é como o Pathbuilder grava). Untrained fica
+   só com o mod, sem o nível — regra do PF2e. */
+const SKILLS = [
+  ['Acrobatics', 'Dex', 2],
+  ['Arcana', 'Int', 0],
+  ['Athletics', 'Str', 2],
+  ['Crafting', 'Int', 0],
+  ['Deception', 'Cha', 2],
+  ['Diplomacy', 'Cha', 0],
+  ['Intimidation', 'Cha', 2],
+  ['Medicine', 'Wis', 0],
+  ['Nature', 'Wis', 2],
+  ['Occultism', 'Int', 0],
+  ['Performance', 'Cha', 0],
+  ['Religion', 'Wis', 0],
+  ['Sailing Lore', 'Int', 2],
+  ['Society', 'Int', 0],
+  ['Stealth', 'Dex', 0],
+  ['Survival', 'Wis', 0],
+  ['Thievery', 'Dex', 0],
+]
+
+const RE = '\u21BB'
+const MAG_KEYS = ['sp', 'focus', 'book'].concat(Array.from({ length: 10 }, (_, i) => 'r' + i))
+const FEAT_GROUPS = [
+  { title: 'Features de classe', key: 'fc', items: [
+    ['Rage', 'Barbarian', 'Nv 1', '\u25C6'],
+    ['Giant Instinct', 'Instinct', 'Nv 1', ''],
+    ['Quick-Tempered', 'Barbarian', 'Nv 1', ''],
+  ] },
+  { title: 'Feats de classe', key: 'fk', items: [
+    ['Sudden Charge', 'Barbarian Feat 1', 'Nv 1', '\u25C6\u25C6'],
+  ] },
+  { title: 'Ancestralidade e herança', key: 'fa', items: [
+    ['Dromaar', 'Heritage Feat', 'Nv 1', ''],
+    ['Orc Ferocity', 'Dwarf Feat 1', 'Nv 1', RE],
+    ['Darkvision', 'Dwarf', '—', ''],
+    ['Low-Light Vision', 'Dromaar', '—', ''],
+  ] },
+  { title: 'Outros', key: 'fo', items: [
+    ['Underwater Marauder', 'Awarded Feat', 'Nv 1', ''],
+  ] },
+]
+
+const ATTACKS = [
+  { id: 'greatpick', name: 'Large Greatpick', meta: '1d10+4 P · Martial', dmg: '1d10+4 P', abil: 'Str', prof: 2, agile: false },
+  { id: 'unarmed', name: 'Unarmed Strike', meta: '1d4+4 B · Unarmed · agile', dmg: '1d4+4 B', abil: 'Str', prof: 2, agile: true },
+  { id: 'javelin', name: 'Javelin', meta: '1d6+4 P · 30 ft · Simple', dmg: '1d6+4 P', abil: 'Dex', prof: 2, agile: false },
+]
+
+const INV_GROUPS = [
+  { title: 'Equipamentos', items: [
+    ['Large Greatpick', 'Nv 0', '1'],
+    ['Javelin', 'Nv 0', '4'],
+    ['Hide', 'Nv 0', '1'],
+    ['Backpack', 'Nv 0', '1'],
+    ['Grappling Hook', 'Nv 0', '1'],
+    ['Bedroll', 'Nv 0', '1'],
+    ['Rope', 'Nv 0', '1'],
+    ['Flint and Steel', 'Nv 0', '1'],
+    ['Waterskin', 'Nv 0', '1'],
+  ] },
+  { title: 'Consumíveis', items: [
+    ['Rations', 'Nv 0', '2'],
+    ['Torch', 'Nv 0', '5'],
+    ['Chalk', 'Nv 0', '10'],
+    ['Soap', 'Nv 0', '1'],
+  ] },
+]
+
+const CONDITIONS = [
+  ['frightened', 'Frightened', true, 'Penalidade de status igual ao valor em todos os testes e CDs. Reduz 1 ao fim de cada turno.'],
+  ['sickened', 'Sickened', true, 'Penalidade de status igual ao valor em todos os testes e CDs. Não pode ingerir nada.'],
+  ['clumsy', 'Clumsy', true, 'Penalidade de status igual ao valor em testes baseados em Destreza: CA, Reflexos, ataques à distância e perícias de Des.'],
+  ['enfeebled', 'Enfeebled', true, 'Penalidade de status igual ao valor em testes baseados em Força: ataques e dano corpo a corpo, Atletismo.'],
+  ['drained', 'Drained', true, 'Penalidade de status igual ao valor em Fortitude e testes de Constituição. Perde PV máximos por nível × valor.'],
+  ['slowed', 'Slowed', true, 'Perde um número de ações igual ao valor no início de cada turno.'],
+  ['prone', 'Prone', false, 'Caído no chão: −2 de circunstância em ataques e você fica desprevenido. Levantar custa uma ação.'],
+  ['offGuard', 'Off-Guard', false, 'Desprevenido: −2 de circunstância na CA.'],
+]
+
+/* Demais condições do PF2e — sem efeito mecânico automático na ficha, servem
+   como marcação e referência rápida. */
+const MORE_CONDITIONS = [
+  ['blinded', 'Blinded', false, 'Não pode ver: tudo fica oculto para você e você falha automaticamente em testes que exijam visão.'],
+  ['concealed', 'Concealed', false, 'Ataques contra você exigem teste plano CD 5 para não errar.'],
+  ['confused', 'Confused', false, 'Ataca alvos aleatórios e não pode usar reações. Fica desprevenido.'],
+  ['controlled', 'Controlled', false, 'Outra criatura decide suas ações.'],
+  ['dazzled', 'Dazzled', false, 'Todas as criaturas e objetos ficam camuflados para você.'],
+  ['deafened', 'Deafened', false, 'Falha automaticamente em testes que exijam audição; −2 em iniciativa por Percepção.'],
+  ['doomed', 'Doomed', true, 'Seu valor de morrendo fatal é reduzido pelo valor. Reduz 1 por descanso completo.'],
+  ['dying', 'Dying', true, 'Inconsciente e à beira da morte. Morre ao chegar em Morrendo 4 (ou menos, se Fadado).'],
+  ['encumbered', 'Encumbered', false, 'Sobrecarregado: Desajeitado 1 e −3 m de deslocamento.'],
+  ['fascinated', 'Fascinated', false, '−2 de status em Percepção e perícias; não pode usar ações hostis contra o objeto do fascínio.'],
+  ['fatigued', 'Fatigued', false, '−1 de status na CA e em salvamentos; não pode explorar com atividades.'],
+  ['fleeing', 'Fleeing', false, 'Deve fugir da fonte na maior velocidade possível no seu turno.'],
+  ['grabbed', 'Grabbed', false, 'Imobilizado e desprevenido; conjurar exige teste plano CD 5.'],
+  ['hidden', 'Hidden', false, 'O oponente sabe sua posição aproximada, mas precisa de teste plano CD 11 para alvejar você.'],
+  ['immobilized', 'Immobilized', false, 'Não pode usar ações com o traço movimento.'],
+  ['invisible', 'Invisible', false, 'Indetectável à visão; permanece oculto mesmo depois de localizado.'],
+  ['paralyzed', 'Paralyzed', false, 'Desprevenido e incapaz de agir, exceto ações puramente mentais.'],
+  ['petrified', 'Petrified', false, 'Transformado em pedra: inconsciente e sem perceber o ambiente.'],
+  ['quickened', 'Quickened', false, 'Ganha uma ação extra por turno, usável apenas conforme o efeito descreve.'],
+  ['restrained', 'Restrained', false, 'Imobilizado e desprevenido; só pode usar ações de manipulação para escapar.'],
+  ['stunned', 'Stunned', true, 'Perde um número de ações igual ao valor; o valor então zera.'],
+  ['stupefied', 'Stupefied', true, 'Penalidade de status igual ao valor em testes de Int, Sab e Car; conjurar exige teste plano CD 5 + valor.'],
+  ['unconscious', 'Unconscious', false, 'Dormindo ou nocauteado: desprevenido, caído, −4 na CA, Percepção e Reflexos.'],
+  ['wounded', 'Wounded', true, 'Ao voltar a Morrendo, some o valor de Ferido ao valor de morrendo. Zera após tratamento bem-sucedido.'],
+]
+
+/* Simulação de conjuração (mago arcano nv 5) para testar a aba. Rurik é
+   bárbaro, então estes dados são de exemplo até o import trazer um conjurador. */
+const A1 = '\u25C6', A2 = '\u25C6\u25C6', A3 = '\u25C6\u25C6\u25C6', AV = '\u25C6 a \u25C6\u25C6\u25C6'
+const COMPENDIUM = [
+  { id: 'escudo', name: 'Escudo', rank: 0, act: A1, traits: ['Truque', 'Abjuração', 'Arcana', 'Força'],
+    desc: 'Um escudo de força invisível aparece à sua frente. Você ganha +1 de bônus de circunstância na CA até o início do seu próximo turno e pode usar Bloquear com Escudo (Dureza 5).' },
+  { id: 'raio-gelo', name: 'Raio de Gelo', rank: 0, act: A2, traits: ['Truque', 'Ataque', 'Frio', 'Evocação'],
+    desc: 'Um raio de frio dispara do seu dedo. Faça um ataque de magia à distância. Em acerto causa 2d4 de dano de frio, e o dobro em acerto crítico.' },
+  { id: 'detectar', name: 'Detectar Magia', rank: 0, act: A2, traits: ['Truque', 'Detecção', 'Divinação'],
+    desc: 'Você sente a presença de magia em um raio de 9 metros. Aprende o círculo da aura mais forte, mas não sua localização exata nem sua escola.' },
+  { id: 'luz', name: 'Luz', rank: 0, act: A2, traits: ['Truque', 'Evocação', 'Luz'],
+    desc: 'Uma esfera de luz orbita o alvo, iluminando vivamente um raio de 6 metros. Conjurar de novo em outro alvo dissipa a anterior.' },
+  { id: 'mao-magica', name: 'Mão Mágica', rank: 0, act: A2, traits: ['Truque', 'Manipulação', 'Telecinesia'],
+    desc: 'Você move um objeto de até 0,5 kg a 6 metros por turno, sustentando a magia enquanto se concentra.' },
+  { id: 'missil', name: 'Míssil Mágico', rank: 1, act: AV, traits: ['Ataque', 'Evocação', 'Força'],
+    desc: 'Dardos de força atingem alvos que você possa ver, causando 1d4+1 de dano de força cada. Cada ação extra gasta cria um dardo adicional.' },
+  { id: 'toque-chocante', name: 'Toque Chocante', rank: 1, act: A2, traits: ['Ataque', 'Elétrico', 'Evocação'],
+    desc: 'Faça um ataque de magia corpo a corpo. Em acerto causa 2d12 de dano elétrico; contra alvos de metal você recebe +1 no ataque e adiciona 1d4.' },
+  { id: 'enfeiticar', name: 'Enfeitiçar', rank: 1, act: A2, traits: ['Emoção', 'Encantamento', 'Incapacitação', 'Mental'],
+    desc: 'A criatura fica fascinada por você e não pode usar ações hostis contra você. O salvamento de Vontade determina a duração.' },
+  { id: 'salto', name: 'Salto', rank: 1, act: A1, traits: ['Movimento', 'Transmutação'],
+    desc: 'Aumente a distância do seu Salto em 9 metros. Não é necessária corrida prévia.' },
+  { id: 'invisibilidade', name: 'Invisibilidade', rank: 2, act: A2, traits: ['Ilusão', 'Sutil'],
+    desc: 'O alvo fica invisível por 10 minutos. Usar uma ação hostil encerra a magia ao fim daquele turno.' },
+  { id: 'nevoa', name: 'Névoa Ofuscante', rank: 2, act: A3, traits: ['Água', 'Conjuração', 'Terreno'],
+    desc: 'Uma névoa densa preenche uma emanação de 6 metros, deixando a área ofuscada e concedendo cobertura visual.' },
+  { id: 'imagem', name: 'Imagem Espelhada', rank: 2, act: A2, traits: ['Ilusão', 'Visual'],
+    desc: 'Três duplicatas ilusórias suas surgem. Ataques podem acertar uma imagem em vez de você, destruindo-a.' },
+  { id: 'bola-fogo', name: 'Bola de Fogo', rank: 3, act: A2, traits: ['Evocação', 'Fogo'],
+    desc: 'Uma explosão de chamas em rajada de 6 metros a até 150 metros causa 6d6 de dano de fogo. Salvamento de Reflexos básico.' },
+  { id: 'relampago', name: 'Relâmpago', rank: 3, act: A2, traits: ['Elétrico', 'Evocação'],
+    desc: 'Um arco elétrico em linha de 36 metros causa 4d12 de dano elétrico. Salvamento de Reflexos básico.' },
+  { id: 'voo', name: 'Voo', rank: 3, act: A2, traits: ['Movimento', 'Transmutação'],
+    desc: 'O alvo ganha Velocidade de voo igual à sua Velocidade por 5 minutos.' },
+  { id: 'sugestao', name: 'Sugestão', rank: 3, act: A2, traits: ['Encantamento', 'Incapacitação', 'Linguístico', 'Mental'],
+    desc: 'Você sugere um curso de ação razoável e a criatura o segue pela duração, conforme o salvamento de Vontade.' },
+]
+const FOCUS = [
+  { id: 'explosao-forca', name: 'Explosão de Força', act: A1, traits: ['Foco', 'Arcana', 'Evocação', 'Força'],
+    desc: 'Um dardo de força pura atinge um alvo que você possa ver, causando 1d4+1 de dano de força. O dano aumenta a cada dois ranks acima do 1º.' },
+  { id: 'barreira-protetora', name: 'Barreira Protetora', act: A1, traits: ['Foco', 'Abjuração', 'Arcana'],
+    desc: 'Uma barreira protege um aliado a até 9 metros, concedendo +1 de bônus de circunstância na CA e nos salvamentos por 1 minuto.' },
+  { id: 'diversao-sombria', name: 'Diversão Sombria', act: A2, traits: ['Foco', 'Arcana', 'Ilusão', 'Mental'],
+    desc: 'Sombras dançam na visão periférica do alvo. Com falha no salvamento de Vontade ele fica desprevenido até o fim do seu próximo turno.' },
+  { id: 'sopro-invocador', name: 'Sopro Invocador', act: A1, traits: ['Foco', 'Arcana', 'Conjuração'],
+    desc: 'Você concede uma ação extra à criatura que invocou, usada apenas para Passo ou Interagir.' },
+]
+COMPENDIUM.push(
+  { id: 'curar', name: 'Curar', rank: 1, act: AV, traits: ['Cura', 'Necromancia', 'Vital'],
+    desc: 'Restaura 1d8 PV ao toque, ou 1d8 a 9 metros com duas ações, ou uma emanação de 9 metros com três ações. Contra mortos-vivos causa o mesmo dano, com Vontade básico.' },
+  { id: 'bencao', name: 'Bênção', rank: 1, act: A2, traits: ['Encantamento', 'Mental'],
+    desc: 'Aliados na emanação de 4,5 metros recebem +1 de status em jogadas de ataque. Você pode Sustentar para ampliar a emanação em 3 metros.' },
+  { id: 'medo', name: 'Medo', rank: 1, act: A2, traits: ['Emoção', 'Encantamento', 'Medo', 'Mental'],
+    desc: 'Uma criatura a até 9 metros fica Amedrontada conforme o salvamento de Vontade: 1 em sucesso, 2 em falha, 3 e fugindo em falha crítica.' },
+  { id: 'chama-sagrada', name: 'Chama Sagrada', rank: 0, act: A2, traits: ['Truque', 'Ataque', 'Evocação', 'Sagrado'],
+    desc: 'Chamas divinas envolvem uma criatura a até 18 metros, causando 1d4 de dano sagrado com Reflexos básico. Criaturas profanas não podem melhorar o resultado.' },
+  { id: 'lampejo-espinhos', name: 'Lampejo de Espinhos', rank: 1, act: A1, traits: ['Planta', 'Evocação'],
+    desc: 'Espinhos brotam ao seu redor. A primeira criatura que atacá-lo em corpo a corpo neste turno sofre 3d4 de dano perfurante.' },
+  { id: 'fala-animal', name: 'Falar com Animais', rank: 2, act: A2, traits: ['Divinação', 'Linguístico'],
+    desc: 'Você compreende e se comunica com animais por 10 minutos, embora eles não fiquem mais amistosos que o normal.' },
+  { id: 'sopro-drac', name: 'Sopro Dracônico', rank: 3, act: A2, traits: ['Evocação', 'Fogo'],
+    desc: 'Um cone de 9 metros de energia dracônica causa 5d6 de dano do tipo escolhido, com Reflexos básico.' },
+)
+
+/* Tradições por magia (PF2e). O compêndio só exibe o que a tradição do
+   personagem alcança — para o Rurik/mago de exemplo, arcana. */
+const TRADS = ['Arcana', 'Divina', 'Oculta', 'Primal']
+const SPELL_TRADS = {
+  escudo: ['Arcana', 'Divina', 'Oculta'],
+  'raio-gelo': ['Arcana', 'Primal'],
+  detectar: ['Arcana', 'Divina', 'Oculta', 'Primal'],
+  luz: ['Arcana', 'Divina', 'Oculta', 'Primal'],
+  'mao-magica': ['Arcana', 'Divina', 'Oculta', 'Primal'],
+  missil: ['Arcana', 'Oculta'],
+  'toque-chocante': ['Arcana', 'Primal'],
+  enfeiticar: ['Arcana', 'Oculta'],
+  salto: ['Arcana', 'Primal'],
+  invisibilidade: ['Arcana', 'Oculta'],
+  nevoa: ['Arcana', 'Primal'],
+  imagem: ['Arcana', 'Oculta'],
+  'bola-fogo': ['Arcana', 'Primal'],
+  relampago: ['Arcana', 'Primal'],
+  voo: ['Arcana', 'Primal'],
+  sugestao: ['Arcana', 'Oculta'],
+  curar: ['Divina', 'Primal'],
+  bencao: ['Divina', 'Oculta'],
+  medo: ['Arcana', 'Divina', 'Oculta', 'Primal'],
+  'chama-sagrada': ['Divina'],
+  'lampejo-espinhos': ['Primal'],
+  'fala-animal': ['Primal'],
+  'sopro-drac': ['Arcana', 'Primal'],
+}
+COMPENDIUM.forEach((sp) => { sp.trads = SPELL_TRADS[sp.id] || ['Arcana'] })
+const CHAR_TRADS = ['Arcana']
+
+/* Ações do PF2e: básicas, de perícia e de classe. cat = basic|skill|class */
+const ACTIONS = [
+  { id: 'atacar', name: 'Golpe', cat: 'basic', act: A1, traits: ['Ataque'],
+    desc: 'Ataque com arma ou desarmado contra a CA do alvo. Cada Golpe após o primeiro no turno sofre penalidade de ataque múltiplo: −5 no segundo, −10 no terceiro (−4/−8 com arma ágil).' },
+  { id: 'passo', name: 'Passo', cat: 'basic', act: A1, traits: ['Movimento'],
+    desc: 'Mova 1,5 m sem provocar reações. Não pode ser usado se seu deslocamento for menor que 3 m.' },
+  { id: 'passolargo', name: 'Passo Largo', cat: 'basic', act: A1, traits: ['Movimento'],
+    desc: 'Mova-se até seu deslocamento. Provoca reações.' },
+  { id: 'correr', name: 'Correr', cat: 'basic', act: A2, traits: ['Movimento'],
+    desc: 'Mova-se até o dobro do deslocamento; com três ações, até o triplo.' },
+  { id: 'mirar', name: 'Mirar', cat: 'basic', act: A1, traits: ['Concentração'],
+    desc: '+1 de circunstância no próximo ataque à distância neste turno, se o alvo não se mover.' },
+  { id: 'defender', name: 'Levantar Escudo', cat: 'basic', act: A1, traits: [],
+    desc: 'Ganha o bônus de CA do escudo até o início do próximo turno e habilita a reação Bloquear.' },
+  { id: 'interagir', name: 'Interagir', cat: 'basic', act: A1, traits: ['Manipulação'],
+    desc: 'Saque, guarde, abra ou manipule um objeto. Provoca reações.' },
+  { id: 'soltar', name: 'Soltar', cat: 'basic', act: 0, traits: ['Manipulação'],
+    desc: 'Ação livre: largue o que está segurando. Não provoca reações.' },
+  { id: 'levantar', name: 'Levantar-se', cat: 'basic', act: A1, traits: ['Movimento'],
+    desc: 'Sai da condição Caído. Provoca reações.' },
+  { id: 'esconder', name: 'Buscar', cat: 'basic', act: A1, traits: ['Concentração', 'Segredo'],
+    desc: 'Teste de Percepção secreto para localizar criaturas ou objetos escondidos na área.' },
+  { id: 'pontaria', name: 'Retardar', cat: 'basic', act: 0, traits: ['Concentração'],
+    desc: 'Ação livre no seu turno: encerre o turno e reentre na iniciativa mais tarde na rodada com as ações restantes.' },
+  { id: 'sustentar', name: 'Sustentar', cat: 'basic', act: A1, traits: ['Concentração'],
+    desc: 'Estenda a duração de uma magia ou efeito sustentado por mais um turno.' },
+  { id: 'reconhecer', name: 'Reconhecer Ameaça', cat: 'basic', act: A1, traits: ['Concentração', 'Segredo'],
+    desc: 'Identifique uma criatura com a perícia de conhecimento apropriada e aprenda uma característica notável.' },
+  { id: 'reacao-op', name: 'Ataque de Oportunidade', cat: 'basic', act: RE, traits: ['Ataque', 'Reação'],
+    desc: 'Gatilho: uma criatura no alcance usa ação de manipulação, movimento ou ataque à distância. Faça um Golpe corpo a corpo contra ela.' },
+  { id: 'bloquear', name: 'Bloquear com Escudo', cat: 'basic', act: RE, traits: ['Reação'],
+    desc: 'Gatilho: você sofre dano por ataque físico com o escudo erguido. Reduza o dano pela Dureza do escudo; o escudo sofre o restante.' },
+
+  { id: 'agarrar', name: 'Agarrar', cat: 'skill', act: A1, skill: 'Atletismo', traits: ['Ataque'],
+    desc: 'Atletismo contra a CD de Fortitude. Sucesso: o alvo fica Agarrado até o fim do seu próximo turno. Crítico: Imobilizado. Falha crítica: você cai.' },
+  { id: 'derrubar', name: 'Derrubar', cat: 'skill', act: A1, skill: 'Atletismo', traits: ['Ataque'],
+    desc: 'Atletismo contra a CD de Reflexos. Sucesso: o alvo fica Caído. Falha crítica: você fica Caído.' },
+  { id: 'empurrar', name: 'Empurrar', cat: 'skill', act: A1, skill: 'Atletismo', traits: ['Ataque'],
+    desc: 'Atletismo contra a CD de Fortitude. Sucesso: empurra o alvo 1,5 m (3 m no crítico) e você pode acompanhar.' },
+  { id: 'desarmar', name: 'Desarmar', cat: 'skill', act: A1, skill: 'Atletismo', traits: ['Ataque'],
+    desc: 'Atletismo contra a CD de Reflexos. Sucesso: −2 nos ataques do alvo com o item até o próximo turno dele. Crítico: derruba o item.' },
+  { id: 'escapar', name: 'Escapar', cat: 'skill', act: A1, skill: 'Atletismo/Acrobacia', traits: [],
+    desc: 'Livre-se de Agarrado, Preso ou Imobilizado com Atletismo, Acrobacia ou ataque desarmado contra a CD do efeito.' },
+  { id: 'furtividade', name: 'Esconder-se', cat: 'skill', act: A1, skill: 'Furtividade', traits: ['Segredo'],
+    desc: 'Com cobertura ou camuflagem, Furtividade contra a Percepção dos oponentes para ficar Escondido.' },
+  { id: 'esgueirar', name: 'Esgueirar-se', cat: 'skill', act: A1, skill: 'Furtividade', traits: ['Movimento', 'Segredo'],
+    desc: 'Mova até metade do deslocamento mantendo-se Escondido ou Indetectado.' },
+  { id: 'fintar', name: 'Fintar', cat: 'skill', act: A1, skill: 'Enganação', traits: ['Mental'],
+    desc: 'Enganação contra a CD de Percepção. Sucesso: o alvo fica Desprevenido contra seu próximo ataque corpo a corpo neste turno.' },
+  { id: 'intimidar', name: 'Amedrontar', cat: 'skill', act: A1, skill: 'Intimidação', traits: ['Emoção', 'Mental'],
+    desc: 'Intimidação contra a CD de Vontade. Sucesso: o alvo fica Amedrontado 1 (2 no crítico).' },
+  { id: 'tratar', name: 'Primeiros Socorros', cat: 'skill', act: A2, skill: 'Medicina', traits: ['Manipulação'],
+    desc: 'Estabilize um personagem Morrendo (CD 5 + valor de morrendo) ou estanque sangramento (CD do efeito).' },
+  { id: 'trepar', name: 'Escalar', cat: 'skill', act: A1, skill: 'Atletismo', traits: ['Movimento'],
+    desc: 'Mova-se 1,5 m para cima, baixo ou lados numa superfície escalável. Crítico: 3 m.' },
+  { id: 'arrombar', name: 'Arrombar Fechadura', cat: 'skill', act: A2, skill: 'Ladinagem', traits: ['Manipulação'],
+    desc: 'Requer kit de ladrão. Cada sucesso desativa um mecanismo; falha crítica quebra as ferramentas.' },
+  { id: 'recall', name: 'Recordar Conhecimento', cat: 'skill', act: A1, skill: 'Conhecimentos', traits: ['Concentração', 'Segredo'],
+    desc: 'Teste de perícia de conhecimento para lembrar um fato útil sobre criatura, lugar ou tradição.' },
+
+  { id: 'furia', name: 'Fúria', cat: 'class', act: A1, traits: ['Bárbaro', 'Concentração', 'Emoção', 'Mental'],
+    desc: 'Entre em fúria por 1 minuto: +2 de dano com Golpes corpo a corpo, −1 na CA e não pode usar ações com o traço concentração. Não pode entrar em fúria de novo por 1 rodada.' },
+  { id: 'gigante', name: 'Instinto do Gigante', cat: 'class', act: A1, traits: ['Bárbaro', 'Polimorfia', 'Primal'],
+    desc: 'Ao entrar em Fúria você cresce uma categoria de tamanho, ganha alcance 3 m e +6 de dano em vez de +2, com −2 adicional na CA.' },
+  { id: 'ataque-poderoso', name: 'Golpe Poderoso', cat: 'class', act: A2, traits: ['Bárbaro', 'Ataque'],
+    desc: 'Faça um Golpe corpo a corpo que conta como um ataque para a penalidade múltipla; em acerto adiciona um dado extra de dano da arma.' },
+  { id: 'gritar', name: 'Rugido Intimidador', cat: 'class', act: A1, traits: ['Bárbaro', 'Emoção', 'Mental'],
+    desc: 'Em Fúria, faça um teste de Intimidação para Amedrontar todos os inimigos em 9 metros.' },
+  { id: 'resistir', name: 'Resistência de Bárbaro', cat: 'class', act: 0, traits: ['Bárbaro'],
+    desc: 'Enquanto em Fúria você ganha resistência a dano físico igual a 3 + mod. de Constituição.' },
+]
+const ACTION_TRAITS = ['Ataque', 'Movimento', 'Manipulação', 'Concentração', 'Mental', 'Reação', 'Segredo']
+const actionById = (id) => ACTIONS.find((a) => a.id === id)
+
+const focusById = (id) => FOCUS.find((s) => s.id === id)
+const anySpell = (id) => COMPENDIUM.find((s) => s.id === id) || focusById(id)
+const CANTRIP_CAP = 5
+const FOCUS_MAX = 3
+const SLOTS = [
+  { rank: 1, total: 4 },
+  { rank: 2, total: 3 },
+  { rank: 3, total: 3 },
+]
+const spellById = (id) => COMPENDIUM.find((s) => s.id === id)
+const rankName = (r) => (r === 0 ? 'Truques' : 'Rank ' + r)
+
+class Component extends DCLogic {
+  state = {
+    tab: 'ficha',
+    sub: 'resumo',
+    hp: 24,
+    temp: 0,
+    hpInput: '',
+    tempInput: '',
+    javelins: 4,
+    hpSheet: false,
+    condSheet: false,
+    pickOpen: false,
+    javOpen: false,
+    conds: {},
+    book: ['escudo', 'raio-gelo', 'detectar', 'luz', 'mao-magica', 'missil', 'toque-chocante', 'enfeiticar', 'salto', 'invisibilidade', 'nevoa', 'imagem', 'bola-fogo', 'relampago', 'voo'],
+    prepared: [
+      { uid: 1, id: 'escudo', used: false },
+      { uid: 2, id: 'raio-gelo', used: false },
+      { uid: 3, id: 'detectar', used: false },
+      { uid: 4, id: 'luz', used: false },
+      { uid: 5, id: 'missil', used: true },
+      { uid: 6, id: 'missil', used: false },
+      { uid: 7, id: 'toque-chocante', used: false },
+      { uid: 8, id: 'invisibilidade', used: false },
+      { uid: 9, id: 'nevoa', used: true },
+      { uid: 10, id: 'bola-fogo', used: false },
+      { uid: 11, id: 'bola-fogo', used: false },
+      { uid: 12, id: 'voo', used: false },
+    ],
+    uidSeq: 13,
+    focusKnown: ['explosao-forca', 'barreira-protetora', 'diversao-sombria'],
+    focusUsed: 1,
+    focusSheetOpen: false,
+    special: [],
+    specialPick: false,
+    bdKey: null,
+    collapsed: {},
+    favs: { greatpick: true },
+    prepRank: null,
+    detailId: null,
+    actSub: 'fav',
+    groupClosed: [],
+    actOpenAll: false,
+    actTrait: null,
+    actFav: ['furia', 'derrubar', 'reacao-op'],
+    actOpen: null,
+    bookSheetOpen: false,
+    compTrad: CHAR_TRADS[0],
+    compRank: null,
+    shieldRaised: false,
+    shieldHp: 12,
+  }
+
+  seg(id) {
+    const on = this.state.sub === id
+    return { bg: on ? ACCENT : RAISED, fg: on ? '#fff' : TEXT }
+  }
+
+  amount() {
+    const n = parseInt(this.state.hpInput, 10)
+    return Number.isFinite(n) && n > 0 ? n : 0
+  }
+
+  applyDamage = () => {
+    const n = this.amount()
+    if (!n) return
+    this.setState((s) => {
+      const fromTemp = Math.min(s.temp, n)
+      return { temp: s.temp - fromTemp, hp: Math.max(0, s.hp - (n - fromTemp)), hpInput: '' }
+    })
+  }
+
+  applyHeal = () => {
+    const n = this.amount()
+    if (!n) return
+    this.setState((s) => ({ hp: Math.min(24, s.hp + n), hpInput: '' }))
+  }
+
+  applyTemp = () => {
+    const n = parseInt(this.state.tempInput, 10)
+    if (!Number.isFinite(n) || n < 0) return
+    this.setState({ temp: n, tempInput: '' })
+  }
+
+  favCtl(id) {
+    const on = !!this.state.favs[id]
+    return {
+      fav: on,
+      starFill: on ? 'oklch(70% 0.14 75)' : 'none',
+      starStroke: on ? 'oklch(70% 0.14 75)' : 'rgba(60,60,67,0.3)',
+      toggleFav: () => this.setState((s) => ({ favs: { ...s.favs, [id]: !s.favs[id] } })),
+    }
+  }
+
+  setKeys(keys, closed) {
+    return () => this.setState((s) => {
+      const c = { ...s.collapsed }
+      keys.forEach((k) => { c[k] = closed })
+      return { collapsed: c }
+    })
+  }
+
+  isOpen(key) {
+    return !this.state.collapsed[key]
+  }
+
+  sectionCtl(key) {
+    return {
+      open: this.isOpen(key),
+      caret: this.isOpen(key) ? 'rotate(0deg)' : 'rotate(-90deg)',
+      toggle: () => this.setState((s) => ({ collapsed: { ...s.collapsed, [key]: !s.collapsed[key] } })),
+    }
+  }
+
+  condMods() {
+    const c = this.state.conds
+    const v = (k) => c[k] || 0
+    const fr = v('frightened'), sk = v('sickened')
+    return {
+      status: Math.max(fr, sk),
+      statusLabel: fr >= sk ? 'Frightened' : 'Sickened',
+      clumsy: v('clumsy'), enfeebled: v('enfeebled'), drained: v('drained'),
+      offGuard: c.offGuard ? 2 : 0, prone: c.prone ? 2 : 0,
+    }
+  }
+
+  /* Penalidades de condição: status não empilham (vale o pior entre Frightened
+     e Sickened); as demais atingem só o que depende do atributo afetado. */
+  stat(title, parts, opts) {
+    const m = this.condMods()
+    const cond = []
+    const add = (label, val) => { if (val > 0) cond.push({ label: label + ' (status)', value: -val, cond: true }) }
+    if (opts.check || opts.dc) add(m.statusLabel, m.status)
+    if (opts.abil === 'Dex') add('Clumsy', m.clumsy)
+    if (opts.abil === 'Str') add('Enfeebled', m.enfeebled)
+    if (opts.abil === 'Con') add('Drained', m.drained)
+    if (opts.ac && m.offGuard) cond.push({ label: 'Off-Guard (circunstância)', value: -2, cond: true })
+    if (opts.attack && m.prone) cond.push({ label: 'Prone (circunstância)', value: -2, cond: true })
+    const all = parts.concat(cond)
+    return {
+      title, parts: all, altered: cond.length > 0,
+      total: all.reduce((n, p) => n + p.value, 0),
+      kind: opts.dc ? 'dc' : 'check',
+    }
+  }
+
+  stats() {
+    const s = this.state
+    const P = (rank) => ({ label: 'Proficiência (' + PROF[rank] + ')', value: LEVEL + rank })
+    const out = {}
+    const acParts = [{ label: 'Base', value: 10 }, { label: 'Hide (armadura)', value: 3 }, { label: 'Dex', value: ABIL.Dex }, P(2)]
+    if (s.shieldRaised) acParts.push({ label: 'Escudo erguido (circunstância)', value: 2 })
+    out.ac = this.stat('Classe de Armadura', acParts, { dc: true, abil: 'Dex', ac: true })
+    out.fort = this.stat('Fortitude', [{ label: 'Con', value: ABIL.Con }, P(4)], { check: true, abil: 'Con' })
+    out.ref = this.stat('Reflexos', [{ label: 'Dex', value: ABIL.Dex }, P(2)], { check: true, abil: 'Dex' })
+    out.will = this.stat('Vontade', [{ label: 'Wis', value: ABIL.Wis }, P(4)], { check: true, abil: 'Wis' })
+    out.perc = this.stat('Percepção', [{ label: 'Wis', value: ABIL.Wis }, P(4)], { check: true, abil: 'Wis' })
+    out.classDc = this.stat('DC de Classe', [{ label: 'Base', value: 10 }, { label: 'Str', value: ABIL.Str }, P(2)], { dc: true, abil: 'Str' })
+    SKILLS.forEach(([name, abil, rank]) => {
+      const parts = [{ label: abil, value: ABIL[abil] }]
+      if (rank) parts.push(P(rank))
+      out['skill:' + name] = this.stat(name, parts, { check: true, abil })
+    })
+    ATTACKS.forEach((a) => {
+      out['atk:' + a.id] = this.stat(a.name, [{ label: a.abil, value: ABIL[a.abil] }, P(a.prof)], { check: true, attack: true, abil: a.abil })
+    })
+    return out
+  }
+
+  cell(key) {
+    const st = this.stats()[key]
+    return {
+      value: st.kind === 'dc' ? String(st.total) : sgn(st.total),
+      color: st.altered ? DANGER : TEXT,
+      open: () => this.setState({ bdKey: key }),
+    }
+  }
+
+  atkCell(id) {
+    const a = ATTACKS.find((x) => x.id === id)
+    const st = this.stats()['atk:' + id]
+    const step = a.agile ? 4 : 5
+    const m1 = sgn(st.total), m2 = sgn(st.total - step), m3 = sgn(st.total - step * 2)
+    return {
+      m1, m2, m3,
+      mods: m1 + ' / ' + m2 + ' / ' + m3,
+      map: m2 + ' / ' + m3,
+      color: st.altered ? DANGER : TEXT,
+      open: () => this.setState({ bdKey: 'atk:' + id }),
+    }
+  }
+
+  focusMax() {
+    return Math.min(this.state.focusKnown.length, 3)
+  }
+
+  focusRows() {
+    return this.state.focusKnown.map(focusById).map((sp, i) => ({
+      name: sp.name,
+      act: sp.act,
+      border: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.06)',
+      open: () => this.setState({ detailId: sp.id }),
+      remove: () => this.setState((st) => ({ focusKnown: st.focusKnown.filter((x) => x !== sp.id) })),
+    }))
+  }
+
+  focusPickRows() {
+    const s = this.state
+    return FOCUS.map((sp, i) => {
+      const known = s.focusKnown.includes(sp.id)
+      return {
+        name: sp.name,
+        act: sp.act,
+        border: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.06)',
+        label: known ? 'Incluída' : 'Incluir',
+        bg: known ? 'rgba(0,0,0,0.05)' : 'oklch(58% 0.14 258 / 0.1)',
+        fg: known ? TEXT_3 : ACCENT_INK,
+        add: known ? () => {} : () => this.setState((st) => ({ focusKnown: [...st.focusKnown, sp.id] })),
+      }
+    })
+  }
+
+  actionGroups() {
+    const s = this.state
+    const list = ACTIONS
+      .filter((a) => (s.actSub === 'fav' ? s.actFav.includes(a.id) : a.cat === s.actSub))
+      .filter((a) => s.actTrait === null || a.traits.includes(s.actTrait))
+    const CAT_LABEL = { class: 'Classe', skill: 'Perícia', basic: 'Básicas' }
+    let groups
+    if (s.actSub === 'fav') {
+      groups = ['class', 'skill', 'basic']
+        .map((c) => ({ key: 'fav-' + c, title: CAT_LABEL[c], hasTitle: true, items: list.filter((a) => a.cat === c) }))
+        .filter((g) => g.items.length)
+    } else if (s.actSub === 'skill') {
+      const names = []
+      list.forEach((a) => { if (!names.includes(a.skill)) names.push(a.skill) })
+      groups = names.sort().map((n) => ({ key: 'sk-' + n, title: n, hasTitle: true, items: list.filter((a) => a.skill === n) }))
+    } else {
+      groups = [{ key: 'all', title: '', hasTitle: false, items: list }]
+    }
+    return groups.map((g) => {
+      const open = !s.groupClosed.includes(g.key)
+      return {
+        key: g.key,
+        title: g.title,
+        hasTitle: g.hasTitle,
+        count: g.items.length,
+        open: g.hasTitle ? open : true,
+        caret: open ? '▲' : '▼',
+        toggle: () => this.setState((st) => ({
+          groupClosed: st.groupClosed.includes(g.key) ? st.groupClosed.filter((x) => x !== g.key) : [...st.groupClosed, g.key],
+        })),
+        rows: this.actionRows(g.items),
+      }
+    })
+  }
+
+  actionRows(list) {
+    const s = this.state
+    return list.map((a, i) => {
+      const fav = s.actFav.includes(a.id)
+      const open = s.actOpenAll === true || s.actOpen === a.id
+      return {
+        name: a.name,
+        act: a.act === 0 ? 'livre' : a.act,
+        actColor: a.act === RE ? 'oklch(52% 0.13 300)' : TEXT_2,
+        meta: a.skill ? a.skill : a.traits.slice(0, 2).join(' · '),
+        desc: a.desc,
+        open,
+        border: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.06)',
+        star: fav ? '\u2605' : '\u2606',
+        starColor: fav ? 'oklch(70% 0.14 80)' : 'rgba(60,60,67,0.3)',
+        toggle: () => this.setState((st) => ({ actOpenAll: false, actOpen: st.actOpenAll || st.actOpen !== a.id ? a.id : null })),
+        toggleFav: () => this.setState((st) => ({
+          actFav: st.actFav.includes(a.id) ? st.actFav.filter((x) => x !== a.id) : [...st.actFav, a.id],
+        })),
+      }
+    })
+  }
+
+  focusDots() {
+    const max = this.focusMax()
+    const used = Math.min(this.state.focusUsed, max)
+    const left = max - used
+    return Array.from({ length: max }, (_, i) => {
+      const filled = i < left
+      return {
+        bg: filled ? ACCENT : 'transparent',
+        border: filled ? ACCENT : 'rgba(0,0,0,0.22)',
+        set: () => this.setState({ focusUsed: max - (filled ? i : i + 1) }),
+      }
+    })
+  }
+
+  /* Preparadas · Especial: lista livre, sem slots. Serve para magias
+     concedidas por itens, rituais ou usos únicos que o mestre autorizar. */
+  specialGroup() {
+    const s = this.state
+    const ctl = this.sectionCtl('sp')
+    const rows = s.special.map((p) => {
+      const sp = anySpell(p.id)
+      return {
+        name: sp.name,
+        act: sp.act,
+        canUse: true,
+        opacity: p.used ? 0.4 : 1,
+        deco: p.used ? 'line-through' : 'none',
+        boxBg: p.used ? ACCENT : 'transparent',
+        boxBorder: p.used ? ACCENT : 'rgba(0,0,0,0.2)',
+        checkOpacity: p.used ? 1 : 0,
+        padLeft: '8px',
+        open: () => this.setState({ detailId: p.id }),
+        toggle: () => this.setState((st) => ({
+          special: st.special.map((x) => (x.uid === p.uid ? { ...x, used: !x.used } : x)),
+        })),
+        remove: () => this.setState((st) => ({ special: st.special.filter((x) => x.uid !== p.uid) })),
+      }
+    })
+    return {
+      title: 'Especial',
+      open: ctl.open,
+      caret: ctl.caret,
+      toggle: ctl.toggle,
+      count: rows.length ? s.special.filter((p) => !p.used).length + ' / ' + rows.length + ' disponíveis' : 'vazio',
+      rows,
+      emptyRows: [],
+      canAdd: true,
+      add: () => this.setState({ specialPick: true }),
+    }
+  }
+
+  prepGroups() {
+    const s = this.state
+    const groups = [{ rank: 0, total: CANTRIP_CAP }].concat(SLOTS)
+    const mapped = groups.map((slot) => {
+      const inRank = s.prepared.filter((p) => spellById(p.id).rank === slot.rank)
+      const isCantrip = slot.rank === 0
+      const rows = inRank.map((p) => {
+        const sp = spellById(p.id)
+        const dim = !isCantrip && p.used
+        return {
+          name: sp.name,
+          act: sp.act,
+          canUse: !isCantrip,
+          opacity: dim ? 0.4 : 1,
+          deco: dim ? 'line-through' : 'none',
+          boxBg: p.used ? ACCENT : 'transparent',
+          boxBorder: p.used ? ACCENT : 'rgba(0,0,0,0.2)',
+          checkOpacity: p.used ? 1 : 0,
+          padLeft: isCantrip ? '16px' : '8px',
+          open: () => this.setState({ detailId: p.id }),
+          toggle: () => this.setState((st) => ({
+            prepared: st.prepared.map((x) => (x.uid === p.uid ? { ...x, used: !x.used } : x)),
+          })),
+          remove: () => this.setState((st) => ({ prepared: st.prepared.filter((x) => x.uid !== p.uid) })),
+        }
+      })
+      const ctl = this.sectionCtl('r' + slot.rank)
+      return {
+        title: isCantrip ? 'Truques' : rankName(slot.rank),
+        open: ctl.open,
+        caret: ctl.caret,
+        toggle: ctl.toggle,
+        count: isCantrip
+          ? inRank.length + ' / ' + slot.total + ' preparados'
+          : inRank.filter((p) => !p.used).length + ' / ' + slot.total + ' disponíveis',
+        rows,
+        emptyRows: Array.from({ length: Math.max(0, slot.total - rows.length) }, (_, i) => ({
+          border: rows.length === 0 && i === 0 ? 'none' : '1px solid rgba(0,0,0,0.06)',
+          pick: () => this.setState({ prepRank: slot.rank }),
+        })),
+        canAdd: false,
+        add: () => {},
+      }
+    })
+    return [this.specialGroup()].concat(mapped)
+  }
+
+  capFor(rank) {
+    if (rank === 0) return CANTRIP_CAP
+    const slot = SLOTS.find((x) => x.rank === rank)
+    return slot ? slot.total : 0
+  }
+
+  canPrepare(id) {
+    const sp = spellById(id)
+    const s = this.state
+    const count = s.prepared.filter((p) => spellById(p.id).rank === sp.rank).length
+    if (count >= this.capFor(sp.rank)) return false
+    if (sp.rank === 0 && s.prepared.some((p) => p.id === id)) return false
+    return true
+  }
+
+  bookRows() {
+    return this.state.book
+      .map(spellById)
+      .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name))
+      .map((sp, i) => {
+        const free = this.canPrepare(sp.id)
+        return {
+          name: sp.name,
+          act: sp.act,
+          rankTag: sp.rank === 0 ? 'Truque' : 'R' + sp.rank,
+          border: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.06)',
+          label: free ? 'Preparar' : 'Sem slot',
+          bg: free ? 'oklch(58% 0.14 258 / 0.1)' : 'rgba(0,0,0,0.05)',
+          fg: free ? ACCENT_INK : TEXT_3,
+          open: () => this.setState({ detailId: sp.id }),
+          prepare: free ? () => this.prepare(sp.id) : () => {},
+        }
+      })
+  }
+
+  prepare(id) {
+    if (!this.canPrepare(id)) return
+    this.setState((s) => ({
+      prepared: [...s.prepared, { uid: s.uidSeq, id, used: false }],
+      uidSeq: s.uidSeq + 1,
+      prepRank: null,
+    }))
+  }
+
+  pickRows() {
+    const s = this.state
+    if (s.prepRank === null) return []
+    return s.book
+      .map(spellById)
+      .filter((sp) => sp.rank === s.prepRank)
+      .map((sp, i) => {
+        const free = this.canPrepare(sp.id)
+        return {
+          name: sp.name,
+          act: sp.act,
+          border: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.06)',
+          label: free ? 'Preparar' : 'Já preparado',
+          fg: free ? ACCENT_INK : TEXT_3,
+          opacity: free ? 1 : 0.5,
+          pick: free ? () => this.prepare(sp.id) : () => {},
+        }
+      })
+  }
+
+  compendiumRows() {
+    const s = this.state
+    const trad = s.compTrad ?? CHAR_TRADS[0]
+    return COMPENDIUM
+      .filter((sp) => sp.trads.includes(trad))
+      .filter((sp) => s.compRank == null || sp.rank === s.compRank)
+      .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name))
+      .map((sp, i) => {
+      const known = s.book.includes(sp.id)
+      return {
+        openDetail: () => this.setState({ detailId: sp.id }),
+        name: sp.name,
+        act: sp.act,
+        rankTag: sp.rank === 0 ? 'Truque' : 'R' + sp.rank,
+        border: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.06)',
+        label: known ? 'No grimório' : 'Adicionar',
+        bg: known ? 'rgba(0,0,0,0.05)' : 'oklch(58% 0.14 258 / 0.1)',
+        fg: known ? TEXT_3 : ACCENT_INK,
+        add: known ? () => {} : () => this.setState((st) => ({ book: [...st.book, sp.id] })),
+      }
+    })
+  }
+
+  bumpCond(key, delta, max) {
+    this.setState((s) => {
+      const next = { ...s.conds }
+      const value = Math.max(0, Math.min(max, (next[key] ?? 0) + delta))
+      if (value) next[key] = value
+      else delete next[key]
+      return { conds: next }
+    })
+  }
+
+  renderVals() {
+    const s = this.state
+    const skillsMode = this.props.skillsMode ?? 'todas'
+    const skills = SKILLS.filter((row) => skillsMode === 'todas' || row[2])
+    const S = this.stats()
+    const bd = s.bdKey ? S[s.bdKey] : null
+    const rankTag = (r) => (r === 2 ? 'T' : r === 4 ? 'E' : r === 6 ? 'M' : r === 8 ? 'L' : 'U')
+    const pct = Math.round((s.hp / 24) * 100)
+    const condChips = CONDITIONS.filter(([key]) => s.conds[key]).map(([key, name, valued]) => ({
+      label: valued ? name + ' ' + s.conds[key] : name,
+    }))
+
+    return {
+      screenTitle: s.tab === 'ficha' ? 'Ficha' : s.tab === 'inventory' ? 'Inventário' : s.tab === 'actions' ? 'Ações' : s.tab === 'shop' ? 'Loja' : 'Mestre',
+      isFicha: s.tab === 'ficha',
+      isInventory: s.tab === 'inventory',
+      showResumo: s.tab === 'ficha' && s.sub === 'resumo',
+      showAtaques: s.tab === 'ficha' && s.sub === 'ataques',
+      showMagias: s.tab === 'ficha' && s.sub === 'magias',
+      showFeats: s.tab === 'ficha' && s.sub === 'feats',
+      showInventory: s.tab === 'inventory',
+      showOther: s.tab === 'shop' || s.tab === 'gm',
+
+      segResumoBg: this.seg('resumo').bg, segResumoFg: this.seg('resumo').fg,
+      segAtaquesBg: this.seg('ataques').bg, segAtaquesFg: this.seg('ataques').fg,
+      segMagiasBg: this.seg('magias').bg, segMagiasFg: this.seg('magias').fg,
+      segFeatsBg: this.seg('feats').bg, segFeatsFg: this.seg('feats').fg,
+      segAcoesBg: this.seg('acoes').bg, segAcoesFg: this.seg('acoes').fg,
+
+      navFichaColor: s.tab === 'ficha' ? ACCENT_INK : TEXT_3,
+      navInvColor: s.tab === 'inventory' ? ACCENT_INK : TEXT_3,
+      navShopColor: s.tab === 'shop' ? ACCENT_INK : TEXT_3,
+      navGmColor: s.tab === 'gm' ? ACCENT_INK : TEXT_3,
+
+      hp: s.hp,
+      temp: s.temp,
+      hasTemp: s.temp > 0,
+      tempInput: s.tempInput,
+      hpPct: pct + '%',
+      hpBarColor: pct <= 25 ? DANGER : ACCENT,
+      hpInput: s.hpInput,
+      hpSheetOpen: s.hpSheet,
+      condSheetOpen: s.condSheet,
+      tempMinusOpacity: s.temp > 0 ? 1 : 0.4,
+
+      javelins: s.javelins,
+      javMinusOpacity: s.javelins > 0 ? 1 : 0.4,
+      javOpen: s.javOpen,
+      javRot: s.javOpen ? '90deg' : '0deg',
+      javBg: s.javOpen ? 'rgba(0,0,0,0.03)' : 'transparent',
+      pickOpen: s.pickOpen,
+      pickRot: s.pickOpen ? '90deg' : '0deg',
+      pickBg: s.pickOpen ? 'rgba(0,0,0,0.03)' : 'transparent',
+
+      skills: skills.map(([name, abil, rank], i) => {
+        const st = S['skill:' + name]
+        return {
+          name,
+          bonus: sgn(st.total),
+          rank: rankTag(rank),
+          rankColor: rank ? ACCENT_INK : TEXT_3,
+          nameColor: rank ? TEXT : TEXT_2,
+          bonusColor: st.altered ? DANGER : rank ? TEXT : TEXT_2,
+          open: () => this.setState({ bdKey: 'skill:' + name }),
+          padLeft: i % 2 === 0 ? '16px' : '12px',
+          divider: i % 2 === 0 ? 'none' : '1px solid rgba(0,0,0,0.06)',
+        }
+      }),
+      skillsCount: skills.length,
+
+      noConditions: condChips.length === 0,
+      hasConditions: condChips.length > 0,
+      condChips,
+      condMoreLabel: s.condMore ? 'Menos condições' : 'Mais condições',
+      condMoreCaret: s.condMore ? '▲' : '▼',
+      toggleCondMore: () => this.setState((p) => ({ condMore: !p.condMore })),
+      condRows: (s.condMore ? CONDITIONS.concat(MORE_CONDITIONS) : CONDITIONS).map(([key, name, valued, desc]) => {
+        const value = s.conds[key] ?? 0
+        return {
+          name,
+          desc,
+          valued,
+          toggleable: !valued,
+          value,
+          color: value ? TEXT : TEXT_2,
+          decOpacity: value > 0 ? 1 : 0.4,
+          checkOpacity: value ? 1 : 0,
+          boxBg: value ? ACCENT : 'transparent',
+          boxBorder: value ? ACCENT : 'rgba(0,0,0,0.2)',
+          inc: () => this.bumpCond(key, 1, 4),
+          dec: () => this.bumpCond(key, -1, 4),
+          toggle: () => this.bumpCond(key, value ? -1 : 1, 1),
+        }
+      }),
+
+      featGroups: FEAT_GROUPS.map((g) => {
+        const ctl = this.sectionCtl(g.key)
+        return {
+          title: g.title,
+          count: g.items.length,
+          open: ctl.open,
+          caret: ctl.caret,
+          toggle: ctl.toggle,
+          items: g.items.map(([name, source, level, act], i) => ({
+            name, source, level, act,
+            hasAct: !!act,
+            border: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.06)',
+            ...this.favCtl('feat:' + name),
+          })),
+        }
+      }),
+      favFeats: FEAT_GROUPS.flatMap((g) => g.items)
+        .filter(([name]) => s.favs['feat:' + name])
+        .map(([name, source, level, act], i) => ({
+          name, source, level, act,
+          hasAct: !!act,
+          border: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.06)',
+          ...this.favCtl('feat:' + name),
+        })),
+      hasFavFeats: FEAT_GROUPS.flatMap((g) => g.items).some(([name]) => s.favs['feat:' + name]),
+      favAttacks: ATTACKS.filter((a) => s.favs[a.id]).map((a, i) => ({
+        name: a.name, meta: a.meta, dmg: a.dmg,
+        mods: this.atkCell(a.id).mods,
+        modsColor: this.atkCell(a.id).color,
+        openMods: this.atkCell(a.id).open,
+        border: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.06)',
+        ...this.favCtl(a.id),
+      })),
+      atkPick: this.atkCell('greatpick'),
+      atkUnarmed: this.atkCell('unarmed'),
+      atkJav: this.atkCell('javelin'),
+      acCell: this.cell('ac'),
+      fortCell: this.cell('fort'),
+      refCell: this.cell('ref'),
+      willCell: this.cell('will'),
+      percCell: this.cell('perc'),
+      classDcCell: this.cell('classDc'),
+      bdOpen: !!bd,
+      bdTitle: bd ? bd.title : '',
+      bdTotal: bd ? (bd.kind === 'dc' ? String(bd.total) : sgn(bd.total)) : '',
+      bdAltered: bd ? bd.altered : false,
+      bdParts: bd ? bd.parts.map((p, i) => ({
+        label: p.label,
+        value: sgn(p.value),
+        color: p.cond ? DANGER : TEXT,
+        border: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.06)',
+      })) : [],
+      closeBd: () => this.setState({ bdKey: null }),
+      hasFavAttacks: ATTACKS.some((a) => s.favs[a.id]),
+      starPick: this.favCtl('greatpick'),
+      starUnarmed: this.favCtl('unarmed'),
+      starJav: this.favCtl('javelin'),
+      atkMeleeOpen: this.sectionCtl('am').open,
+      atkMeleeCaret: this.sectionCtl('am').caret,
+      atkMeleeToggle: this.sectionCtl('am').toggle,
+      atkRangedOpen: this.sectionCtl('ar').open,
+      atkRangedCaret: this.sectionCtl('ar').caret,
+      atkRangedToggle: this.sectionCtl('ar').toggle,
+      atkSpellOpen: this.sectionCtl('as').open,
+      atkSpellCaret: this.sectionCtl('as').caret,
+      atkSpellToggle: this.sectionCtl('as').toggle,
+
+      invGroups: INV_GROUPS.map((g) => ({
+        title: g.title,
+        count: g.items.length,
+        items: g.items.map(([name, level, qty], i) => ({
+          name, level, qty,
+          border: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.06)',
+        })),
+      })),
+
+      showAbilities: this.props.showAbilityScores ?? true,
+
+      goResumo: () => this.setState({ sub: 'resumo' }),
+      goAtaques: () => this.setState({ sub: 'ataques' }),
+      goMagias: () => this.setState({ sub: 'magias' }),
+      goAcoes: () => this.setState({ sub: 'acoes' }),
+
+      prepGroups: this.prepGroups(),
+      bookRows: this.bookRows(),
+      bookCount: s.book.length + ' magias',
+      slotTable: Array.from({ length: 9 }, (_, i) => {
+        const rank = i + 1
+        const slot = SLOTS.find((x) => x.rank === rank)
+        const border = i === 0 ? 'none' : '1px solid rgba(0,0,0,0.07)'
+        if (!slot) return { rank: String(rank), value: '–', fg: 'rgba(60,60,67,0.3)', border }
+        // mesma leitura do cabeçalho de cada rank: preparadas ainda conjuráveis / total
+        const ready = s.prepared.filter((p) => spellById(p.id).rank === rank && !p.used).length
+        return { rank: String(rank), value: ready + '/' + slot.total, fg: 'rgba(0,0,0,0.85)', border }
+      }),
+      cantripCount: s.prepared.filter((p) => spellById(p.id).rank === 0).length + '/' + CANTRIP_CAP,
+      focusRows: this.focusRows(),
+      focusDots: this.focusDots(),
+      focusCount: Math.max(0, this.focusMax() - s.focusUsed) + ' / ' + this.focusMax(),
+      specialPickOpen: s.specialPick,
+      closeSpecialPick: () => this.setState({ specialPick: false }),
+      specialAddRows: COMPENDIUM.concat(FOCUS).map((sp, i) => ({
+        name: sp.name,
+        act: sp.act,
+        rankTag: sp.rank === undefined ? 'Foco' : sp.rank === 0 ? 'Truque' : 'R' + sp.rank,
+        border: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.06)',
+        add: () => this.setState((st) => ({
+          special: [...st.special, { uid: st.uidSeq, id: sp.id, used: false }],
+          uidSeq: st.uidSeq + 1,
+          specialPick: false,
+        })),
+      })),
+      focusOpen: this.sectionCtl('focus').open,
+      focusCaret: this.sectionCtl('focus').caret,
+      focusToggle: this.sectionCtl('focus').toggle,
+      bookOpen: this.sectionCtl('book').open,
+      bookCaret: this.sectionCtl('book').caret,
+      bookToggle: this.sectionCtl('book').toggle,
+      focusSheetOpen: s.focusSheetOpen,
+      openFocusSheet: () => this.setState({ focusSheetOpen: true }),
+      focusPickRows: this.focusPickRows(),
+      closeFocusSheet: () => this.setState({ focusSheetOpen: false }),
+      openBookSheet: () => this.setState({ bookSheetOpen: true }),
+      isActions: s.tab === 'ficha' && s.sub === 'acoes',
+      actSegs: [['fav', 'Favoritas'], ['class', 'Classe'], ['skill', 'Perícia'], ['basic', 'Básicas']].map(([k, label]) => ({
+        label,
+        bg: s.actSub === k ? '#fff' : 'transparent',
+        fg: s.actSub === k ? ACCENT_INK : TEXT_2,
+        shadow: s.actSub === k ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
+        pick: () => this.setState({ actSub: k }),
+      })),
+      actTraitOptions: [{ value: '', label: 'Todos os traços' }].concat(ACTION_TRAITS.map((t) => ({ value: t, label: t }))),
+      actTraitValue: s.actTrait ?? '',
+      pickTrait: (e) => this.setState({ actTrait: e.target.value || null }),
+      expandAtk: this.setKeys(['am', 'ar', 'as'], false),
+      collapseAtk: this.setKeys(['am', 'ar', 'as'], true),
+      expandMag: this.setKeys(MAG_KEYS, false),
+      collapseMag: this.setKeys(MAG_KEYS, true),
+      expandFeats: this.setKeys(FEAT_GROUPS.map((g) => g.key), false),
+      collapseFeats: this.setKeys(FEAT_GROUPS.map((g) => g.key), true),
+      actionGroups: this.actionGroups(),
+      expandAllActions: () => this.setState({ groupClosed: [], actOpenAll: true, actOpen: null }),
+      collapseAllActions: () => this.setState({ groupClosed: this.actionGroups().map((g) => g.key), actOpenAll: false, actOpen: null }),
+      actionsEmpty: this.actionGroups().every((g) => g.rows.length === 0),
+      bookSheetOpen: s.bookSheetOpen,
+      compendiumRows: this.compendiumRows(),
+      compEmpty: this.compendiumRows().length === 0,
+      compTradChips: TRADS.map((t) => {
+        const avail = CHAR_TRADS.includes(t)
+        const on = avail && (s.compTrad ?? CHAR_TRADS[0]) === t
+        return {
+          label: t,
+          bg: on ? 'oklch(58% 0.14 258)' : avail ? 'rgba(0,0,0,0.05)' : 'transparent',
+          fg: on ? '#fff' : avail ? TEXT_2 : 'rgba(60,60,67,0.25)',
+          pick: avail ? () => this.setState({ compTrad: t }) : () => {},
+        }
+      }),
+      compRankChips: [null, 0, 1, 2, 3].map((r) => {
+        const on = s.compRank === r
+        return {
+          label: r === null ? 'Todos' : r === 0 ? 'Truque' : 'R' + r,
+          bg: on ? 'oklch(58% 0.14 258)' : 'rgba(0,0,0,0.05)',
+          fg: on ? '#fff' : TEXT_2,
+          pick: () => this.setState({ compRank: r }),
+        }
+      }),
+      pickOpenSpell: s.prepRank !== null,
+      pickTitle: s.prepRank === 0 ? 'Preparar um truque' : 'Preparar magia de rank ' + s.prepRank,
+      pickHint: s.prepRank === 0
+        ? 'Truques não gastam slots e podem ser conjurados à vontade, mas não se repetem.'
+        : 'Do grimório. A mesma magia pode ocupar mais de um slot.',
+      pickRows: this.pickRows(),
+      detailOpen: s.detailId !== null,
+      detailName: s.detailId ? anySpell(s.detailId).name : '',
+      detailAct: s.detailId ? anySpell(s.detailId).act : '',
+      detailRank: s.detailId ? (anySpell(s.detailId).rank === undefined ? 'Magia de foco' : anySpell(s.detailId).rank === 0 ? 'Truque' : 'Magia de rank ' + anySpell(s.detailId).rank) : '',
+      detailTraits: s.detailId ? anySpell(s.detailId).traits.map((t) => ({ label: t })) : [],
+      detailDesc: s.detailId ? anySpell(s.detailId).desc : '',
+      closeDetail: () => this.setState({ detailId: null }),
+      closeSpellSheets: () => this.setState({ prepRank: null, bookSheetOpen: false }),
+      resetPrepared: () => this.setState((st) => ({
+        prepared: st.prepared.map((p) => ({ ...p, used: false })),
+        special: st.special.map((p) => ({ ...p, used: false })),
+        focusUsed: 0,
+      })),
+      goFeats: () => this.setState({ sub: 'feats' }),
+      tabFicha: () => this.setState({ tab: 'ficha' }),
+      tabInventory: () => this.setState({ tab: 'inventory' }),
+      tabShop: () => this.setState({ tab: 'shop' }),
+      tabGm: () => this.setState({ tab: 'gm' }),
+
+      openHp: () => this.setState({ hpSheet: true, condSheet: false }),
+      openCond: () => this.setState({ condSheet: true, hpSheet: false }),
+      closeSheets: () => this.setState({ hpSheet: false, condSheet: false }),
+      setHpInput: (e) => this.setState({ hpInput: e.target.value }),
+      setTempInput: (e) => this.setState({ tempInput: e.target.value }),
+      doDamage: this.applyDamage,
+      doHeal: this.applyHeal,
+      doTemp: this.applyTemp,
+      tempPlus: () => this.setState((p) => ({ temp: p.temp + 1 })),
+      tempMinus: () => this.setState((p) => ({ temp: Math.max(0, p.temp - 1) })),
+      javPlus: () => this.setState((p) => ({ javelins: p.javelins + 1 })),
+      javMinus: () => this.setState((p) => ({ javelins: Math.max(0, p.javelins - 1) })),
+      togglePick: () => this.setState((p) => ({ pickOpen: !p.pickOpen })),
+      toggleJav: () => this.setState((p) => ({ javOpen: !p.javOpen })),
+      clearConds: () => this.setState({ conds: {} }),
+
+      shieldHp: s.shieldHp,
+      shieldBroken: s.shieldHp <= 6,
+      raiseLabel: s.shieldRaised ? 'Erguido' : 'Erguer',
+      raiseBg: s.shieldRaised ? 'oklch(58% 0.14 258 / 0.14)' : 'rgba(0,0,0,0.05)',
+      raiseFg: s.shieldRaised ? 'oklch(50% 0.14 258)' : 'rgba(60,60,67,0.6)',
+      toggleRaise: () => this.setState((p) => ({ shieldRaised: !p.shieldRaised })),
+      shieldMinus: () => this.setState((p) => ({ shieldHp: Math.max(0, p.shieldHp - 1) })),
+      shieldPlus: () => this.setState((p) => ({ shieldHp: Math.min(12, p.shieldHp + 1) })),
+    }
+  }
+}
+</script>
+</body>
+</html>
