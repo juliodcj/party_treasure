@@ -1269,43 +1269,20 @@
   color: var(--text-3);
 }
 
-/* -------------------------------------------------------- ficha: aba Resumo */
+/* -------------------------------------------------------- ficha: aba Resumo
 
-.charsheet__body {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-/* Painel branco de seção, no lugar do `margin: 0 -16px` do protótipo. */
-.panel {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  padding: 10px 12px 12px;
-}
-
-.panel__title {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  margin: 0 0 8px;
-}
-
-.panel__count {
-  color: var(--text-3);
-  font-variant-numeric: tabular-nums;
-}
+   Full-bleed, como o resto do app e como o próprio protótipo: cada bloco é a
+   mesma `.list-group` / `.list-rows` da Biblioteca e do Inventário — faixa de
+   título sticky, conteúdo branco de ponta a ponta, filete fino entre linhas.
+   Nenhum cartão arredondado flutuando dentro da tela. */
 
 /* Grades de célula. Uma classe por número de colunas: o layout é do bloco, e
-   nenhum componente decide a própria largura. */
+   nenhum componente decide a própria largura. Edge-to-edge dentro do
+   `.list-rows` que a envolve — sem raio próprio, exatamente como o protótipo. */
 .grid {
   display: grid;
   gap: 1px;
   background: var(--line);
-  border-radius: var(--r-sm);
-  overflow: hidden;
 }
 
 .grid--2 { grid-template-columns: repeat(2, 1fr); }
@@ -1358,6 +1335,10 @@
   display: flex;
   align-items: stretch;
   gap: 12px;
+  /* Este bloco não tem faixa de título em cima (é o único que não tem), então
+     carrega o próprio respiro em vez de herdá-lo de um `.panel` que não existe
+     mais — igual ao protótipo, `padding:12px 16px 14px`. */
+  padding: 12px 16px 14px;
 }
 
 .vitals__hp {
@@ -1666,7 +1647,10 @@
 /* ------------------------------------------------------------------ escudo */
 
 .shield {
-  margin-top: 10px;
+  /* `.list-rows` não tem padding lateral (o grid acima dele é edge-to-edge de
+     propósito); o escudo, que é um cartão dentro do bloco, precisa do próprio
+     respiro dos lados — o `.panel` que sumiu dava isso de graça. */
+  margin: 10px 16px 12px;
   border: 1px solid var(--line-field);
   border-radius: var(--r-sm);
   overflow: hidden;
@@ -1762,7 +1746,8 @@
 }
 
 .skills__legend {
-  margin: 6px 0 0;
+  margin: 0;
+  padding: 6px 16px 8px;
   font-size: var(--t-label);
   line-height: var(--lh-text);
   color: var(--text-3);
@@ -1772,10 +1757,18 @@
 
 .profs {
   background: var(--surface);
-  padding: 7px 10px 8px;
+  padding: 7px 12px 8px;
   display: flex;
   flex-direction: column;
   gap: 3px;
+}
+
+.profs:first-child {
+  padding-left: 16px;
+}
+
+.profs:last-child {
+  padding-right: 16px;
 }
 
 .profs__row {
@@ -1808,17 +1801,13 @@
 
 /* ------------------------------------------------------------ linhas soltas */
 
+/* O filete entre linhas vem de graça da regra geral `.list-rows > * + *`. */
 .charsheet__line {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 0;
+  padding: 10px 16px;
   min-height: var(--tap-md);
-  border-bottom: 1px solid var(--line);
-}
-
-.charsheet__line:last-child {
-  border-bottom: 0;
 }
 
 .charsheet__line-label {
@@ -1862,7 +1851,7 @@
      ponta da coluna da esquerda e encostava nos números do MAP. */
   gap: 12px;
   min-height: var(--tap-md);
-  padding: 4px 0;
+  padding: 4px 8px 4px 16px;
 }
 
 .atk__left {
@@ -1940,7 +1929,7 @@
 }
 
 .atk__body {
-  padding: 2px 0 12px;
+  padding: 2px 16px 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1993,6 +1982,10 @@
   align-items: center;
   gap: 8px;
   min-height: var(--tap-md);
+  /* `.list-rows` não dá respiro lateral (é edge-to-edge de propósito) — mesmo
+     recuo que `.list-row .item__head` usa no Inventário. */
+  padding-left: 16px;
+  padding-right: 8px;
 }
 
 .entry__main {
@@ -2043,7 +2036,7 @@
 }
 
 .entry__body {
-  padding: 2px 0 12px;
+  padding: 2px 16px 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;

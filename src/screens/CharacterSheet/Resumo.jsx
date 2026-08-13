@@ -41,10 +41,13 @@ export default function Resumo({ player, view, onGoToGm }) {
   const pct = Math.max(0, Math.min(100, Math.round((view.hp / view.hpMax) * 100)))
 
   return (
-    <div className="charsheet__body">
-      {/* ------------------------------------------------------ HP e condições */}
-      <section className="panel">
-        <div className="vitals">
+    <>
+      {/* ------------------------------------------------------ HP e condições
+
+          Sem faixa de título, como no protótipo: é o único bloco que abre a
+          tela direto, sem sobrancelha em cima. */}
+      <section className="list-group">
+        <div className="list-rows vitals">
           <div className="vitals__hp">
             <button type="button" className="vitals__hp-btn" onClick={() => setHpAberto(true)}>
               <span className="label">Pontos de vida</span>
@@ -185,7 +188,7 @@ export default function Resumo({ player, view, onGoToGm }) {
       </Bloco>
 
       {/* ------------------------------------------------------------ descanso */}
-      <button type="button" className="btn btn--tint btn--block" onClick={() => setDescansando(true)}>
+      <button type="button" className="btn btn--tint btn--block charsheet__rest" onClick={() => setDescansando(true)}>
         Descanso noturno
       </button>
 
@@ -213,20 +216,23 @@ export default function Resumo({ player, view, onGoToGm }) {
           }}
         />
       ) : null}
-    </div>
+    </>
   )
 }
 
 /* ------------------------------------------------------------------ peças */
 
+/* Faixa de título + conteúdo full-bleed: a mesma `.list-group` que a
+   Biblioteca e o Inventário usam, para a ficha ser a mesma casa e não uma
+   tela grande com liberdade visual própria (D15). */
 function Bloco({ titulo, contagem = null, children }) {
   return (
-    <section className="panel">
-      <h3 className="label panel__title">
+    <section className="list-group">
+      <h3 className="label list-group__title">
         <span>{titulo}</span>
-        {contagem != null ? <span className="panel__count">{contagem}</span> : null}
+        {contagem != null ? <span className="list-group__count">{contagem}</span> : null}
       </h3>
-      {children}
+      <div className="list-rows">{children}</div>
     </section>
   )
 }

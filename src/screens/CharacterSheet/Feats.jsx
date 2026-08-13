@@ -56,7 +56,7 @@ export default function Feats({ player }) {
   const favoritas = feats.filter((feat) => favoritos[chave(feat)])
 
   return (
-    <div className="charsheet__body">
+    <>
       {favoritas.length ? (
         <Grupo
           titulo="Favoritos"
@@ -83,7 +83,7 @@ export default function Feats({ player }) {
       {feats.length === 0 ? (
         <div className="empty">Nenhum feat veio na ficha importada.</div>
       ) : null}
-    </div>
+    </>
   )
 }
 
@@ -98,12 +98,12 @@ const chave = (feat) => `feat:${feat.id ?? feat.name}`
 
 function Grupo({ titulo, itens, prefixo, player, aberto, setAberto }) {
   return (
-    <section className="panel">
-      <h3 className="label panel__title">
+    <section className="list-group">
+      <h3 className="label list-group__title">
         <span>{titulo}</span>
-        <span className="panel__count">{itens.length}</span>
+        <span className="list-group__count">{itens.length}</span>
       </h3>
-      <div className="entries">
+      <div className="list-rows entries">
         {itens.map((feat, indice) => (
           <Linha
             key={`${prefixo}-${feat.id ?? feat.name}-${indice}`}

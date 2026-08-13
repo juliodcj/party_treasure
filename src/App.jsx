@@ -9,7 +9,10 @@ import SettingsSheet from './components/SettingsSheet.jsx'
 import ConnectionBanner from './components/ConnectionBanner.jsx'
 import { BagIcon, ChevronDown, CrownIcon, GearIcon, SheetIcon, ShopIcon } from './components/Icons.jsx'
 import InventoryScreen from './screens/InventoryScreen.jsx'
-import CharacterSheetScreen from './screens/CharacterSheet/index.jsx'
+import CharacterSheetScreen, {
+  identidade,
+  subAbasDe,
+} from './screens/CharacterSheet/index.jsx'
 import ShopScreen from './screens/ShopScreen.jsx'
 import LibraryScreen from './screens/LibraryScreen.jsx'
 import GmScreen from './screens/GmScreen.jsx'
@@ -42,6 +45,9 @@ export default function App() {
   const player = useActivePlayer()
 
   const [tab, setTab] = useState('inventory')
+  // A sub-aba da Ficha mora aqui pelo mesmo motivo que a aba: ela é desenhada
+  // no cabeçalho fixo, que é do App, e não rola junto com o conteúdo.
+  const [sheetSub, setSheetSub] = useState('resumo')
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   // Como no protótipo, só um item fica aberto de cada vez.
   const [openId, setOpenId] = useState(null)
@@ -170,7 +176,9 @@ export default function App() {
           ) : null
         }
         actions={
-          isGm ? (
+          isSheet && player.sheet ? (
+            <span className="charsheet__level">Nv {player.sheet.level}</span>
+          ) : isGm ? (
             <button
               type="button"
               className="header-icon-btn"
@@ -197,6 +205,29 @@ export default function App() {
 
         {subhead ? <HeaderCount>{subhead}</HeaderCount> : null}
 
+        {/* Identidade e sub-abas ficam no cabeçalho fixo, como no protótipo:
+            trocar de seção é o gesto mais repetido da ficha, e ele não pode
+            depender de rolar até o topo. */}
+        {isSheet && player.sheet ? (
+          <>
+            <div className="charsheet__ident-line">{identidade(player.sheet)}</div>
+            <div className="seg charsheet__seg" role="tablist" aria-label="Seções da ficha">
+              {subAbasDe(player.sheet).map((aba) => (
+                <button
+                  key={aba.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={sheetSub === aba.id}
+                  className={`seg__tab${sheetSub === aba.id ? ' seg__tab--on' : ''}`}
+                  onClick={() => setSheetSub(aba.id)}
+                >
+                  {aba.label}
+                </button>
+              ))}
+            </div>
+          </>
+        ) : null}
+
         {isGm || isSheet ? null : (
           <FiltersBar
             filters={filters}
@@ -213,7 +244,9 @@ export default function App() {
         {isInventory ? (
           <InventoryScreen player={player} filters={filters} openId={openId} onToggle={toggleItem} />
         ) : null}
-        {isSheet ? <CharacterSheetScreen player={player} onGoToGm={() => goTo('gm')} /> : null}
+        {isSheet ? (
+          <CharacterSheetScreen player={player} sub={sheetSub} onGoToGm={() => goTo('gm')} />
+        ) : null}
         {isShop ? (
           <ShopScreen
             player={player}

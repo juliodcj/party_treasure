@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { buildSheet } from '../../lib/sheet.js'
 import { playerInventory } from '../../lib/items.js'
 import { useStore } from '../../state/store.jsx'
@@ -20,7 +20,7 @@ import Acoes from './Acoes.jsx'
  * para a moldura já ser a definitiva e o conteúdo entrar por dentro.
  */
 
-const SUBABAS = [
+export const SUBABAS = [
   { id: 'resumo', label: 'Resumo' },
   { id: 'ataques', label: 'Ataques' },
   { id: 'magias', label: 'Magias' },
@@ -28,9 +28,8 @@ const SUBABAS = [
   { id: 'acoes', label: 'Ações' },
 ]
 
-export default function CharacterSheetScreen({ player, onGoToGm }) {
+export default function CharacterSheetScreen({ player, sub, onGoToGm }) {
   const { state } = useStore()
-  const [sub, setSub] = useState('resumo')
 
   const items = useMemo(
     () => playerInventory(state, player).map(({ item, qty }) => ({ ...item, qty })),
@@ -52,31 +51,9 @@ export default function CharacterSheetScreen({ player, onGoToGm }) {
   if (!view) return <EmptySheet />
 
   const sheet = player.sheet
-  /* Conjurador não tem aba de magia à toa, e quem não conjura não vê a aba
-     (§12.3). O bárbaro do fixture cai justamente nesse caso. */
-  const abas = SUBABAS.filter((aba) => aba.id !== 'magias' || sheet.spellcasting)
 
   return (
-    <div className="charsheet">
-      <div className="charsheet__ident">
-        <div className="charsheet__ident-line">{identidade(sheet)}</div>
-      </div>
-
-      <div className="seg charsheet__seg" role="tablist" aria-label="Seções da ficha">
-        {abas.map((aba) => (
-          <button
-            key={aba.id}
-            type="button"
-            role="tab"
-            aria-selected={sub === aba.id}
-            className={`seg__tab${sub === aba.id ? ' seg__tab--on' : ''}`}
-            onClick={() => setSub(aba.id)}
-          >
-            {aba.label}
-          </button>
-        ))}
-      </div>
-
+    <>
       {semNadaEquipado(player) ? (
         <div className="charsheet__warn">
           Ficha importada. Agora monte a mochila no Inventário e vista a
@@ -99,7 +76,7 @@ export default function CharacterSheetScreen({ player, onGoToGm }) {
           normalmente.
         </div>
       ) : null}
-    </div>
+    </>
   )
 }
 
@@ -116,8 +93,16 @@ function semNadaEquipado(player) {
   return !gear.wornArmorId && !gear.heldShieldId && !(gear.equippedWeaponIds ?? []).length
 }
 
+/**
+ * As sub-abas que este personagem tem. Conjurador não tem aba de magia à toa, e
+ * quem não conjura não vê a aba (§12.3) — o bárbaro do fixture é esse caso.
+ */
+export function subAbasDe(sheet) {
+  return SUBABAS.filter((aba) => aba.id !== 'magias' || sheet?.spellcasting)
+}
+
 /** `Rurik · Dwarf (Dromaar) · Barbarian · Sailor`, pulando o que não veio. */
-function identidade(sheet) {
+export function identidade(sheet) {
   return [sheet.name, linhaAncestralidade(sheet), sheet.class, sheet.background]
     .filter(Boolean)
     .join(' · ')

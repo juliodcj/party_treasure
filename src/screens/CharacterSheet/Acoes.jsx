@@ -52,7 +52,7 @@ export default function Acoes({ player }) {
   const filtradas = traco ? todas.filter((acao) => (acao.traits ?? []).includes(traco)) : todas
 
   return (
-    <div className="charsheet__body">
+    <>
       <label className="acoes__filtro">
         <span className="field-label">Traço</span>
         <select
@@ -78,12 +78,12 @@ export default function Acoes({ player }) {
         const itens = filtradas.filter((acao) => acao.group === grupo.id)
         if (!itens.length) return null
         return (
-          <section className="panel" key={grupo.id}>
-            <h3 className="label panel__title">
+          <section className="list-group" key={grupo.id}>
+            <h3 className="label list-group__title">
               <span>{grupo.titulo}</span>
-              <span className="panel__count">{itens.length}</span>
+              <span className="list-group__count">{itens.length}</span>
             </h3>
-            <div className="entries">
+            <div className="list-rows entries">
               {itens.map((acao) => (
                 <Linha
                   key={acao.id}
@@ -97,7 +97,7 @@ export default function Acoes({ player }) {
           </section>
         )
       })}
-    </div>
+    </>
   )
 }
 

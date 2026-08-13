@@ -51,7 +51,7 @@ export default function Ataques({ player, view }) {
   }
 
   return (
-    <div className="charsheet__body">
+    <>
       {/*
         A fase sugeria oferecer o modificador de Rage já preenchido na
         importação. Não foi feito, e de propósito: o número da Fúria muda com o
@@ -81,18 +81,18 @@ export default function Ataques({ player, view }) {
       {editando ? (
         <ItemModsSheet player={player} item={editando} onClose={() => setEditando(null)} />
       ) : null}
-    </div>
+    </>
   )
 }
 
 function Grupo({ titulo, ataques, chave, ...props }) {
   return (
-    <section className="panel">
-      <h3 className="label panel__title">
+    <section className="list-group">
+      <h3 className="label list-group__title">
         <span>{titulo}</span>
-        <span className="panel__count">{ataques.length}</span>
+        <span className="list-group__count">{ataques.length}</span>
       </h3>
-      <div className="atk">
+      <div className="list-rows atk">
         {ataques.map((attack) => (
           <Linha key={`${chave}-${attack.id}`} attack={attack} grupo={chave} {...props} />
         ))}
