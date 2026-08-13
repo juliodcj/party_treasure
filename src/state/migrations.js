@@ -2,6 +2,53 @@
 // de origem; o valor devolve o estado já na versão seguinte. O servidor aplica
 // em cadeia até chegar na versão atual — nunca descarta a mesa só porque o
 // schema mudou. Vale também para a mesa antiga importada de um aparelho.
+/**
+ * Os campos da ficha, em branco. Um lugar só, porque três precisam deles: a
+ * migração 5 → 6, a mesa de exemplo e o saneamento de mesa vinda de fora.
+ *
+ * `hp: null` de propósito: sem ficha não existe HP máximo, e zero seria mentira
+ * (um personagem sem ficha não está morrendo). Quem tem ficha recebe
+ * `hp = sheet.hpMax` no `IMPORT_SHEET`.
+ *
+ * `vitals` sobrevive à reimportação e à remoção da ficha — é fato de mesa, não
+ * cálculo. `gear` e `itemMods` idem: o que a pessoa está vestindo e o que o
+ * mestre concedeu não se perdem porque a ficha foi trocada.
+ */
+export function emptySheetFields() {
+  return {
+    sheet: null,
+    vitals: {
+      hp: null,
+      tempHp: 0,
+      conditions: {},
+      focusPoints: 0,
+      shieldHp: null,
+      shieldRaised: false,
+      slotsUsed: {},
+      preparedSpells: [],
+      extraSpells: [],
+      favorites: {},
+    },
+    gear: { wornArmorId: null, heldShieldId: null, equippedWeaponIds: [] },
+    itemMods: {},
+  }
+}
+
+/**
+ * Completa um jogador com o que faltar da ficha, sem tocar no que já existe.
+ * Idempotente: rodar duas vezes dá o mesmo jogador.
+ */
+export function withSheetFields(player) {
+  const empty = emptySheetFields()
+  return {
+    ...player,
+    sheet: player.sheet ?? null,
+    vitals: { ...empty.vitals, ...(player.vitals ?? {}) },
+    gear: { ...empty.gear, ...(player.gear ?? {}) },
+    itemMods: player.itemMods ?? {},
+  }
+}
+
 const MIGRATIONS = {
   2: (state) => ({
     ...state,
@@ -27,6 +74,15 @@ const MIGRATIONS = {
       }),
     }
   },
+  // A ficha de personagem entrou. Todo jogador ganha os campos vazios: quem já
+  // está na mesa continua exatamente como estava, só que agora com um lugar
+  // reservado para a ficha que talvez nunca venha. Personagem sem ficha é caso
+  // de primeira classe, não estado de transição.
+  5: (state) => ({
+    ...state,
+    version: 6,
+    players: state.players.map(withSheetFields),
+  }),
 }
 
 export function migrate(state, targetVersion) {

@@ -1,7 +1,7 @@
 import { reducer } from '../src/state/reducer.js'
 import { withHistory } from '../src/state/history.js'
 import { createInitialState } from '../src/state/initialState.js'
-import { migrate } from '../src/state/migrations.js'
+import { migrate, withSheetFields } from '../src/state/migrations.js'
 
 /**
  * A mesa. Um estado só, com um dono só: este processo.
@@ -50,6 +50,21 @@ const TABLE_ACTIONS = new Set([
   'ADD_CAMPAIGN_ITEMS',
   'UPDATE_CAMPAIGN_ITEM',
   'REMOVE_CAMPAIGN_ITEM',
+  // Ficha de personagem. Vincular/atualizar/remover só sai da tela do Mestre
+  // (D14), mas quem barra isso é a tela: sem papéis e sem login, qualquer
+  // aparelho pode despachar qualquer uma — o histórico registra quem foi.
+  'IMPORT_SHEET',
+  'UPDATE_SHEET',
+  'REMOVE_SHEET',
+  'APPLY_DAMAGE',
+  'APPLY_HEAL',
+  'SET_TEMP_HP',
+  'SET_CONDITION',
+  'CLEAR_CONDITIONS',
+  'SET_FOCUS',
+  'TOGGLE_SHIELD_RAISED',
+  'SET_SHIELD_HP',
+  'TOGGLE_FAVORITE',
   'UNDO_TO',
   'CLEAR_HISTORY',
   'RESET',
@@ -75,7 +90,7 @@ export function sanitizeTable(raw) {
     settings: { ...seed.settings, ...(migrated.settings ?? {}) },
     history: Array.isArray(migrated.history) ? migrated.history : [],
     players: migrated.players.map((player) => ({
-      ...player,
+      ...withSheetFields(player),
       items: player.items ?? {},
       customItems: player.customItems ?? [],
       itemNotes: player.itemNotes ?? {},

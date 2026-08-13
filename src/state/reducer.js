@@ -1,6 +1,7 @@
 import { addCoins, simplifyWallet, spendCopper, toCopper, withWalletCopper } from '../lib/money.js'
 import { makeId, normalizeItem, resolveItem } from '../lib/items.js'
 import { SELL_RATE } from '../config.js'
+import { emptySheetFields } from './migrations.js'
 
 /*
  * As regras da mesa. Desde a Fase 3 quem roda este arquivo é o SERVIDOR, não o
@@ -42,6 +43,41 @@ function withoutNote(itemNotes, itemId) {
   return next
 }
 
+/* ---------------------------------------------------------------- a ficha */
+
+const positive = (value) => {
+  const n = Math.round(Number(value))
+  return Number.isFinite(n) && n > 0 ? n : 0
+}
+
+const hpMaxOf = (player) => Math.max(1, Math.round(Number(player.sheet?.hpMax) || 1))
+
+/** Sem HP gravado, o personagem está inteiro — nunca em zero. */
+const hpNow = (player) => {
+  const hp = player.vitals?.hp
+  return Number.isFinite(hp) ? hp : hpMaxOf(player)
+}
+
+/**
+ * Mexe só em `vitals`. `fn` devolve os campos que mudaram, ou `null` quando a
+ * ação não se aplica — devolver o mesmo estado (e não um clone) é o que faz o
+ * servidor não transmitir patch à toa nem gravar arquivo por nada.
+ */
+function withVitals(state, playerId, fn) {
+  const player = state.players.find((p) => p.id === playerId)
+  if (!player) return state
+  const vitals = player.vitals ?? {}
+  const patch = fn(vitals, player)
+  if (!patch) return state
+  return {
+    ...state,
+    players: mapPlayer(state.players, playerId, (current) => ({
+      ...current,
+      vitals: { ...current.vitals, ...patch },
+    })),
+  }
+}
+
 export function reducer(state, action) {
   switch (action.type) {
     case 'SET_SETTINGS':
@@ -64,6 +100,8 @@ export function reducer(state, action) {
             items: {},
             customItems: [],
             itemNotes: {},
+            // Nasce sem ficha, e funciona assim: carteira e mochila, como sempre.
+            ...emptySheetFields(),
           },
         ],
       }
@@ -439,6 +477,129 @@ export function reducer(state, action) {
           itemIds: shop.itemIds.filter((id) => id !== action.itemId),
         })),
       }
+
+    // ---------------------------------------------------------------- a ficha
+
+    /*
+     * Importar e atualizar são a mesma coisa e por isso dividem o caso: os dois
+     * substituem `player.sheet` INTEIRA (D4). Não existe política de merge —
+     * subir de nível é reimportar, e mesclar duas fichas seria inventar qual
+     * metade vale.
+     *
+     * O que sobrevive: carteira, mochila, itens avulsos, observações, `vitals`,
+     * `gear` e `itemMods`. A ficha diz quem o personagem é; o resto é o que
+     * aconteceu na mesa, e isso não se perde numa reimportação.
+     */
+    case 'IMPORT_SHEET':
+    case 'UPDATE_SHEET': {
+      const sheet = action.sheet
+      if (!sheet || typeof sheet !== 'object') return state
+      const hpMax = Math.max(1, Math.round(Number(sheet.hpMax) || 1))
+
+      return {
+        ...state,
+        players: mapPlayer(state.players, action.playerId, (player) => {
+          const vitals = player.vitals ?? {}
+          /* Quem estava ferido continua ferido: o HP atual atravessa a
+             reimportação. Se o novo máximo for menor (perdeu Con, por exemplo),
+             o atual desce junto — mas nunca sobe sozinho para o teto novo. */
+          const hp = Math.min(vitals.hp ?? hpMax, hpMax)
+          return { ...player, sheet, vitals: { ...vitals, hp } }
+        }),
+      }
+    }
+
+    /* Remover a ficha nunca apaga item, moeda nem observação — e nem `vitals`,
+       `gear` ou `itemMods`. Só some o "quem o personagem é". */
+    case 'REMOVE_SHEET':
+      return {
+        ...state,
+        players: mapPlayer(state.players, action.playerId, (player) => ({ ...player, sheet: null })),
+      }
+
+    // ------------------------------------------------------- HP e condições
+
+    /* Dano come o HP temporário antes do real (§10.8), e o HP não passa de
+       zero para baixo: morrendo é a condição Dying, não HP negativo. */
+    case 'APPLY_DAMAGE':
+      return withVitals(state, action.playerId, (vitals, player) => {
+        const amount = positive(action.amount)
+        if (!amount || !player.sheet) return null
+        const fromTemp = Math.min(vitals.tempHp ?? 0, amount)
+        const hp = hpNow(player)
+        return {
+          tempHp: (vitals.tempHp ?? 0) - fromTemp,
+          hp: Math.max(0, hp - (amount - fromTemp)),
+        }
+      })
+
+    case 'APPLY_HEAL':
+      return withVitals(state, action.playerId, (vitals, player) => {
+        const amount = positive(action.amount)
+        if (!amount || !player.sheet) return null
+        return { hp: Math.min(hpMaxOf(player), hpNow(player) + amount) }
+      })
+
+    /* HP temporário não empilha: vale o maior entre o que já tinha e o novo
+       (§10.8). Definir 0 zera, que é como se tira o que sobrou. */
+    case 'SET_TEMP_HP':
+      return withVitals(state, action.playerId, (vitals) => {
+        const value = Math.max(0, Math.round(Number(action.value) || 0))
+        return { tempHp: value === 0 ? 0 : Math.max(vitals.tempHp ?? 0, value) }
+      })
+
+    /* Condição em zero (ou desmarcada) some do objeto em vez de virar `0`:
+       "Frightened 0" não é uma condição ativa, é a ausência dela. */
+    case 'SET_CONDITION':
+      return withVitals(state, action.playerId, (vitals) => {
+        const conditions = { ...(vitals.conditions ?? {}) }
+        const value = action.value
+        if (value === true) conditions[action.key] = true
+        else if (typeof value === 'number' && value > 0) conditions[action.key] = Math.round(value)
+        else delete conditions[action.key]
+        return { conditions }
+      })
+
+    case 'CLEAR_CONDITIONS':
+      return withVitals(state, action.playerId, () => ({ conditions: {} }))
+
+    // ------------------------------------------------------- foco e escudo
+
+    /* O tamanho da reserva de foco vem da ficha; sem ficha, ou com reserva
+       zerada, não há o que gastar nem o que repor. */
+    case 'SET_FOCUS':
+      return withVitals(state, action.playerId, (vitals, player) => {
+        const pool = Math.max(0, Math.round(Number(player.sheet?.focusPoints) || 0))
+        if (!pool) return null
+        return { focusPoints: Math.min(pool, Math.max(0, Math.round(Number(action.value) || 0))) }
+      })
+
+    case 'TOGGLE_SHIELD_RAISED':
+      return withVitals(state, action.playerId, (vitals, player) => {
+        // Erguer escudo que não está empunhado seria bônus fantasma na CA.
+        if (!player.gear?.heldShieldId) return null
+        return { shieldRaised: !vitals.shieldRaised }
+      })
+
+    case 'SET_SHIELD_HP':
+      return withVitals(state, action.playerId, (vitals, player) => {
+        const shield = resolveItem(state, player.gear?.heldShieldId, player.id)
+        const max = Math.max(0, Math.round(Number(shield?.shield?.hpMax) || 0))
+        if (!max) return null
+        return { shieldHp: Math.min(max, Math.max(0, Math.round(Number(action.value) || 0))) }
+      })
+
+    /* Favorito é do personagem, não de quem está olhando (§14) — por isso mora
+       na mesa e não na sessão do aparelho. A chave é livre: id de item, slug de
+       feat, id de ação. */
+    case 'TOGGLE_FAVORITE':
+      return withVitals(state, action.playerId, (vitals) => {
+        if (!action.key) return null
+        const favorites = { ...(vitals.favorites ?? {}) }
+        if (favorites[action.key]) delete favorites[action.key]
+        else favorites[action.key] = true
+        return { favorites }
+      })
 
     case 'RESET':
       return action.state
