@@ -146,6 +146,7 @@ function reivindicar(mapa, chave, id, kind) {
   if (!atual || prio < atual.prio) mapa.set(chave, { id, prio })
 }
 const spellIndex = []
+const actionIndex = []
 const conditions = []
 const counts = {}
 let semNome = 0
@@ -170,6 +171,10 @@ for (const { pack, kind } of PACKS) {
 
     const system = raw.system ?? {}
     const slug = slugFromFile(file)
+    /* A primeira pasta dentro do pack. No `actions` ela é o agrupamento que a
+       ficha mostra — `basic/`, `skill/`, `class/` —, e vem da organização da
+       própria Paizo em vez de uma lista nossa. */
+    const grupo = path.relative(dir, file).split(path.sep)[0].replace(/\.json$/, '') || null
     const html = sanitizeDescription(system?.description?.value ?? '')
     const traitBlock = system?.traits ?? {}
 
@@ -181,6 +186,7 @@ for (const { pack, kind } of PACKS) {
       pack,
       level: Number.isFinite(Number(system?.level?.value)) ? Number(system.level.value) : null,
       category: system?.category ?? null,
+      group: grupo,
       rarity: traitBlock.rarity ?? null,
       traits: Array.isArray(traitBlock.value) ? traitBlock.value : [],
       traditions: Array.isArray(traitBlock.traditions) ? traitBlock.traditions : [],
@@ -216,6 +222,21 @@ for (const { pack, kind } of PACKS) {
         traits: entry.traits,
         rarity: entry.rarity,
         actionCost: entry.actionCost,
+      })
+    }
+    /* Só `basic` e `skill` vão no bundle: são 84 verbetes, valem para todo
+       personagem e a aba precisa deles de cara. As 196 ações de classe só
+       aparecem se o personagem tiver a feature, e essas chegam resolvidas pela
+       importação. */
+    if (kind === 'action' && (grupo === 'basic' || grupo === 'skill')) {
+      actionIndex.push({
+        id: entry.id,
+        slug,
+        name: entry.name,
+        group: grupo,
+        actionCost: entry.actionCost,
+        traits: entry.traits,
+        rarity: entry.rarity,
       })
     }
     if (kind === 'condition') {
@@ -333,6 +354,8 @@ spellIndex.sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name))
 conditions.sort((a, b) => a.name.localeCompare(b.name))
 
 writeFileSync(path.join(dataDir, 'index.spells.json'), JSON.stringify(spellIndex))
+actionIndex.sort((a, b) => a.name.localeCompare(b.name))
+writeFileSync(path.join(dataDir, 'index.actions.json'), JSON.stringify(actionIndex))
 writeFileSync(path.join(dataDir, 'conditions.json'), JSON.stringify(conditions))
 writeFileSync(path.join(dataDir, 'unarmed.json'), `${JSON.stringify(punho, null, 2)}\n`)
 
@@ -378,6 +401,7 @@ if (semNome) console.log(`  ${String(semNome)} arquivo(s) sem nome, ignorados`)
 
 console.log(`\nGerado:`)
 console.log(`  src/data/index.spells.json     ${spellIndex.length} magias, ${kb(bytes(path.join(dataDir, 'index.spells.json')))}`)
+console.log(`  src/data/index.actions.json    ${actionIndex.length} ações básicas e de perícia, ${kb(bytes(path.join(dataDir, 'index.actions.json')))}`)
 console.log(`  src/data/conditions.json       ${conditions.length} condições, ${kb(bytes(path.join(dataDir, 'conditions.json')))}`)
 console.log(`  src/data/unarmed.json          ${punho.name} ${punho.weapon.damage.dice}${punho.weapon.damage.die} ${punho.weapon.damage.damageType} [${punho.traits.join(' ')}]`)
 console.log(`  server/data/entries.bin        ${entries.size} verbetes, ${kb(offset)}`)

@@ -1973,3 +1973,84 @@
 .mods__caveat {
   margin-top: 10px;
 }
+
+/* ------------------------------------------- ficha: listas de verbete
+
+   Vale para Feats e Ações — as duas são a mesma lista, com nome, custo em
+   ações, uma linha de apoio e a descrição do Foundry ao abrir. */
+
+.entries {
+  display: flex;
+  flex-direction: column;
+}
+
+.entry + .entry {
+  border-top: 1px solid var(--line);
+}
+
+.entry__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap-md);
+}
+
+.entry__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 0;
+  text-align: left;
+}
+
+.entry__title {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+}
+
+.entry__name {
+  font-size: var(--t-body);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entry__sub {
+  font-size: var(--t-meta);
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Losangos de ação e a seta de reação. Cor do traço decorativo, não do texto. */
+.entry__cost {
+  flex-shrink: 0;
+  font-size: var(--t-meta);
+  letter-spacing: var(--track-label);
+  color: var(--ornament);
+  white-space: nowrap;
+}
+
+.entry__cost--text {
+  color: var(--text-3);
+  letter-spacing: normal;
+}
+
+.entry__body {
+  padding: 2px 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.acoes__filtro {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
