@@ -621,6 +621,30 @@ Respondidas pelo Julio em 13/08. Valem como decisão.
    sugestão futura**, não implementado.
 3. **Um personagem por jogador**: **sim, continua valendo.**
 
+## 17b. Onde a implementação divergiu da espec
+
+Registrado em 13/08, ao fim das fases 0 a 10. Divergir de propósito é aceitável;
+divergir sem registro, não.
+
+| Ponto | A espec dizia | O que foi feito, e por quê |
+|---|---|---|
+| Chave do verbete | `slug → [offset, tamanho]` | `kind:slug`. Medido: 119 magias e 46 ações têm o mesmo slug de um feat (`fly` é ação **e** magia). Por slug puro, a magia sumia do compêndio sem um pio. |
+| Prioridade de nome | cinco packs | oito. `glossary` entra **acima** de `spells` porque existe uma magia chamada *Darkvision*, e o `specials` do anão falava do sentido. |
+| Nome do Punho | "Unarmed Strike" | **"Unarmed Attack"**, que é como o Foundry o publica em `PF2E.WeaponTypeUnarmed`. O Punho não está em pack: é extraído de `src/module/actor/character/document.ts` na ingestão, com falha alta se o bloco mudar de forma. |
+| Grupos da aba Ações | Classe · Perícia · Básicas | mantido, mas o critério são as **pastas do pack** (`class/`, `skill/`, `basic/`), não uma lista nossa. |
+| Modificador de Rage pré-preenchido | sugerido na fase 9 | **não feito.** O número da Fúria muda com instinto, nível e arma; preenchê-lo seria o app chutando, o oposto de D6. No lugar, uma nota no topo da aba contando que o campo existe. |
+| `REST` | fase 8 dispararia o descanso da tela | virou **ação do reducer**. Cura, foco, slots e Doomed mudam juntos ou não mudam; em quatro despachos, um Wi-Fi oscilando deixaria o personagem curado e ainda Doomed. |
+| `traits.equipment.json` | — | renomeado para `traits.json`: passou a cobrir magia, condição, feat e ação (242 → 385 traços). |
+
+### O que ficou de fora, e continua de fora
+
+Runas · bulk e carga (D8) · contêineres · inventário por instância (o modificador
+manual vale para a pilha inteira, §8) · validação de número de mãos (§8) ·
+level-up, escolha de feat, rolagem de dado, iniciativa e controle de combate.
+
+**Anotado como sugestão futura, não implementado:** descanso do grupo inteiro na
+aba Mestre (a resposta 1 da §17 pediu por personagem).
+
 ## 18. Riscos
 
 1. **Aba Magias escrita contra dados inventados** até chegar um JSON de

@@ -423,10 +423,13 @@ tesouro entre o grupo.
 Ícones/imagens de item, filtro por livros que eu possuo (daí a importância do
 `publication`), exportação JSON/PDF, i18n.
 
-**Ficha de personagem — em andamento**
-Importação do JSON do Pathbuilder, motor de cálculo e as cinco sub-abas. Tem
-roadmap próprio, em treze fases: [docs/ficha/README.md](docs/ficha/README.md).
-A espec é [docs/ESPEC_Ficha.md](docs/ESPEC_Ficha.md).
+**Ficha de personagem — fases 0 a 10 ✔, fase 11 parada**
+Importação do JSON do Pathbuilder, motor de cálculo, e as abas Resumo, Ataques,
+Feats e Ações. A aba **Magias está parada** de propósito: implementá-la exige um
+export do Pathbuilder de um personagem conjurador, e escrever a tela contra dado
+inventado é o maior risco aberto do projeto. Roadmap em treze fases:
+[docs/ficha/README.md](docs/ficha/README.md); espec em
+[docs/ESPEC_Ficha.md](docs/ESPEC_Ficha.md), com o que divergiu na §17b.
 
 ---
 
@@ -548,5 +551,8 @@ src/
   components/         peças reutilizadas pelas telas
   screens/            Inventário, Ficha, Loja, Mestre
                       (a Biblioteca é tela filha do Mestre)
+    CharacterSheet/   a ficha: Resumo, Ataques, Feats, Ações,
+                      importação e as folhas de HP, condições e breakdown
+test/                 node --test nativo, sem dependência nova
   styles/             tokens e folhas de estilo
 ```
