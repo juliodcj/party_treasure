@@ -1136,3 +1136,122 @@
   gap: 8px;
   margin-top: 8px;
 }
+
+/* =========================================================== ficha (charsheet)
+
+   Prefixo próprio porque `components/Sheet.jsx` já é a folha deslizante e a
+   classe `.sheet__*` é dela. A ficha de personagem é `.charsheet__*`.
+
+   Nenhum valor literal aqui: cor, tamanho, espaço e raio saem de tokens.css. */
+
+.charsheet {
+  display: flex;
+  flex-direction: column;
+}
+
+/* `Rurik · Dwarf (Dromaar) · Barbarian · Sailor` — a linha de identidade, logo
+   abaixo do título da tela. */
+.charsheet__ident {
+  padding: 4px 0 10px;
+}
+
+.charsheet__ident-line {
+  font-size: var(--t-sm);
+  line-height: var(--lh-snug);
+  color: var(--text-2);
+}
+
+.charsheet__seg {
+  margin-bottom: 12px;
+}
+
+/* Texto de apoio dentro das folhas da ficha: o que a importação faz e não faz. */
+.charsheet__note {
+  margin: 0 0 10px;
+  font-size: var(--t-meta);
+  line-height: var(--lh-text);
+  color: var(--text-body);
+}
+
+/* Prévia da ficha antes de confirmar. Duas colunas: rótulo e valor. */
+.charsheet__preview {
+  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.charsheet__preview-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.charsheet__preview-value {
+  margin: 0;
+  margin-left: auto;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--text);
+  text-align: right;
+}
+
+/* Aviso do que não resolveu. Não é erro — a ficha entra assim mesmo —, por isso
+   usa a superfície afundada e não o vermelho. */
+.charsheet__warn {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--surface-sunken);
+}
+
+.charsheet__warn-text {
+  margin: 4px 0 0;
+  font-size: var(--t-meta);
+  line-height: var(--lh-text);
+  color: var(--text-body);
+}
+
+.charsheet__warn-list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: var(--t-meta);
+  line-height: var(--lh-text);
+  color: var(--text-body);
+}
+
+.charsheet__details {
+  margin-top: 10px;
+  font-size: var(--t-meta);
+  color: var(--text-2);
+}
+
+.charsheet__details summary {
+  cursor: pointer;
+  min-height: var(--tap-sm);
+  display: flex;
+  align-items: center;
+}
+
+/* Erro de leitura do JSON: aqui, sim, é vermelho — não dá para seguir. */
+.charsheet__error {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--danger-tint);
+  color: var(--danger-ink);
+  font-size: var(--t-sm);
+  line-height: var(--lh-text);
+}
+
+/* Par "Atualizar / Remover" no painel do Mestre. Confirmar à esquerda: a ação
+   que a pessoa veio fazer vem primeiro, e a destrutiva fica depois. */
+.gm__sheet-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.gm__sheet-actions .btn {
+  flex: 1;
+}

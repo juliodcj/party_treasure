@@ -285,3 +285,16 @@ export function CrownIcon() {
     </svg>
   )
 }
+
+/* Aba Ficha: uma folha pautada. Como todo ícone daqui, desenha em currentColor
+   — quem decide a cor é o botão em volta, nunca o ícone. */
+export function SheetIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="4.5" y="3" width="15" height="18" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <line x1="8" y1="8" x2="16" y2="8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <line x1="8" y1="16" x2="13" y2="16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
+}
