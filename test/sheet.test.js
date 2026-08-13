@@ -339,3 +339,141 @@ test('sem ficha o motor devolve nulo, não explode', async () => {
     null,
   )
 })
+
+/* ------------------------------------------------ §11 condições, o detalhe */
+
+test('Frightened 2 derruba a CA junto com todo o resto', async () => {
+  const view = await ver({ items: [HIDE], gear: { wornArmorId: HIDE.id }, vitals: { conditions: { frightened: 2 } } })
+
+  assert.equal(view.ac.total, 16) // 18 − 2: penalidade de status vale para CD também
+  assert.equal(view.ac.altered, true)
+  assert.equal(view.saves.fortitude.total, 5)
+  assert.equal(view.saves.reflex.total, 3)
+  assert.equal(view.saves.will.total, 4)
+  assert.equal(view.classDc.total, 15)
+})
+
+test('Frightened 2 + Sickened 1 derruba 2, não 3', async () => {
+  const view = await ver({ vitals: { conditions: { frightened: 2, sickened: 1 } } })
+  assert.equal(view.perception.total, 4) // 6 − 2
+  // e o breakdown nomeia a pior das duas, não as duas
+  const parcelas = view.perception.parts.filter((p) => p.cond)
+  assert.equal(parcelas.length, 1)
+  assert.match(parcelas[0].label, /Frightened/)
+})
+
+test('Clumsy 1 derruba CA e Reflexos, e não encosta em Fortitude', async () => {
+  const view = await ver({ vitals: { conditions: { clumsy: 1 } } })
+
+  assert.equal(view.ac.total, 14) // 15 − 1
+  assert.equal(view.saves.reflex.total, 4) // 5 − 1
+  assert.equal(view.saves.fortitude.total, 7)
+  assert.equal(view.saves.will.total, 6)
+  assert.equal(view.saves.fortitude.altered, false)
+})
+
+test('Off-Guard derruba só a CA', async () => {
+  const view = await ver({ vitals: { conditions: { offGuard: true } } })
+
+  assert.equal(view.ac.total, 13) // 15 − 2 de circunstância
+  assert.equal(view.perception.total, 6)
+  assert.equal(view.saves.reflex.total, 5)
+})
+
+test('as 35 condições sem efeito automático não mexem em número nenhum', async () => {
+  const view = await ver({
+    vitals: { conditions: { blinded: true, fascinated: true, encumbered: true, stunned: 2 } },
+  })
+
+  assert.equal(view.ac.total, 15)
+  assert.equal(view.perception.total, 6)
+  assert.equal(view.ac.altered, false, 'marcação não é alteração de número')
+})
+
+test('Slowed fica exposto sem virar parcela: ele tira ação, não bônus', async () => {
+  const view = await ver({ vitals: { conditions: { slowed: 2 } } })
+  assert.equal(view.slowed, 2)
+  assert.equal(view.ac.total, 15)
+})
+
+/* --------------------------------------------------------- §10.7 descanso */
+
+test('o descanso noturno cura conMod × nível, com o mínimo de 1 por nível', async () => {
+  const { nightRest } = await import('../src/lib/sheet.js')
+
+  // Rurik: Con +2, nível 1 -> cura 2
+  const rurik = nightRest(SHEET, { hp: 10, tempHp: 5, conditions: {} })
+  assert.equal(rurik.hp, 12)
+  assert.equal(rurik.tempHp, 0, 'HP temporário não sobrevive à noite')
+
+  // Con negativo não pode curar zero nem tirar vida: o piso é 1 por nível
+  const fraco = { ...SHEET, level: 3, hpMax: 40, abilities: { ...SHEET.abilities, con: 6 } }
+  assert.equal(nightRest(fraco, { hp: 10 }).hp, 13)
+})
+
+test('o descanso reduz Doomed em 1 e nunca zera de uma vez', async () => {
+  const { nightRest } = await import('../src/lib/sheet.js')
+
+  assert.equal(nightRest(SHEET, { hp: 24, conditions: { doomed: 3 } }).conditions.doomed, 2)
+  assert.equal(nightRest(SHEET, { hp: 24, conditions: { doomed: 1 } }).conditions.doomed, undefined)
+})
+
+test('Wounded some quando o HP volta ao máximo, não pelo descanso em si', async () => {
+  const { nightRest } = await import('../src/lib/sheet.js')
+
+  // curou 2 de 24, longe do teto: Wounded fica
+  assert.equal(nightRest(SHEET, { hp: 5, conditions: { wounded: 1 } }).conditions.wounded, 1)
+  // chegou ao máximo: Wounded some
+  assert.equal(nightRest(SHEET, { hp: 23, conditions: { wounded: 1 } }).conditions.wounded, undefined)
+})
+
+test('Refocus devolve um ponto e para na reserva; sem reserva, não faz nada', async () => {
+  const { refocus } = await import('../src/lib/sheet.js')
+
+  assert.equal(refocus(SHEET, { focusPoints: 0 }), null, 'bárbaro não tem foco')
+
+  const conjurador = { ...SHEET, focusPoints: 2 }
+  assert.equal(refocus(conjurador, { focusPoints: 0 }).focusPoints, 1)
+  assert.equal(refocus(conjurador, { focusPoints: 2 }).focusPoints, 2)
+})
+
+/* --------------------------------------------------------- §9 a forma */
+
+test('toda estatística devolve parcelas rotuladas que somam o total', async () => {
+  const view = await ver({ items: [HIDE, GREATPICK], gear: { wornArmorId: HIDE.id } })
+
+  const todas = [
+    view.ac,
+    view.perception,
+    view.classDc,
+    ...Object.values(view.saves),
+    ...view.skills.map((s) => s.stat),
+    ...view.attacks.map((a) => a.attack),
+    ...view.attacks.map((a) => a.damage.bonus),
+  ]
+
+  for (const st of todas) {
+    assert.ok(Array.isArray(st.parts), `${st.title} sem parcelas`)
+    assert.equal(
+      st.parts.reduce((n, p) => n + p.value, 0),
+      st.total,
+      `as parcelas de "${st.title}" não somam o total`,
+    )
+    for (const p of st.parts) assert.ok(p.label, `parcela sem rótulo em "${st.title}"`)
+  }
+})
+
+test('a proficiência aparece com o grau escrito, não só com o número', async () => {
+  const view = await ver()
+  const arcana = acharPericia(view, 'Arcana')
+  const atletismo = acharPericia(view, 'Athletics')
+
+  assert.ok(arcana.stat.parts.some((p) => p.label.includes('untrained')))
+  assert.ok(atletismo.stat.parts.some((p) => p.label.includes('trained')))
+})
+
+test('o motor não importa React nem toca em disco', async () => {
+  const fonte = readFileSync(path.join(ROOT, 'src/lib/sheet.js'), 'utf8')
+  assert.equal(/from ['"]react/.test(fonte), false)
+  assert.equal(/node:fs|require\(/.test(fonte), false)
+})
