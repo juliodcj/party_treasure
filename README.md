@@ -191,6 +191,16 @@ git sparse-checkout set packs/pf2e static/lang
 Os packs mudaram de lugar: hoje são `packs/pf2e/equipment/…`, não `packs/…`.
 Existe também `packs/sf2e/` (Starfinder), que este app ignora.
 
+Com o clone em `vendor/pf2e`, a ingestão é:
+
+```bash
+npm run build:catalog   # gera src/data/catalog.equipment.json
+npm run build:traits    # gera src/data/traits.equipment.json
+```
+
+Sem o clone, os scripts param com a instrução de como cloná-lo, em vez de gravar
+um catálogo vazio por cima do bom.
+
 `vendor/` vai no `.gitignore`. Versionado é o **script de ingestão** (e
 opcionalmente o `.sqlite` gerado, se couber).
 
@@ -497,6 +507,8 @@ scripts/
   dev.mjs             sobe Vite e servidor juntos
   smoke-sync.mjs      dois clientes de mentira provando a sincronização
   build-catalog.mjs   gera o catálogo a partir dos packs do Foundry
+  build-traits.mjs    nomes e descrições de traço, do en.json oficial
+  vendor-pf2e.mjs     onde estão os packs, e o recado quando não estão
   lint-visual.mjs     guarda da identidade visual, roda dentro do build
 src/
   main.jsx            entrada

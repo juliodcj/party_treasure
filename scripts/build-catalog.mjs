@@ -2,9 +2,16 @@
 // repositorio foundryvtt/pf2e (dados reais, licenciados em ORC/OGL pela Paizo).
 //
 // Uso:
-//   git clone --depth 1 --filter=blob:none --sparse https://github.com/foundryvtt/pf2e.git <dir>
-//   cd <dir> && git sparse-checkout set packs/pf2e/equipment
-//   node scripts/build-catalog.mjs <dir>/packs/pf2e/equipment
+//   git clone --depth 1 --filter=blob:none --sparse https://github.com/foundryvtt/pf2e.git vendor/pf2e
+//   cd vendor/pf2e && git sparse-checkout set packs/pf2e static/lang
+//   node scripts/build-catalog.mjs
+//
+// Sem argumento, procura em vendor/pf2e. Pode receber a raiz do clone, a pasta
+// packs/pf2e ou a pasta equipment direto — resolve os tres.
+//
+// O repositorio do Foundry mudou de layout: os packs sairam de `packs/…` para
+// `packs/pf2e/…`, e ganharam um vizinho `packs/sf2e/…` que e Starfinder e nao
+// entra aqui.
 //
 // Reaproveita as mesmas funcoes de leitura de src/lib/foundryImport.js (o
 // importador manual do GM), so com id estavel (derivado do nome do arquivo)
@@ -28,14 +35,12 @@ import {
   sanitizeDescription,
   toPlainText,
 } from '../src/lib/foundryImport.js'
+import { DEFAULT_VENDOR, resolvePack } from './vendor-pf2e.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const srcDir = process.argv[2]
-if (!srcDir) {
-  console.error('Uso: node scripts/build-catalog.mjs <pasta com os .json de packs/pf2e/equipment>')
-  process.exit(1)
-}
+const srcDir = resolvePack('equipment', process.argv[2] ?? DEFAULT_VENDOR)
+console.log(`Lendo ${srcDir}`)
 
 function slugFromFile(file) {
   return file.replace(/\.json$/, '')
