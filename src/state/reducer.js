@@ -35,6 +35,95 @@ function withItemDelta(items, itemId, delta) {
   return next
 }
 
+/* --------------------------------------------------------- item que sai
+
+   O bug mais provável desta entrega inteira, e o que menos avisa: um slot
+   apontando para um item que já foi vendido continua somando o bônus de CA
+   dele. Ninguém descobre na hora — descobre três semanas depois, num combate,
+   quando a conta não fecha.
+
+   Por isso a limpeza é UMA função, chamada por toda ação que tira item do
+   inventário: vender, excluir, transferir, e o +/- que chega a zero. */
+
+/** O item saiu: sai do slot, do favorito e dos modificadores. */
+function withoutItem(player, itemId) {
+  const gear = player.gear ?? {}
+  const favorites = player.vitals?.favorites ?? {}
+  const itemMods = player.itemMods ?? {}
+
+  const equipped = gear.equippedWeaponIds ?? []
+  const temFavorito = Object.hasOwn(favorites, itemId)
+  const temMod = Object.hasOwn(itemMods, itemId)
+  const estavaEquipado =
+    gear.wornArmorId === itemId || gear.heldShieldId === itemId || equipped.includes(itemId)
+
+  /* Nada a limpar: devolver o mesmo objeto evita patch e gravação à toa. */
+  if (!estavaEquipado && !temFavorito && !temMod) return player
+
+  const novosFavoritos = { ...favorites }
+  delete novosFavoritos[itemId]
+  const novosMods = { ...itemMods }
+  delete novosMods[itemId]
+
+  return {
+    ...player,
+    gear: {
+      ...gear,
+      wornArmorId: gear.wornArmorId === itemId ? null : gear.wornArmorId,
+      heldShieldId: gear.heldShieldId === itemId ? null : gear.heldShieldId,
+      equippedWeaponIds: equipped.filter((id) => id !== itemId),
+    },
+    vitals: { ...player.vitals, favorites: novosFavoritos },
+    itemMods: novosMods,
+  }
+}
+
+/** A mesma coisa, mas o item mudou de id (renomear cria uma cópia avulsa). */
+function renameItemRefs(player, fromId, toId) {
+  const gear = player.gear ?? {}
+  const favorites = player.vitals?.favorites ?? {}
+  const itemMods = player.itemMods ?? {}
+  const troca = (id) => (id === fromId ? toId : id)
+
+  const novosFavoritos = { ...favorites }
+  if (Object.hasOwn(novosFavoritos, fromId)) {
+    delete novosFavoritos[fromId]
+    novosFavoritos[toId] = true
+  }
+  const novosMods = { ...itemMods }
+  if (Object.hasOwn(novosMods, fromId)) {
+    novosMods[toId] = novosMods[fromId]
+    delete novosMods[fromId]
+  }
+
+  return {
+    ...player,
+    gear: {
+      ...gear,
+      wornArmorId: troca(gear.wornArmorId),
+      heldShieldId: troca(gear.heldShieldId),
+      equippedWeaponIds: (gear.equippedWeaponIds ?? []).map(troca),
+    },
+    vitals: { ...player.vitals, favorites: novosFavoritos },
+    itemMods: novosMods,
+  }
+}
+
+/**
+ * O invariante que amarra tudo: **nenhum id em `gear` pode estar fora de
+ * `player.items`**. Exportado para o teste poder conferir depois de cada ação,
+ * em vez de o teste repetir a regra por conta própria.
+ */
+export function gearIsConsistent(player) {
+  const gear = player.gear ?? {}
+  const tem = (id) => id == null || Object.hasOwn(player.items ?? {}, id)
+  return (
+    tem(gear.wornArmorId) &&
+    tem(gear.heldShieldId) &&
+    (gear.equippedWeaponIds ?? []).every((id) => tem(id))
+  )
+}
+
 /** Tira a observação de um item — usado sempre que ele sai todo da mochila. */
 function withoutNote(itemNotes, itemId) {
   if (!itemNotes[itemId]) return itemNotes
@@ -218,10 +307,12 @@ export function reducer(state, action) {
       // na carteira. Comprar é na Loja; vender é o botão "Vender".
       return {
         ...state,
-        players: mapPlayer(state.players, action.playerId, (player) => ({
-          ...player,
-          items: withItemDelta(player.items, action.itemId, action.delta),
-        })),
+        players: mapPlayer(state.players, action.playerId, (player) => {
+          const items = withItemDelta(player.items, action.itemId, action.delta)
+          const base = { ...player, items }
+          // Chegou a zero: o item saiu da mochila e não pode continuar vestido.
+          return items[action.itemId] ? base : withoutItem(base, action.itemId)
+        }),
       }
 
     case 'SET_ITEM_NOTE': {
@@ -244,12 +335,15 @@ export function reducer(state, action) {
         players: mapPlayer(state.players, action.playerId, (player) => {
           const items = { ...player.items }
           delete items[action.itemId]
-          return {
-            ...player,
-            items,
-            customItems: player.customItems.filter((custom) => custom.id !== action.itemId),
-            itemNotes: withoutNote(player.itemNotes, action.itemId),
-          }
+          return withoutItem(
+            {
+              ...player,
+              items,
+              customItems: player.customItems.filter((custom) => custom.id !== action.itemId),
+              itemNotes: withoutNote(player.itemNotes, action.itemId),
+            },
+            action.itemId,
+          )
         }),
       }
 
@@ -263,7 +357,7 @@ export function reducer(state, action) {
           const sold = Math.min(owned, action.qty ?? 1)
           if (sold <= 0) return player
           const earnedCp = Math.floor(item.priceCp * SELL_RATE) * sold
-          return {
+          const vendido = {
             ...player,
             ...withWalletCopper(player, toCopper(player) + earnedCp),
             items: withItemDelta(player.items, action.itemId, -sold),
@@ -273,6 +367,8 @@ export function reducer(state, action) {
                 : player.customItems,
             itemNotes: sold >= owned ? withoutNote(player.itemNotes, action.itemId) : player.itemNotes,
           }
+          // Vendeu a armadura que estava vestindo: a CA precisa cair junto.
+          return sold >= owned ? withoutItem(vendido, action.itemId) : vendido
         }),
       }
     }
@@ -292,7 +388,7 @@ export function reducer(state, action) {
         ...state,
         players: state.players.map((player) => {
           if (player.id === action.fromId) {
-            return {
+            const origem = {
               ...player,
               items: withItemDelta(player.items, action.itemId, -moved),
               customItems:
@@ -302,8 +398,12 @@ export function reducer(state, action) {
               // A observação é anotação de quem escreveu, não viaja com o item.
               itemNotes: leftBehind <= 0 ? withoutNote(player.itemNotes, action.itemId) : player.itemNotes,
             }
+            // Enviou a última: desequipa na origem e o modificador manual morre
+            // aqui — ele é do dono, não do item, e não viaja junto.
+            return leftBehind <= 0 ? withoutItem(origem, action.itemId) : origem
           }
           if (player.id === action.toId) {
+            // Chega guardado, nunca equipado: quem recebe decide o que vestir.
             return {
               ...player,
               items: withItemDelta(player.items, action.itemId, moved),
@@ -363,7 +463,10 @@ export function reducer(state, action) {
           delete items[action.itemId]
           items[renamed.id] = owned
           const note = player.itemNotes?.[action.itemId]
-          return {
+          // Renomear cria uma cópia com id novo. É o MESMO objeto para quem
+          // está jogando, então o slot, o favorito e o modificador acompanham —
+          // senão a armadura se desveste sozinha ao ganhar um apelido.
+          return renameItemRefs({
             ...player,
             items,
             // Renomear de novo troca o avulso antigo, não empilha.
@@ -374,7 +477,7 @@ export function reducer(state, action) {
             itemNotes: note
               ? { ...withoutNote(player.itemNotes, action.itemId), [renamed.id]: note }
               : player.itemNotes,
-          }
+          }, action.itemId, renamed.id)
         }),
       }
     }
@@ -476,6 +579,10 @@ export function reducer(state, action) {
           ...shop,
           itemIds: shop.itemIds.filter((id) => id !== action.itemId),
         })),
+        /* E sai do corpo de quem estava usando. O item continua na mochila de
+           quem tem (a mesa não confisca nada), mas o slot não pode apontar para
+           uma armadura que a biblioteca não conhece mais. */
+        players: state.players.map((player) => withoutItem(player, action.itemId)),
       }
 
     // ---------------------------------------------------------------- a ficha
@@ -515,6 +622,111 @@ export function reducer(state, action) {
       return {
         ...state,
         players: mapPlayer(state.players, action.playerId, (player) => ({ ...player, sheet: null })),
+      }
+
+    // ------------------------------------------------------------- equipar
+
+    /*
+     * Slots nomeados, não uma marca `equipped` em cada item. Com slot, o estado
+     * inválido — duas armaduras vestidas ao mesmo tempo — não é representável:
+     * `wornArmorId` é um campo só, e vestir a segunda simplesmente sobrescreve.
+     *
+     * Armas são várias, e **não validamos número de mãos**. Validar exigiria
+     * rastrear qual mão está com o quê a cada turno, que é contabilidade de
+     * combate — fora do escopo, e o tipo de regra que atrapalha mais do que
+     * ajuda em pé, no meio da mesa.
+     */
+    case 'EQUIP_ITEM': {
+      const item = resolveItem(state, action.itemId, action.playerId)
+      if (!item) return state
+
+      return {
+        ...state,
+        players: mapPlayer(state.players, action.playerId, (player) => {
+          // Só equipa o que está na mochila — é o invariante que impede slot
+          // apontando para item que o jogador não tem.
+          if (!player.items?.[action.itemId]) return player
+          const gear = player.gear ?? {}
+
+          if (item.category === 'armor') {
+            return { ...player, gear: { ...gear, wornArmorId: action.itemId } }
+          }
+          if (item.category === 'shield') {
+            return {
+              ...player,
+              gear: { ...gear, heldShieldId: action.itemId },
+              // Escudo novo entra inteiro e baixado.
+              vitals: {
+                ...player.vitals,
+                shieldHp: Number(item.shield?.hpMax) || 0,
+                shieldRaised: false,
+              },
+            }
+          }
+          if (item.category === 'weapon') {
+            const atuais = gear.equippedWeaponIds ?? []
+            if (atuais.includes(action.itemId)) return player
+            return { ...player, gear: { ...gear, equippedWeaponIds: [...atuais, action.itemId] } }
+          }
+          // Corda e sabão não se vestem.
+          return player
+        }),
+      }
+    }
+
+    case 'UNEQUIP_ITEM':
+      return {
+        ...state,
+        players: mapPlayer(state.players, action.playerId, (player) => {
+          const gear = player.gear ?? {}
+          const eraEscudo = gear.heldShieldId === action.itemId
+          return {
+            ...player,
+            gear: {
+              ...gear,
+              wornArmorId: gear.wornArmorId === action.itemId ? null : gear.wornArmorId,
+              heldShieldId: eraEscudo ? null : gear.heldShieldId,
+              equippedWeaponIds: (gear.equippedWeaponIds ?? []).filter((id) => id !== action.itemId),
+            },
+            // Guardar o escudo baixa a guarda junto: escudo na mochila não
+            // pode continuar "erguido" dando bônus de CA.
+            vitals: eraEscudo ? { ...player.vitals, shieldRaised: false } : player.vitals,
+          }
+        }),
+      }
+
+    /*
+     * Modificadores manuais (D6). É a saída honesta para tudo que o motor não
+     * sabe calcular: Rage, Giant Instinct, weapon specialization, runa. O
+     * rótulo é livre e aparece no breakdown como parcela nomeada — o app não
+     * chuta, o jogador declara.
+     *
+     * Limitação aceita: `player.items` é `{ id: quantidade }`, não instâncias,
+     * então o modificador vale para a pilha inteira. Não dá para ter uma adaga
+     * com runa e outra sem. Mudar isso reescreveria compra, venda,
+     * transferência e a Loja.
+     */
+    case 'SET_ITEM_MODS':
+      return {
+        ...state,
+        players: mapPlayer(state.players, action.playerId, (player) => {
+          const mods = { ...(player.itemMods ?? {}) }
+          const lista = (action.mods ?? [])
+            .map((mod) => ({
+              label: String(mod.label ?? '').trim(),
+              atk: Math.round(Number(mod.atk) || 0),
+              dmg: Math.round(Number(mod.dmg) || 0),
+              extraDice: Math.round(Number(mod.extraDice) || 0),
+            }))
+            // Modificador sem rótulo não explica nada no breakdown, e é
+            // exatamente o que a espec proíbe: número que aparece sem dizer
+            // de onde veio.
+            .filter((mod) => mod.label)
+
+          if (lista.length) mods[action.itemId] = lista
+          else delete mods[action.itemId]
+          return { ...player, itemMods: mods }
+        }),
       }
 
     // ------------------------------------------------------- HP e condições

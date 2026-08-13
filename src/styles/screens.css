@@ -1255,3 +1255,16 @@
 .gm__sheet-actions .btn {
   flex: 1;
 }
+
+/* Linha do "Vestir / Empunhar / Equipar", dentro do item aberto no Inventário. */
+.item__equip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.item__equip-hint {
+  font-size: var(--t-meta);
+  color: var(--text-3);
+}

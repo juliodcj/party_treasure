@@ -50,6 +50,10 @@ const TABLE_ACTIONS = new Set([
   'ADD_CAMPAIGN_ITEMS',
   'UPDATE_CAMPAIGN_ITEM',
   'REMOVE_CAMPAIGN_ITEM',
+  // Equipar e modificador manual: da linha do item, no Inventário.
+  'EQUIP_ITEM',
+  'UNEQUIP_ITEM',
+  'SET_ITEM_MODS',
   // Ficha de personagem. Vincular/atualizar/remover só sai da tela do Mestre
   // (D14), mas quem barra isso é a tela: sem papéis e sem login, qualquer
   // aparelho pode despachar qualquer uma — o histórico registra quem foi.
