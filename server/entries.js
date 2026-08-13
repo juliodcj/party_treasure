@@ -1,13 +1,18 @@
 // O corpus de verbetes: feats, features de classe, heranças, ações, magias,
 // condições e os sentidos do glossário.
 //
-// São ~15 MB de texto, e o servidor pode ser um celular rodando Termux. Por
-// isso duas coisas ficam separadas:
+// São ~15 MB de texto, divididos em duas partes:
 //
-//   entries.idx.json   o índice, ~1,3 MB — esse fica em memória, é o que
-//                      permite responder "existe?" sem tocar no disco.
-//   entries.bin        o texto, ~15 MB — esse NUNCA é carregado inteiro. Cada
-//                      verbete é lido com um `fs.read` no offset dele.
+//   entries.idx.json   o índice, ~1,3 MB — fica em memória, é o que permite
+//                      responder "existe?" sem tocar no disco.
+//   entries.bin        o texto, ~15 MB — lido por offset, um verbete por vez,
+//                      e guardado em memória depois da primeira leitura.
+//
+// A leitura por offset nasceu de uma restrição que não existe mais (o servidor
+// podia ser um celular com Termux). Continua valendo por mérito próprio: o
+// servidor sobe instantâneo em vez de parsear dez mil objetos no boot, e paga
+// só pelo que a mesa realmente abrir. Rodando num PC, o cache abaixo faz a
+// segunda leitura de um verbete custar zero.
 //
 // Gerado por `npm run build:lore`. Sem ele, as rotas respondem 503 dizendo o
 // que rodar — o resto do app (inventário, loja, carteira) funciona igual.
@@ -48,6 +53,11 @@ export function createEntries() {
      syscall a mais por linha de lista de feats. */
   const fd = openSync(BIN, 'r')
 
+  /* O servidor é o PC do mestre, então memória é barata: verbete lido uma vez
+     não volta ao disco. Uma sessão inteira abre algumas centenas de verbetes,
+     não os dez mil. */
+  const cache = new Map()
+
   /**
    * Aceita a chave completa (`spell:fly`) ou o slug solto (`fly`). O slug solto
    * cai na prioridade de pack decidida na ingestão — é o mesmo desempate que
@@ -63,11 +73,14 @@ export function createEntries() {
   function get(ref) {
     const key = keyFor(ref)
     if (!key) return null
+    if (cache.has(key)) return cache.get(key)
     const [offset, length] = offsets[key]
     const buffer = Buffer.allocUnsafe(length)
     readSync(fd, buffer, 0, length, offset)
     try {
-      return JSON.parse(buffer.toString('utf8'))
+      const entry = JSON.parse(buffer.toString('utf8'))
+      cache.set(key, entry)
+      return entry
     } catch {
       // Índice e .bin fora de sincronia: reingerir resolve, mas não podemos
       // derrubar o servidor da mesa por causa de um verbete.
@@ -95,7 +108,10 @@ export function createEntries() {
     resolveName,
     size: Object.keys(offsets).length,
     geradoEm: index.geradoEm ?? null,
-    close: () => closeSync(fd),
+    close: () => {
+      cache.clear()
+      closeSync(fd)
+    },
   }
 }
 

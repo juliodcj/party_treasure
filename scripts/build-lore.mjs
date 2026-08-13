@@ -19,10 +19,11 @@
 //                                nomes usado para resolver o que o Pathbuilder
 //                                manda.
 //
-// O corpus somado passa de 30 MB. Mandar isso para um Android baratinho no
-// primeiro carregamento é o que a decisão D10 evita: o servidor lê por offset,
-// um verbete por vez, sem carregar o arquivo em memória — ele pode estar
-// rodando num Termux.
+// O corpus somado passa de 30 MB, e é isso que a decisão D10 mantém fora do
+// bundle. O motivo mudou e ficou mais forte: com os jogadores entrando por
+// Cloudflare, o bundle atravessa a internet a cada celular que abre o app, e
+// não mais a rede local. O servidor, esse roda no PC do mestre e pode ser
+// generoso — lê por offset e guarda em memória o que já leu.
 
 import {
   closeSync,

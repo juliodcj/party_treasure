@@ -16,7 +16,8 @@ sessão está em `docs/ficha/fase-NN.md`.
 Para decidir caso que a espec não previu. Nesta ordem.
 
 1. **A ficha é para a mesa.** Usada em pé, entre rodadas, no celular. Três toques
-   é erro. Depender de internet é erro.
+   é erro. Na mesa presencial, depender de internet é erro — o Wi-Fi local basta;
+   o túnel da Cloudflare é para quem joga de fora, não a base.
 2. **O Pathbuilder constrói, o party_treasure joga.** Subir de nível é reimportar.
 3. **Cada fonte é dona do que sabe.** Pathbuilder: quem o personagem é. Foundry:
    regras e texto. party_treasure: o que acontece na mesa (dinheiro, itens, HP).
@@ -46,7 +47,7 @@ Para decidir caso que a espec não previu. Nesta ordem.
 | D7 | Fato do personagem no **servidor**; só ponto de vista no aparelho | Régua já escrita em `src/state/session.js` |
 | D8 | **Bulk e carga adiados** | Puxa contêiner, bulk de moeda, efeito automático |
 | D9 | Feats/ações/magias com **descrição completa** do Foundry | Ficha sem descrição não substitui o livro |
-| D10 | Corpus **não vai no bundle**; resolvido no servidor | 32 MB num Android baratinho |
+| D10 | Corpus **não vai no bundle**; resolvido no servidor | 32 MB atravessando a internet a cada celular que abre o app |
 | D11 | **Zero conteúdo escrito à mão** | Protótipo é layout, não conteúdo |
 | D12 | Dado de pack **em inglês** | Regra do `CLAUDE.md` |
 | D13 | Item criado à mão **ganha ficha técnica** quando arma/armadura/escudo | Homebrew é o que o catálogo não cobre |
@@ -174,8 +175,12 @@ Gerar em `scripts/build-lore.mjs`:
   todo.
 - `server/data/entries.bin` + `entries.idx.json` — verbetes sanitizados
   concatenados, índice `slug → [offset, tamanho]`. Servidor lê por `fs.read` no
-  offset. **Não carregar em memória e não gerar 9.000 arquivos:** o servidor pode
-  estar num Termux em Android.
+  offset, guardando em memória o que já leu. **Não gerar 9.000 arquivos soltos.**
+
+  *(Revisto em 13/08: caiu o "não carregar em memória". O servidor roda só no PC
+  do mestre, onde memória é barata. O corpus continua fora do bundle por outra
+  razão, hoje mais forte — com o acesso por Cloudflare, o bundle atravessa a
+  internet a cada celular que abre o app, e não mais a rede local.)*
 
 Rotas Express, só leitura:
 ```
@@ -653,6 +658,6 @@ aba Mestre (a resposta 1 da §17 pediu por personagem).
    specialization e Rage. Preço de D2; a resposta é o modificador manual.
 3. **`player.sheet` nulo** em caminho não tratado.
 4. **Item equipado que sai do inventário** (§13.1).
-5. **Termux:** o servidor pode ser um celular.
+5. ~~**Termux:** o servidor pode ser um celular.~~ **Descartado em 13/08:** o servidor roda só no PC do mestre. Em troca entrou um risco novo — com o acesso por Cloudflare o app fica exposto à internet, e ele não tem login nem papéis (§6 do README): quem tiver o endereço mexe na mesa.
 6. **Licença:** packs sob ORC/OGL e Community Use Policy. Preservar `publication`
    em todo verbete resolvido.

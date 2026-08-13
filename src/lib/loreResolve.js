@@ -3,7 +3,8 @@
  * O Pathbuilder exporta só nomes: `feats` traz ["Sudden Charge", …] e
  * `specials` traz ["Rage", "Giant Instinct", "Darkvision", …]. Descrição,
  * traços e custo em ações vêm dos packs — e vêm do servidor, porque o corpus
- * tem 15 MB e não cabe no bundle de um Android baratinho (D10).
+ * tem 15 MB e não faz sentido atravessar a internet a cada celular que abre o
+ * app (D10).
  *
  * **Casamento por nome exato**, com caixa e pontuação normalizadas, e nada além
  * disso. Nada de aproximação: é exatamente o mesmo erro que fez o app não

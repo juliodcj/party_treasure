@@ -1,8 +1,8 @@
 # PF2e — Party Treasure
 
-App web para gerenciar **inventário, dinheiro e lojas** de uma mesa presencial
-de Pathfinder 2e. O mestre roda o servidor no PC; os jogadores acessam pelo
-navegador do celular Android na mesma rede Wi-Fi.
+App web para gerenciar **ficha, inventário, dinheiro e lojas** de uma mesa de
+Pathfinder 2e. O mestre roda o servidor no PC; os jogadores acessam pelo
+navegador do celular — no Wi-Fi de casa, ou de longe por um Cloudflare Tunnel.
 
 Repositório: `https://github.com/juliodcj/party_treasure`
 
@@ -130,26 +130,42 @@ implemente por conta própria.
 ## 3. Arquitetura
 
 ```
-┌─────────────────────────────────┐
-│  PC do Mestre (servidor)        │
-│  Node.js + Express + Socket.IO  │
-│  ├── serve o frontend           │
-│  ├── WebSocket: estado da mesa  │
-│  └── data/mesa.json: a mesa     │
-└──────────────┬──────────────────┘
-               │ Wi-Fi local — http://192.168.x.x:3000
-     ┌─────────┼─────────┬─────────┐
-     ▼         ▼         ▼         ▼
-  Android   Android   Android   Android
-  (jogador) (jogador) (jogador) (mestre)
+┌───────────────────────────────────────┐
+│  PC do Mestre — e SÓ o PC do Mestre   │
+│  Node.js + Express + Socket.IO        │
+│  ├── serve o frontend                 │
+│  ├── WebSocket: estado da mesa        │
+│  ├── data/mesa.json: a mesa           │
+│  └── server/data/: o corpus do Foundry│
+└───────────┬───────────────┬───────────┘
+            │               │
+   Wi-Fi local        Cloudflare Tunnel
+   192.168.x.x:3000   (mesa a distância)
+            │               │
+     ┌──────┴──────┐   ┌────┴────┐
+     ▼             ▼   ▼         ▼
+  Android      Android   Android (fora de casa)
+  (jogador)    (mestre)  (jogador)
 ```
+
+O servidor roda **no PC**, nunca num celular. Isso foi decidido em 13/08 e
+simplifica a vida: memória e disco ali são baratos, então o corpus inteiro do
+Foundry fica no servidor sem economia nenhuma.
+
+Os celulares são só tela. Na mesa presencial eles entram pelo Wi-Fi; quando
+alguém joga de fora, entram por um **Cloudflare Tunnel** apontando para o mesmo
+processo.
 
 ### Requisitos não-negociáveis
 
-- **100% offline** depois da ingestão inicial. Deve rodar em hotspot sem dados.
-- **Zero custo / zero nuvem.** Sem Firebase, Supabase, Auth0, nada.
-- **Jogador não instala nada.** Abre a URL no Chrome. PWA (manifest + service
-  worker) para "Adicionar à tela inicial".
+- **O celular não instala nada e não guarda a mesa.** Toda a verdade está no PC.
+- **Zero custo / zero nuvem para os dados.** Sem Firebase, Supabase, Auth0. O
+  Cloudflare Tunnel é só um cano até o seu PC — a mesa continua sendo um arquivo
+  no seu disco.
+- **Sem internet, a mesa presencial continua funcionando** pelo Wi-Fi local. O
+  túnel é o extra, não a base.
+- **Jogador não instala nada.** Abre a URL no Chrome — a do Wi-Fi ou a do
+  túnel. PWA (manifest + service worker) para "Adicionar à tela inicial".
 - **Mobile-first Android**, retrato. Mestre pode usar tela maior.
 
 ### Stack
@@ -212,7 +228,7 @@ O `build:lore` divide o que gera segundo quem precisa e quando:
 
 | Fica no servidor | Por quê |
 |---|---|
-| `server/data/entries.bin` (15 MB) | 10.205 verbetes com descrição completa. Mandar isso para um Android baratinho no primeiro carregamento é o que não pode acontecer |
+| `server/data/entries.bin` (15 MB) | 10.205 verbetes com descrição completa. Não vai no bundle porque atravessaria a internet a cada celular que abre o app — e no PC ele é barato: o servidor lê por offset e guarda em memória o que já leu |
 | `server/data/entries.idx.json` (1,3 MB) | `slug → [offset, tamanho]`; o servidor lê um verbete por vez com `fs.read`, sem carregar o arquivo |
 
 O servidor expõe `GET /api/entry/:ref` e `GET /api/entries?slugs=…` ou `?names=…`.
@@ -493,6 +509,31 @@ existe um `data/mesa.bak.json` com a versão anterior.
 Enquanto o servidor estiver no ar, o que um aparelho faz aparece nos outros na
 hora. Se o Wi-Fi cair, o celular avisa em vermelho e para de aceitar alterações
 até voltar — melhor não acontecer nada do que um item que some sozinho depois.
+
+### Quando alguém joga de fora (Cloudflare Tunnel)
+
+O mesmo `npm start`, mais um cano da Cloudflare até o seu PC. Nada muda no app,
+e a mesa continua sendo um arquivo no seu disco:
+
+```bash
+cloudflared tunnel --url http://localhost:3000
+```
+
+O comando imprime um endereço `https://…trycloudflare.com`. Quem abrir esse
+endereço vê a mesma mesa que quem está na sala.
+
+O WebSocket atravessa o túnel sem configuração extra — a Cloudflare faz o
+upgrade de protocolo sozinha.
+
+> **Leia antes de mandar o link.** O app **não tem login nem papéis**: foi feito
+> assim de propósito, para uma mesa de amigos numa rede fechada (§6). Com o
+> túnel no ar, **qualquer pessoa com o endereço mexe na mesa** — dá dinheiro,
+> apaga item, troca ficha. O histórico registra o que aconteceu, mas não impede.
+>
+> Na prática: ligue o túnel só durante a sessão e desligue depois. Se um dia a
+> mesa ficar exposta de forma permanente, o certo é pôr o Cloudflare Access na
+> frente (autenticação por e-mail, de graça no plano gratuito) — é uma
+> configuração do túnel, não do app.
 
 ### Para mexer no código
 
