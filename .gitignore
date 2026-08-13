@@ -17,3 +17,7 @@ dist/
 
 # Mesa de verdade, gravada pelo servidor. E dado seu, nao codigo.
 /data/
+
+# Corpus de verbetes do Foundry (15 MB), gerado por `npm run build:lore`.
+# Nao vai para o Git pela mesma razao que vendor/: e derivado, e grande.
+/server/data/

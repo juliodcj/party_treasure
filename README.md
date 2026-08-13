@@ -194,12 +194,30 @@ Existe também `packs/sf2e/` (Starfinder), que este app ignora.
 Com o clone em `vendor/pf2e`, a ingestão é:
 
 ```bash
-npm run build:catalog   # gera src/data/catalog.equipment.json
-npm run build:traits    # gera src/data/traits.equipment.json
+npm run build:catalog   # src/data/catalog.equipment.json (5.739 itens)
+npm run build:lore      # feats, magias, ações, condições e o Punho
+npm run build:traits    # src/data/traits.json — rode por último
 ```
 
 Sem o clone, os scripts param com a instrução de como cloná-lo, em vez de gravar
 um catálogo vazio por cima do bom.
+
+O `build:lore` divide o que gera segundo quem precisa e quando:
+
+| Vai no bundle | Por quê |
+|---|---|
+| `src/data/index.spells.json` (445 KB) | o compêndio navega 1.993 magias offline, e navegar precisa ser instantâneo — por isso vai **sem descrição** |
+| `src/data/conditions.json` (50 KB) | as 43 condições aparecem em toda rolagem; pedir ao servidor seria ida à rede no meio do combate |
+| `src/data/unarmed.json` | o Punho, que não é item |
+
+| Fica no servidor | Por quê |
+|---|---|
+| `server/data/entries.bin` (15 MB) | 10.205 verbetes com descrição completa. Mandar isso para um Android baratinho no primeiro carregamento é o que não pode acontecer |
+| `server/data/entries.idx.json` (1,3 MB) | `slug → [offset, tamanho]`; o servidor lê um verbete por vez com `fs.read`, sem carregar o arquivo |
+
+O servidor expõe `GET /api/entry/:ref` e `GET /api/entries?slugs=…` ou `?names=…`.
+Sem a ingestão, essas rotas respondem 503 dizendo o que rodar — **o resto do app
+funciona igual**, porque inventário, loja e carteira não dependem do corpus.
 
 `vendor/` vai no `.gitignore`. Versionado é o **script de ingestão** (e
 opcionalmente o `.sqlite` gerado, se couber).
@@ -513,9 +531,12 @@ scripts/
   dev.mjs             sobe Vite e servidor juntos
   smoke-sync.mjs      dois clientes de mentira provando a sincronização
   build-catalog.mjs   gera o catálogo a partir dos packs do Foundry
+  build-lore.mjs      feats, magias, ações, condições e o Punho
   build-traits.mjs    nomes e descrições de traço, do en.json oficial
   vendor-pf2e.mjs     onde estão os packs, e o recado quando não estão
   lint-visual.mjs     guarda da identidade visual, roda dentro do build
+server/
+  entries.js          lê um verbete por offset, sem carregar os 15 MB
 src/
   main.jsx            entrada
   App.jsx             abas e navegação

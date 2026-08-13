@@ -6,6 +6,7 @@ import express from 'express'
 import { Server } from 'socket.io'
 import { createStorage } from './storage.js'
 import { createTable } from './table.js'
+import { FALTA_INGESTAO, createEntries } from './entries.js'
 import { printStartupBanner } from './net.js'
 
 /**
@@ -32,6 +33,77 @@ const table = createTable(storage)
 const app = express()
 const http = createServer(app)
 const io = new Server(http)
+
+/*
+ * O corpus de verbetes (§5.3). Só leitura, e por isso fora do WebSocket: uma
+ * descrição de feat não muda durante a sessão, então não precisa de patch nem
+ * de número de sequência — é uma consulta como qualquer outra.
+ *
+ * Sem autenticação, porque o app não tem: é uma mesa de amigos numa rede local.
+ */
+const entries = createEntries()
+if (!entries.ok) console.warn(`[mesa] ${entries.motivo}`)
+
+const semCorpus = (response) => response.status(503).json({ error: FALTA_INGESTAO })
+
+app.get('/api/entry/:ref', (request, response) => {
+  if (!entries.ok) return semCorpus(response)
+  const entry = entries.get(request.params.ref)
+  if (!entry) return response.status(404).json({ error: 'Verbete não encontrado', ref: request.params.ref })
+  return response.json(entry)
+})
+
+/*
+ * Lote, usado na importação da ficha. Aceita as duas perguntas que a importação
+ * faz, e devolve as duas respostas separadas:
+ *
+ *   ?slugs=feat:sudden-charge,rage    "me dê estes verbetes"
+ *   ?names=Rage,Darkvision            "o Pathbuilder disse isto; o que é?"
+ *
+ * O que não resolveu sai em `unresolved` com o nome que veio, para a tela
+ * mostrar assim mesmo. Nome que some é o erro que a espec chama de inaceitável.
+ */
+app.get('/api/entries', (request, response) => {
+  if (!entries.ok) return semCorpus(response)
+
+  const lista = (valor) =>
+    String(valor ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+
+  const refs = lista(request.query.slugs)
+  const names = lista(request.query.names)
+  if (!refs.length && !names.length) {
+    return response.status(400).json({ error: 'Informe slugs= ou names=' })
+  }
+
+  const resolved = {}
+  const unresolved = []
+  const encontrados = []
+
+  for (const ref of refs) {
+    const entry = entries.get(ref)
+    if (entry) encontrados.push(entry)
+    else unresolved.push(ref)
+  }
+  for (const name of names) {
+    const key = entries.resolveName(name)
+    const entry = key ? entries.get(key) : null
+    if (entry) {
+      resolved[name] = entry.id
+      encontrados.push(entry)
+    } else {
+      unresolved.push(name)
+    }
+  }
+
+  return response.json({
+    entries: Object.fromEntries(encontrados.map((e) => [e.id, e])),
+    resolved,
+    unresolved,
+  })
+})
 
 // Em desenvolvimento quem serve o app é o Vite (com hot reload), e este
 // processo cuida só do WebSocket. Na mesa é este processo que serve tudo.
@@ -86,6 +158,7 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
     if (closing) return
     closing = true
     storage.flush()
+    entries.close()
     io.close()
     http.close(() => process.exit(0))
     // Se algum celular segurar a conexão, não esperamos para sempre.

@@ -51,6 +51,11 @@ const HIDE = doCatalogo('Hide Armor')
 const GREATPICK = doCatalogo('Greatpick')
 const JAVELIN = doCatalogo('Javelin')
 
+/* O Punho não é item e não está em pack: `npm run build:lore` o extrai do
+   código do sistema Foundry. Por isso o nome vem de lá — "Unarmed Attack", que
+   é como o Foundry o publica — e não da nossa memória. */
+const UNARMED = JSON.parse(readFileSync(path.join(ROOT, 'src/data/unarmed.json'), 'utf8'))
+
 const VITALS_VAZIO = { hp: 24, tempHp: 0, conditions: {}, shieldHp: 0, shieldRaised: false }
 
 /** Monta a visão do motor com o Rurik e o equipamento que o caso pedir. */
@@ -196,9 +201,9 @@ test('Javelin: Dex no ataque, Força no dano — +5 e 1d6+4', async () => {
   assert.equal(atk.damage.formula, '1d6+4') // arremesso soma Str no dano
 })
 
-test('Unarmed Strike existe sempre, sem estar no inventário', async () => {
+test('o Punho existe sempre, sem estar no inventário', async () => {
   const view = await ver()
-  const punho = acharAtaque(view, 'Unarmed Strike')
+  const punho = acharAtaque(view, UNARMED.name)
 
   assert.equal(punho.attack.total, 7) // Str 4 + (1 + unarmed trained 2)
   assert.equal(punho.damage.formula, '1d4+4')
@@ -212,7 +217,7 @@ test('MAP é −5/−10, e −4/−8 com arma ágil', async () => {
   assert.equal(pick.map.second, pick.attack.total - 5)
   assert.equal(pick.map.third, pick.attack.total - 10)
 
-  const punho = acharAtaque(view, 'Unarmed Strike') // `agile`
+  const punho = acharAtaque(view, UNARMED.name) // `agile`
   assert.equal(punho.map.second, punho.attack.total - 4)
   assert.equal(punho.map.third, punho.attack.total - 8)
 })
@@ -230,7 +235,7 @@ test('só arma vira ataque; corda e sabão não', async () => {
   const view = await ver({ items: [GREATPICK, doCatalogo('Rope'), doCatalogo('Soap')] })
   assert.deepEqual(
     view.attacks.map((a) => a.name).sort(),
-    ['Greatpick', 'Unarmed Strike'],
+    ['Greatpick', UNARMED.name].sort(),
   )
 })
 

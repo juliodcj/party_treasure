@@ -1,0 +1,28 @@
+{
+  "id": "unarmed-strike",
+  "name": "Unarmed Attack",
+  "category": "weapon",
+  "level": 0,
+  "priceCp": 0,
+  "bulk": 0,
+  "traits": [
+    "agile",
+    "finesse",
+    "nonlethal",
+    "unarmed"
+  ],
+  "weapon": {
+    "category": "unarmed",
+    "group": "brawling",
+    "hands": 0,
+    "ranged": false,
+    "range": null,
+    "reload": null,
+    "damage": {
+      "dice": 1,
+      "die": "d4",
+      "damageType": "bludgeoning"
+    }
+  },
+  "origem": "foundryvtt/pf2e src/module/actor/character/document.ts"
+}

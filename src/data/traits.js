@@ -3,7 +3,7 @@
 // Fica em ingles de proposito: e a mesma lingua dos nomes de item, e evita
 // tradução amadora de texto de regra.
 
-import TRAIT_DICT from './traits.equipment.json' with { type: 'json' }
+import TRAIT_DICT from './traits.json' with { type: 'json' }
 
 export const TRAITS = TRAIT_DICT
 
