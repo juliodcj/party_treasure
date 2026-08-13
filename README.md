@@ -89,18 +89,38 @@ nome, nível, preço, bulk, traits, descrição); editar/excluir.
 **Mestre** — lista de jogadores com carteira; dar moedas a um jogador ou ao
 grupo; dar item; adicionar/renomear jogadores; cadastrar/remover itens nas lojas.
 
+### Navegação hoje
+
+A barra de abas tem **quatro**: **Inventário · Ficha · Loja · Mestre**. A
+Biblioteca não é aba: é tela filha do Mestre, aberta de lá. (Antes da ficha eram
+três — este parágrafo é a descrição correta, não o histórico.)
+
 ---
 
 ## 2. Escopo
 
+Este programa **não é um character builder**. É uma ficha melhorada do
+Pathbuilder, com gestão de inventário, loja e ações do mestre. Quem constrói
+o personagem é o Pathbuilder; subir de nível é reimportar.
+
 ### Dentro do escopo
 
-Inventário, dinheiro, lojas, biblioteca de itens, papéis mestre/jogador.
+Inventário, dinheiro, lojas, biblioteca de itens, papéis mestre/jogador, e a
+**ficha de personagem** importada do Pathbuilder: HP e condições, defesas,
+perícias, ataques montados a partir do inventário, feats, ações e magias — tudo
+com o texto vindo dos packs do Foundry.
+
+A ficha entra colando o JSON do Pathbuilder (*Export to Foundry VTT*) na tela do
+Mestre. Personagem sem ficha continua funcionando como sempre: carteira e
+inventário, sem cálculo.
+
+Espec da ficha: [docs/ESPEC_Ficha.md](docs/ESPEC_Ficha.md).
+Fases de implementação: [docs/ficha/README.md](docs/ficha/README.md).
 
 ### Fora do escopo — não implementar
 
-**HP, iniciativa, condições, combate, fichas de personagem, magias, feats,
-classes, ancestralidades, bestiário.** Este app é sobre **tesouro e economia**.
+**Level-up, escolha de feat, distribuição de atributo, rolagem de dado,
+iniciativa, controle de combate e bestiário.**
 
 Se surgir uma ideia fora disso, anote como sugestão e siga em frente — não
 implemente por conta própria.
@@ -168,17 +188,59 @@ cd vendor/pf2e
 git sparse-checkout set packs/pf2e static/lang
 ```
 
+Os packs mudaram de lugar: hoje são `packs/pf2e/equipment/…`, não `packs/…`.
+Existe também `packs/sf2e/` (Starfinder), que este app ignora.
+
+Com o clone em `vendor/pf2e`, a ingestão é:
+
+```bash
+npm run build:catalog   # src/data/catalog.equipment.json (5.739 itens)
+npm run build:lore      # feats, magias, ações, condições e o Punho
+npm run build:traits    # src/data/traits.json — rode por último
+```
+
+Sem o clone, os scripts param com a instrução de como cloná-lo, em vez de gravar
+um catálogo vazio por cima do bom.
+
+O `build:lore` divide o que gera segundo quem precisa e quando:
+
+| Vai no bundle | Por quê |
+|---|---|
+| `src/data/index.spells.json` (445 KB) | o compêndio navega 1.993 magias offline, e navegar precisa ser instantâneo — por isso vai **sem descrição** |
+| `src/data/conditions.json` (50 KB) | as 43 condições aparecem em toda rolagem; pedir ao servidor seria ida à rede no meio do combate |
+| `src/data/unarmed.json` | o Punho, que não é item |
+
+| Fica no servidor | Por quê |
+|---|---|
+| `server/data/entries.bin` (15 MB) | 10.205 verbetes com descrição completa. Mandar isso para um Android baratinho no primeiro carregamento é o que não pode acontecer |
+| `server/data/entries.idx.json` (1,3 MB) | `slug → [offset, tamanho]`; o servidor lê um verbete por vez com `fs.read`, sem carregar o arquivo |
+
+O servidor expõe `GET /api/entry/:ref` e `GET /api/entries?slugs=…` ou `?names=…`.
+Sem a ingestão, essas rotas respondem 503 dizendo o que rodar — **o resto do app
+funciona igual**, porque inventário, loja e carteira não dependem do corpus.
+
 `vendor/` vai no `.gitignore`. Versionado é o **script de ingestão** (e
 opcionalmente o `.sqlite` gerado, se couber).
 
 ### Packs relevantes para este app
 
-| Pasta | Conteúdo | Qtd |
+| Pasta (dentro de `packs/pf2e/`) | Conteúdo | Qtd |
 |---|---|---|
 | `equipment/` | itens, armas, armaduras, escudos, consumíveis | ~5.700 |
-| `conditions/` | condições (só para descrever traits/efeitos de item) | 43 |
+| `conditions/` | as condições da ficha e dos efeitos de item | 43 |
+| `feats/` | feats de classe, ancestralidade, perícia, geral | ~6.300 |
+| `class-features/` | features de classe (Rage, Giant Instinct…) | ~880 |
+| `heritages/` · `ancestry-features/` | heranças e traços de ancestralidade | ~385 |
+| `actions/` | ações básicas e de perícia | ~575 |
+| `spells/` | magias e truques | ~2.000 |
 
-**Ignorar** `feats/`, `spells/`, `classes/`, bestiários — fora do escopo.
+**Ignorar** bestiários, `classes/` e tudo que sirva a construir personagem — quem
+constrói é o Pathbuilder.
+
+O `equipment/` vira `src/data/catalog.equipment.json` e viaja no bundle. O resto
+somaria ~32 MB, então não vai no bundle: `scripts/build-lore.mjs` gera um índice
+de magias e as condições para o bundle, e um arquivo indexado que o **servidor**
+lê sob demanda (`/api/entry/:slug`).
 
 ---
 
@@ -361,6 +423,14 @@ tesouro entre o grupo.
 Ícones/imagens de item, filtro por livros que eu possuo (daí a importância do
 `publication`), exportação JSON/PDF, i18n.
 
+**Ficha de personagem — fases 0 a 10 ✔, fase 11 parada**
+Importação do JSON do Pathbuilder, motor de cálculo, e as abas Resumo, Ataques,
+Feats e Ações. A aba **Magias está parada** de propósito: implementá-la exige um
+export do Pathbuilder de um personagem conjurador, e escrever a tela contra dado
+inventado é o maior risco aberto do projeto. Roadmap em treze fases:
+[docs/ficha/README.md](docs/ficha/README.md); espec em
+[docs/ESPEC_Ficha.md](docs/ESPEC_Ficha.md), com o que divergiu na §17b.
+
 ---
 
 ## 8. Convenções
@@ -427,10 +497,23 @@ até voltar — melhor não acontecer nada do que um item que some sozinho depoi
 ### Para mexer no código
 
 ```bash
-npm run dev     # o mesmo endereço, com recarga automática ao salvar
-npm run smoke   # prova que a sincronização entre dois aparelhos funciona
-npm run build   # só compila
+npm run dev          # o mesmo endereço, com recarga automática ao salvar
+npm test             # testes (node --test nativo, sem dependência nova)
+npm run smoke        # prova que a sincronização entre dois aparelhos funciona
+npm run lint:visual  # guarda da identidade visual (roda dentro do build)
+npm run build        # confere a identidade visual e compila
 ```
+
+Enquanto a ficha está sendo construída, `test/sheet.test.js` **falha de
+propósito**: é o gabarito do motor de cálculo, escrito antes do motor, conferido
+à mão contra o export do Pathbuilder. Ele fica vermelho até a fase 5 e é assim
+que tem que ser. `test/pathbuilder.test.js` tem que estar sempre verde.
+
+O `lint:visual` reclama de cor crua, tamanho de fonte cravado e `style={{}}` de
+aparência em qualquer lugar fora de `src/styles/tokens.css`. As doze violações
+que já existiam quando ele nasceu estão congeladas em
+`scripts/visual-baseline.json` — essa lista só encolhe, e violação nova trava o
+build.
 
 ### Estrutura
 
@@ -438,6 +521,10 @@ npm run build   # só compila
 CLAUDE.md             regras obrigatórias de código e de estilo
 docs/
   design-system.md    cor, tipografia, componentes, ordem das ações
+  ESPEC_Ficha.md      a espec da ficha de personagem
+  ficha/              uma fase por arquivo, do 0 ao 12
+  design/             o protótipo do Claude Design, como veio
+  fixtures/           JSON do Pathbuilder usado nos testes
 server/
   index.js            Express + Socket.IO, serve o app e imprime o QR
   table.js            a mesa: estado autoritativo, ordem das ações, patches
@@ -447,6 +534,12 @@ scripts/
   dev.mjs             sobe Vite e servidor juntos
   smoke-sync.mjs      dois clientes de mentira provando a sincronização
   build-catalog.mjs   gera o catálogo a partir dos packs do Foundry
+  build-lore.mjs      feats, magias, ações, condições e o Punho
+  build-traits.mjs    nomes e descrições de traço, do en.json oficial
+  vendor-pf2e.mjs     onde estão os packs, e o recado quando não estão
+  lint-visual.mjs     guarda da identidade visual, roda dentro do build
+server/
+  entries.js          lê um verbete por offset, sem carregar os 15 MB
 src/
   main.jsx            entrada
   App.jsx             abas e navegação
@@ -456,6 +549,10 @@ src/
   state/              regras da mesa (rodam no servidor), sessão e a
                       ponte com o servidor (store.jsx)
   components/         peças reutilizadas pelas telas
-  screens/            Inventário, Loja, Biblioteca, Mestre
+  screens/            Inventário, Ficha, Loja, Mestre
+                      (a Biblioteca é tela filha do Mestre)
+    CharacterSheet/   a ficha: Resumo, Ataques, Feats, Ações,
+                      importação e as folhas de HP, condições e breakdown
+test/                 node --test nativo, sem dependência nova
   styles/             tokens e folhas de estilo
 ```

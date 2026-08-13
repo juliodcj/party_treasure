@@ -109,6 +109,8 @@ const wallet = (client, id) => {
 }
 const qty = (client, id, itemId) =>
   client.table.players.find((current) => current.id === id).items[itemId] ?? 0
+const vitals = (client, id) => client.table.players.find((current) => current.id === id).vitals ?? {}
+const sheetOf = (client, id) => client.table.players.find((current) => current.id === id).sheet
 
 const check = (label) => console.log(`  ok  ${label}`)
 
@@ -154,6 +156,29 @@ async function run() {
   await new Promise((r) => setTimeout(r, 200))
   assert.equal(wallet(celularB, valeros), carteiraCheia)
   check('compra sem saldo e recusada pelo servidor')
+
+  // 3b. A ficha é fato do personagem, e mora no servidor: vincular num celular
+  // e bater nele ali faz o outro ver o HP descer. Se HP fosse do aparelho, cada
+  // um teria a sua contagem e ninguém saberia qual é a verdadeira.
+  const ficha = { name: 'Rurik', level: 1, hpMax: 24, class: 'Barbarian' }
+  await send(celularA, { type: 'IMPORT_SHEET', playerId: valeros, sheet: ficha, by: valeros })
+  await until('a ficha chegar no outro celular', () => vitals(celularB, valeros).hp === 24)
+
+  await send(celularB, { type: 'APPLY_DAMAGE', playerId: valeros, amount: 9, by: valeros })
+  await until('o dano chegar no primeiro celular', () => vitals(celularA, valeros).hp === 15)
+  check('dano aplicado num celular aparece no outro')
+
+  await send(celularA, { type: 'SET_CONDITION', playerId: valeros, key: 'frightened', value: 2, by: valeros })
+  await until('a condicao chegar', () => vitals(celularB, valeros).conditions.frightened === 2)
+  check('condicao marcada num celular aparece no outro')
+
+  // Remover a ficha não pode levar a mochila junto.
+  const mochilaAntes = qty(celularB, valeros, itemId)
+  await send(celularA, { type: 'REMOVE_SHEET', playerId: valeros, by: valeros })
+  await until('a ficha sumir nos dois', () => sheetOf(celularB, valeros) === null)
+  assert.equal(qty(celularB, valeros, itemId), mochilaAntes, 'remover ficha nao pode mexer no inventario')
+  assert.equal(vitals(celularB, valeros).hp, 15, 'o HP e fato de mesa e sobrevive')
+  check('remover a ficha nao leva inventario nem HP junto')
 
   // 4. Ação inventada não passa.
   const recusa = await send(celularA, { type: 'DAR_TUDO_PRA_MIM' })

@@ -7,8 +7,9 @@ import EditWalletSheet from './components/EditWalletSheet.jsx'
 import { EMPTY_FILTERS, FiltersBar } from './components/ItemFilters.jsx'
 import SettingsSheet from './components/SettingsSheet.jsx'
 import ConnectionBanner from './components/ConnectionBanner.jsx'
-import { BagIcon, ChevronDown, CrownIcon, GearIcon, ShopIcon } from './components/Icons.jsx'
+import { BagIcon, ChevronDown, CrownIcon, GearIcon, SheetIcon, ShopIcon } from './components/Icons.jsx'
 import InventoryScreen from './screens/InventoryScreen.jsx'
+import CharacterSheetScreen from './screens/CharacterSheet/index.jsx'
 import ShopScreen from './screens/ShopScreen.jsx'
 import LibraryScreen from './screens/LibraryScreen.jsx'
 import GmScreen from './screens/GmScreen.jsx'
@@ -21,6 +22,7 @@ import { plural } from './lib/text.js'
    personagem, que não é aba nenhuma — abre a folha de troca. */
 const TABS = [
   { id: 'inventory', label: 'Inventário', Icon: BagIcon },
+  { id: 'sheet', label: 'Ficha', Icon: SheetIcon },
   { id: 'shop', label: 'Loja', Icon: ShopIcon },
   { id: 'gm', label: 'Mestre', Icon: CrownIcon },
 ]
@@ -29,6 +31,7 @@ const TABS = [
    das outras e um botão de voltar. Daí o título vir daqui e não das abas. */
 const TITLES = {
   inventory: 'Inventário',
+  sheet: 'Ficha',
   shop: 'Loja',
   gm: 'Mestre',
   library: 'Biblioteca',
@@ -51,6 +54,7 @@ export default function App() {
   const [editWalletOpen, setEditWalletOpen] = useState(false)
 
   const isInventory = tab === 'inventory'
+  const isSheet = tab === 'sheet'
   const isShop = tab === 'shop'
   const isLibrary = tab === 'library'
   const isGm = tab === 'gm'
@@ -59,7 +63,8 @@ export default function App() {
   const inGmSection = isGm || isLibrary
   // Só o Mestre não tem botão flutuante — as outras telas precisam do respiro
   // extra no fim da lista para o último item não ficar embaixo dele.
-  const hasFab = !isGm
+  // A Ficha também não tem botão flutuante.
+  const hasFab = !isGm && !isSheet
 
   const shop = state.shops.find((current) => current.id === state.activeShopId) ?? state.shops[0]
 
@@ -192,7 +197,7 @@ export default function App() {
 
         {subhead ? <HeaderCount>{subhead}</HeaderCount> : null}
 
-        {isGm ? null : (
+        {isGm || isSheet ? null : (
           <FiltersBar
             filters={filters}
             onChange={setFilters}
@@ -208,6 +213,7 @@ export default function App() {
         {isInventory ? (
           <InventoryScreen player={player} filters={filters} openId={openId} onToggle={toggleItem} />
         ) : null}
+        {isSheet ? <CharacterSheetScreen player={player} onGoToGm={() => goTo('gm')} /> : null}
         {isShop ? (
           <ShopScreen
             player={player}

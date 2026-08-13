@@ -775,3 +775,40 @@
   line-height: var(--lh-snug);
   text-align: center;
 }
+
+/* Bloco da ficha técnica no formulário de item: arma, armadura ou escudo. */
+.form__tech {
+  border: 1px solid var(--line-field);
+  border-radius: var(--r-md);
+  padding: 10px 12px 12px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form__tech legend {
+  padding: 0 6px;
+}
+
+.form__field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap-sm);
+  font-size: var(--t-sm);
+  color: var(--text-body);
+}
+
+.form__hint {
+  font-size: var(--t-meta);
+  color: var(--text-3);
+}

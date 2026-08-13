@@ -216,6 +216,10 @@ function InventoryItem({
         <ItemNote player={player} item={item} autoEdit={noteOpen && !savedNote} />
       ) : null}
 
+      {/* Só aparece com ficha: sem ela não há CA para uma armadura mexer, e o
+          botão prometeria um efeito que não existe. */}
+      {player.sheet ? <EquipButton player={player} item={item} qty={qty} /> : null}
+
       <div className="item__foot">
         <div className="item__tools">
           <button
@@ -498,5 +502,57 @@ function SendItemSheet({ player, entry, onClose }) {
         disabled={!targetId}
       />
     </Sheet>
+  )
+}
+
+/*
+ * Vestir a armadura, empunhar o escudo, equipar a arma.
+ *
+ * O rótulo muda com o tipo porque é assim que se fala na mesa: ninguém "equipa"
+ * um escudo, empunha. Azul, nunca vermelho — equipar se desfaz com um toque.
+ *
+ * O que está equipado importa: a armadura vestida entra na CA, o escudo
+ * empunhado habilita o Erguer, e a arma equipada aparece primeiro em Ataques.
+ */
+const ROTULO_EQUIPAR = {
+  armor: { on: 'Vestida', off: 'Vestir', nome: 'armadura' },
+  shield: { on: 'Empunhado', off: 'Empunhar', nome: 'escudo' },
+  weapon: { on: 'Equipada', off: 'Equipar', nome: 'arma' },
+}
+
+function EquipButton({ player, item, qty }) {
+  const { dispatch } = useStore()
+  const rotulo = ROTULO_EQUIPAR[item.category]
+  if (!rotulo || qty <= 0) return null
+
+  const gear = player.gear ?? {}
+  const equipado =
+    gear.wornArmorId === item.id ||
+    gear.heldShieldId === item.id ||
+    (gear.equippedWeaponIds ?? []).includes(item.id)
+
+  return (
+    <div className="item__equip">
+      <button
+        type="button"
+        className={`chip${equipado ? ' chip--on' : ''}`}
+        aria-pressed={equipado}
+        onClick={() =>
+          dispatch({
+            type: equipado ? 'UNEQUIP_ITEM' : 'EQUIP_ITEM',
+            playerId: player.id,
+            itemId: item.id,
+          })
+        }
+      >
+        {equipado ? rotulo.on : rotulo.off}
+      </button>
+      {equipado && item.category === 'armor' ? (
+        <span className="item__equip-hint">Entra na CA</span>
+      ) : null}
+      {equipado && item.category === 'shield' ? (
+        <span className="item__equip-hint">Dá para erguer na Ficha</span>
+      ) : null}
+    </div>
   )
 }

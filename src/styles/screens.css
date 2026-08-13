@@ -1136,3 +1136,921 @@
   gap: 8px;
   margin-top: 8px;
 }
+
+/* =========================================================== ficha (charsheet)
+
+   Prefixo próprio porque `components/Sheet.jsx` já é a folha deslizante e a
+   classe `.sheet__*` é dela. A ficha de personagem é `.charsheet__*`.
+
+   Nenhum valor literal aqui: cor, tamanho, espaço e raio saem de tokens.css. */
+
+.charsheet {
+  display: flex;
+  flex-direction: column;
+}
+
+/* `Rurik · Dwarf (Dromaar) · Barbarian · Sailor` — a linha de identidade, logo
+   abaixo do título da tela. */
+.charsheet__ident {
+  padding: 4px 0 10px;
+}
+
+.charsheet__ident-line {
+  font-size: var(--t-sm);
+  line-height: var(--lh-snug);
+  color: var(--text-2);
+}
+
+.charsheet__seg {
+  margin-bottom: 12px;
+}
+
+/* Texto de apoio dentro das folhas da ficha: o que a importação faz e não faz. */
+.charsheet__note {
+  margin: 0 0 10px;
+  font-size: var(--t-meta);
+  line-height: var(--lh-text);
+  color: var(--text-body);
+}
+
+/* Prévia da ficha antes de confirmar. Duas colunas: rótulo e valor. */
+.charsheet__preview {
+  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.charsheet__preview-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.charsheet__preview-value {
+  margin: 0;
+  margin-left: auto;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--text);
+  text-align: right;
+}
+
+/* Aviso do que não resolveu. Não é erro — a ficha entra assim mesmo —, por isso
+   usa a superfície afundada e não o vermelho. */
+.charsheet__warn {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--surface-sunken);
+}
+
+.charsheet__warn-text {
+  margin: 4px 0 0;
+  font-size: var(--t-meta);
+  line-height: var(--lh-text);
+  color: var(--text-body);
+}
+
+.charsheet__warn-list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: var(--t-meta);
+  line-height: var(--lh-text);
+  color: var(--text-body);
+}
+
+.charsheet__details {
+  margin-top: 10px;
+  font-size: var(--t-meta);
+  color: var(--text-2);
+}
+
+.charsheet__details summary {
+  cursor: pointer;
+  min-height: var(--tap-sm);
+  display: flex;
+  align-items: center;
+}
+
+/* Erro de leitura do JSON: aqui, sim, é vermelho — não dá para seguir. */
+.charsheet__error {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--danger-tint);
+  color: var(--danger-ink);
+  font-size: var(--t-sm);
+  line-height: var(--lh-text);
+}
+
+/* Par "Atualizar / Remover" no painel do Mestre. Confirmar à esquerda: a ação
+   que a pessoa veio fazer vem primeiro, e a destrutiva fica depois. */
+.gm__sheet-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.gm__sheet-actions .btn {
+  flex: 1;
+}
+
+/* Linha do "Vestir / Empunhar / Equipar", dentro do item aberto no Inventário. */
+.item__equip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.item__equip-hint {
+  font-size: var(--t-meta);
+  color: var(--text-3);
+}
+
+/* -------------------------------------------------------- ficha: aba Resumo */
+
+.charsheet__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Painel branco de seção, no lugar do `margin: 0 -16px` do protótipo. */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 10px 12px 12px;
+}
+
+.panel__title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 8px;
+}
+
+.panel__count {
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Grades de célula. Uma classe por número de colunas: o layout é do bloco, e
+   nenhum componente decide a própria largura. */
+.grid {
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+
+.grid--2 { grid-template-columns: repeat(2, 1fr); }
+.grid--3 { grid-template-columns: repeat(3, 1fr); }
+.grid--4 { grid-template-columns: repeat(4, 1fr); }
+.grid--6 { grid-template-columns: repeat(6, 1fr); }
+
+/* Uma célula de número. Tocável abre o breakdown; a de fato, não. */
+.statcell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 8px 4px 9px;
+  min-height: var(--tap-md);
+  background: var(--surface);
+  text-align: center;
+}
+
+.statcell__label {
+  font-size: var(--t-label);
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.statcell__value {
+  font-size: var(--t-lg);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* Vermelho quando uma condição mexeu no número — a mesma marca que o
+   breakdown explica, para o aviso e a explicação nunca discordarem. */
+.statcell__value--altered {
+  color: var(--danger);
+}
+
+.statcell__unit,
+.statcell__sub {
+  font-size: var(--t-label);
+  color: var(--text-3);
+}
+
+/* --------------------------------------------------------------- HP e barra */
+
+.vitals {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.vitals__hp {
+  flex: 0 0 46%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.vitals__hp-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vitals__hp-line {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.vitals__hp-now {
+  font-size: var(--t-title);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--track-title);
+  font-variant-numeric: tabular-nums;
+}
+
+.vitals__hp-max {
+  font-size: var(--t-body);
+  font-weight: 600;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.vitals__temp {
+  font-size: var(--t-meta);
+  font-weight: 700;
+  color: var(--accent-ink);
+  background: var(--accent-tint);
+  border-radius: var(--r-pill);
+  padding: 2px 6px;
+}
+
+.vitals__bar {
+  width: 100%;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--surface-raised);
+  overflow: hidden;
+}
+
+.vitals__bar-fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+}
+
+/* Um quarto de vida ou menos: a barra avisa antes de a pessoa ler o número. */
+.vitals__bar-fill--low {
+  background: var(--danger);
+}
+
+.vitals__cond {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding-left: 12px;
+  border-left: 1px solid var(--line);
+  text-align: left;
+}
+
+.vitals__manage {
+  font-size: var(--t-label);
+  font-weight: 700;
+  color: var(--accent-ink);
+}
+
+/* ----------------------------------------------------------------- condições */
+
+.cond__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.cond__chip {
+  font-size: var(--t-meta);
+  font-weight: 600;
+  color: var(--danger-ink);
+  background: var(--danger-tint);
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+}
+
+.charsheet__none {
+  font-size: var(--t-sm);
+  color: var(--text-3);
+}
+
+.cond__list {
+  max-height: 46vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.cond__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.cond__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cond__name {
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.cond__row--on .cond__name {
+  color: var(--text);
+}
+
+.cond__desc {
+  font-size: var(--t-meta);
+  line-height: var(--lh-text);
+  color: var(--text-3);
+}
+
+/* Caixa de marcar das condições sem valor. O alvo é a caixa inteira. */
+.cond__check {
+  flex-shrink: 0;
+  width: var(--tap-sm);
+  height: var(--tap-sm);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line-check);
+  background: var(--surface);
+}
+
+.cond__check--on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.cond__more {
+  margin-top: 10px;
+}
+
+/* --------------------------------------------------------------- breakdown */
+
+.bd__head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.bd__title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--t-lg);
+  font-weight: 700;
+  line-height: var(--lh-snug);
+}
+
+.bd__total {
+  font-size: var(--t-title);
+  font-weight: 700;
+  letter-spacing: var(--track-title);
+  font-variant-numeric: tabular-nums;
+}
+
+.bd__total--altered {
+  color: var(--danger);
+}
+
+.bd__parts {
+  display: flex;
+  flex-direction: column;
+}
+
+.bd__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+
+.bd__label {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--t-sm);
+  font-weight: 600;
+}
+
+.bd__value {
+  font-size: var(--t-body);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.bd__label--cond,
+.bd__value--cond {
+  color: var(--danger);
+}
+
+.bd__note {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  font-size: var(--t-meta);
+  line-height: var(--lh-text);
+  color: var(--danger-ink);
+}
+
+/* ---------------------------------------------------------------- folha de HP */
+
+.hp-sheet__now {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.hp-sheet__hp {
+  font-size: var(--t-title);
+  font-weight: 700;
+  letter-spacing: var(--track-title);
+  font-variant-numeric: tabular-nums;
+}
+
+.hp-sheet__max {
+  font-size: var(--t-body);
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+.hp-sheet__temp {
+  font-size: var(--t-meta);
+  font-weight: 700;
+  color: var(--accent-ink);
+  background: var(--accent-tint);
+  border-radius: var(--r-pill);
+  padding: 2px 8px;
+}
+
+/* Curar e Dano agem as duas, então a positiva fica à esquerda — mesma razão do
+   "± Ajustar moedas". */
+.hp-sheet__pair {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.hp-sheet__temp-box {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: var(--r-md);
+  background: var(--surface-sunken);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hp-sheet__temp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hp-sheet__temp-now {
+  font-size: var(--t-sm);
+  font-weight: 700;
+  color: var(--accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.hp-sheet__temp-row {
+  display: flex;
+  gap: 8px;
+}
+
+.hp-sheet__temp-row .input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------------ escudo */
+
+.shield {
+  margin-top: 10px;
+  border: 1px solid var(--line-field);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+
+.shield__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--surface-sunken);
+  border-bottom: 1px solid var(--line-field);
+}
+
+.shield__name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--t-meta);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shield--broken .shield__name {
+  color: var(--text-3);
+}
+
+.shield__warn {
+  padding: 8px;
+  font-size: var(--t-meta);
+  line-height: var(--lh-text);
+  color: var(--danger-ink);
+  background: var(--danger-tint);
+}
+
+/* ---------------------------------------------------------------- perícias */
+
+.skills {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--line);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+
+.skills__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  min-height: var(--tap-md);
+  background: var(--surface);
+  text-align: left;
+}
+
+.skills__name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skills__name--untrained {
+  color: var(--text-2);
+}
+
+.skills__rank {
+  font-size: var(--t-label);
+  font-weight: 700;
+  letter-spacing: var(--track-label);
+  color: var(--text-3);
+}
+
+.skills__rank--trained {
+  color: var(--accent-ink);
+}
+
+.skills__bonus {
+  font-size: var(--t-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 26px;
+  text-align: right;
+}
+
+.skills__bonus--altered {
+  color: var(--danger);
+}
+
+.skills__legend {
+  margin: 6px 0 0;
+  font-size: var(--t-label);
+  line-height: var(--lh-text);
+  color: var(--text-3);
+}
+
+/* ----------------------------------------------------------- proficiências */
+
+.profs {
+  background: var(--surface);
+  padding: 7px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.profs__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.profs__name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--t-meta);
+  font-weight: 600;
+}
+
+.profs__name--untrained {
+  color: var(--text-3);
+}
+
+.profs__rank {
+  font-size: var(--t-label);
+  font-weight: 700;
+  letter-spacing: var(--track-label);
+  color: var(--text-3);
+}
+
+.profs__rank--trained {
+  color: var(--accent-ink);
+}
+
+/* ------------------------------------------------------------ linhas soltas */
+
+.charsheet__line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  min-height: var(--tap-md);
+  border-bottom: 1px solid var(--line);
+}
+
+.charsheet__line:last-child {
+  border-bottom: 0;
+}
+
+.charsheet__line-label {
+  flex: 1;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.charsheet__line-value {
+  font-size: var(--t-sm);
+  font-weight: 600;
+  text-align: right;
+}
+
+.charsheet__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0 0;
+  font-size: var(--t-meta);
+  color: var(--text-3);
+}
+
+/* ------------------------------------------------------- ficha: aba Ataques */
+
+.atk {
+  display: flex;
+  flex-direction: column;
+}
+
+.atk__row + .atk__row {
+  border-top: 1px solid var(--line);
+}
+
+.atk__head {
+  display: flex;
+  align-items: center;
+  /* Vão maior que o resto do app de propósito: o stepper de arremesso fica na
+     ponta da coluna da esquerda e encostava nos números do MAP. */
+  gap: 12px;
+  min-height: var(--tap-md);
+  padding: 4px 0;
+}
+
+.atk__left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 3px 0;
+}
+
+.atk__name-btn {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-align: left;
+}
+
+/* Dano e quantidade embaixo do nome: numa linha só, o stepper de arremesso
+   espremia justamente o nome, que é como se acha a arma na lista. */
+.atk__under {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.atk__name {
+  display: block;
+  font-size: var(--t-body);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atk__dmg {
+  flex-shrink: 0;
+  font-size: var(--t-meta);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+/* Os três números do MAP juntos: é o que se lê no meio do turno. */
+.atk__mods {
+  flex-shrink: 0;
+  font-size: var(--t-body);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.atk__mods--altered {
+  color: var(--danger);
+}
+
+.atk__sep {
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+.atk__star {
+  flex-shrink: 0;
+  width: var(--tap-sm);
+  height: var(--tap-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--t-body);
+  color: var(--text-3);
+}
+
+.atk__star--on {
+  color: var(--gold);
+}
+
+.atk__body {
+  padding: 2px 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ------------------------------------------------ modificadores manuais */
+
+.mods__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.mods__row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: var(--r-md);
+  background: var(--surface-sunken);
+}
+
+.mods__numbers {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.mods__caveat {
+  margin-top: 10px;
+}
+
+/* ------------------------------------------- ficha: listas de verbete
+
+   Vale para Feats e Ações — as duas são a mesma lista, com nome, custo em
+   ações, uma linha de apoio e a descrição do Foundry ao abrir. */
+
+.entries {
+  display: flex;
+  flex-direction: column;
+}
+
+.entry + .entry {
+  border-top: 1px solid var(--line);
+}
+
+.entry__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap-md);
+}
+
+.entry__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 0;
+  text-align: left;
+}
+
+.entry__title {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+}
+
+.entry__name {
+  font-size: var(--t-body);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entry__sub {
+  font-size: var(--t-meta);
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Losangos de ação e a seta de reação. Cor do traço decorativo, não do texto. */
+.entry__cost {
+  flex-shrink: 0;
+  font-size: var(--t-meta);
+  letter-spacing: var(--track-label);
+  color: var(--ornament);
+  white-space: nowrap;
+}
+
+.entry__cost--text {
+  color: var(--text-3);
+  letter-spacing: normal;
+}
+
+.entry__body {
+  padding: 2px 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.acoes__filtro {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

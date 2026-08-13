@@ -7,6 +7,7 @@ import { EMPTY_FILTERS, FiltersBar } from '../components/ItemFilters.jsx'
 import { ChevronRight, EditIcon, TrashIcon } from '../components/Icons.jsx'
 import EditWalletSheet from '../components/EditWalletSheet.jsx'
 import ShopEditScreen from './ShopEditScreen.jsx'
+import ImportSheet from './CharacterSheet/ImportSheet.jsx'
 import { useStore } from '../state/store.jsx'
 import { CATALOG } from '../data/catalog.js'
 import {
@@ -18,6 +19,14 @@ import {
   resolveItem,
 } from '../lib/items.js'
 import { plural } from '../lib/text.js'
+
+/** Data curta da importação, para o rodapé "Importada em 10/08 · Nv 1". */
+const dataCurta = (iso) => {
+  const data = new Date(iso)
+  return Number.isNaN(data.getTime())
+    ? '—'
+    : data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+}
 
 /* Quais seções ficam abertas. Mora fora do componente porque a aba Mestre é
    desmontada ao trocar de aba: guardado só no estado do React, fechar o
@@ -403,7 +412,7 @@ function PlayerNameField({ player }) {
 
 function PlayerCard({ player, canDelete, onDelete }) {
   const { state, dispatch } = useStore()
-  const [panel, setPanel] = useState(null) // 'coins' | 'items'
+  const [panel, setPanel] = useState(null) // 'coins' | 'items' | 'sheet'
   const [gold, setGold] = useState('')
   const [silver, setSilver] = useState('')
   const [copper, setCopper] = useState('')
@@ -411,6 +420,8 @@ function PlayerCard({ player, canDelete, onDelete }) {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [drafts, setDrafts] = useState({})
   const [editingWallet, setEditingWallet] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [removing, setRemoving] = useState(false)
 
   const catalog = useMemo(() => libraryItems(state), [state])
   const rows = catalog.filter(
@@ -466,6 +477,17 @@ function PlayerCard({ player, canDelete, onDelete }) {
         >
           Item
         </button>
+        {/* Ficha entra e sai só por aqui (D14): um único lugar de substituição.
+            Vincular e Atualizar são azuis porque se desfazem — é só colar outro
+            JSON. Remover é o painel, e lá dentro o botão é vermelho. */}
+        <button
+          type="button"
+          className="btn btn--tint"
+          aria-expanded={panel === 'sheet'}
+          onClick={() => openPanel('sheet')}
+        >
+          Ficha
+        </button>
         <button
           type="button"
           className="icon-btn icon-btn--accent"
@@ -477,6 +499,65 @@ function PlayerCard({ player, canDelete, onDelete }) {
           <TrashIcon />
         </button>
       </div>
+
+      {panel === 'sheet' ? (
+        <div className="gm__panel">
+          {player.sheet ? (
+            <>
+              <div className="gm__hint">
+                {player.sheet.name} · Nv {player.sheet.level}
+                {player.sheet.class ? ` · ${player.sheet.class}` : ''}
+                {' · importada em '}
+                {dataCurta(player.sheet.importedAt)}
+              </div>
+              <div className="gm__sheet-actions">
+                <button type="button" className="btn btn--tint" onClick={() => setImporting(true)}>
+                  Atualizar ficha
+                </button>
+                <button type="button" className="btn btn--danger" onClick={() => setRemoving(true)}>
+                  Remover ficha
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="gm__hint">
+                Sem ficha. Cole o JSON do Pathbuilder para vincular uma — o
+                inventário e a carteira não mudam.
+              </div>
+              <button
+                type="button"
+                className="btn btn--solid btn--block"
+                onClick={() => setImporting(true)}
+              >
+                Vincular ficha
+              </button>
+            </>
+          )}
+        </div>
+      ) : null}
+
+      {importing ? <ImportSheet player={player} onClose={() => setImporting(false)} /> : null}
+
+      {removing ? (
+        <Sheet title={`Remover a ficha de ${player.name}?`} onClose={() => setRemoving(false)} center>
+          <div className="sheet__question">
+            Some o que o Pathbuilder trouxe: classe, perícias, feats e os cálculos.
+            {'\n\n'}
+            Ficam como estão o inventário, a carteira, as observações, os PV, as
+            condições e o que estiver equipado.
+          </div>
+          <SheetActions
+            onConfirm={() => {
+              dispatch({ type: 'REMOVE_SHEET', playerId: player.id })
+              setRemoving(false)
+            }}
+            onCancel={() => setRemoving(false)}
+            confirmLabel="Remover ficha"
+            confirmVariant="danger"
+          />
+        </Sheet>
+      ) : null}
 
       {panel === 'coins' ? (
         <div className="gm__panel">

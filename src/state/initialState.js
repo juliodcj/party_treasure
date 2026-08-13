@@ -1,4 +1,5 @@
 import { CATALOG } from '../data/catalog.js'
+import { emptySheetFields } from './migrations.js'
 
 /**
  * Mesa de exemplo, usada na primeira vez que o servidor sobe (quando ainda não
@@ -7,7 +8,7 @@ import { CATALOG } from '../data/catalog.js'
  */
 export function createInitialState() {
   return {
-    version: 5,
+    version: 6,
     // Config da mesa: livros que o mestre possui + remaster/legado, persistida
     // e compartilhada por todas as telas (não é um filtro por aba, como os outros).
     settings: { ownedCategories: [], remasterFilter: 'all' },
@@ -30,6 +31,7 @@ export function createInitialState() {
         },
         customItems: [],
         itemNotes: {},
+        ...emptySheetFields(),
       },
       {
         id: 'p-seelah',
@@ -45,6 +47,7 @@ export function createInitialState() {
         },
         customItems: [],
         itemNotes: {},
+        ...emptySheetFields(),
       },
       {
         id: 'p-ezren',
@@ -60,6 +63,7 @@ export function createInitialState() {
         },
         customItems: [],
         itemNotes: {},
+        ...emptySheetFields(),
       },
     ],
     campaignItems: [],

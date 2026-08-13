@@ -28,6 +28,15 @@ const SLICE_KEYS = {
   UPDATE_SHOP: ['shops'],
   REMOVE_SHOP: ['shops'],
   TOGGLE_SHOP_ITEM: ['shops'],
+  // Vincular, atualizar e remover ficha entram: substituem a ficha inteira e
+  // colar o JSON errado no personagem errado é um engano que precisa ter volta.
+  //
+  // HP, condições, foco, PV do escudo e favorito NÃO entram, de propósito:
+  // mudam dezenas de vezes por combate e afogariam o log, que existe para o
+  // mestre reverter o que dói — não para narrar a luta.
+  IMPORT_SHEET: ['players'],
+  UPDATE_SHEET: ['players'],
+  REMOVE_SHEET: ['players'],
   ADD_CAMPAIGN_ITEMS: ['campaignItems'],
   UPDATE_CAMPAIGN_ITEM: ['campaignItems'],
   REMOVE_CAMPAIGN_ITEM: ['campaignItems', 'shops'],
@@ -102,6 +111,12 @@ function describeAction(state, action) {
       return `Excluiu a loja ${shopName(state, action.shopId)}`
     case 'TOGGLE_SHOP_ITEM':
       return `Alterou o estoque de ${shopName(state, action.shopId)}`
+    case 'IMPORT_SHEET':
+      return `Vinculou a ficha de ${action.sheet?.name ?? 'personagem'} a ${playerName(state, action.playerId)}`
+    case 'UPDATE_SHEET':
+      return `Atualizou a ficha de ${playerName(state, action.playerId)}`
+    case 'REMOVE_SHEET':
+      return `Removeu a ficha de ${playerName(state, action.playerId)}`
     case 'ADD_CAMPAIGN_ITEMS':
       return `Adicionou ${action.items.length} item(ns) à biblioteca`
     case 'UPDATE_CAMPAIGN_ITEM':
