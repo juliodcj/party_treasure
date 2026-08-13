@@ -74,6 +74,17 @@ Nada escrito à mão. O que o protótipo inventa, e a fonte real:
 | MAP do Javelin `±0 / −5` | regra: −5/−10, ou −4/−8 com `agile` |
 | Perícias, atributos, HP 24, CA 18 | calculados (§10) |
 
+**O Punho não está em pack nenhum** (medido na fase 2). `Unarmed Strike` precisa
+ser injetado sempre (§10.3), mas não existe em `packs/pf2e/equipment` — no
+Foundry ele é montado em código, em
+`src/module/actor/character/document.ts`, como `slug: "basic-unarmed"`,
+`category: "unarmed"`, `group: "brawling"`, dano `1d4 bludgeoning`, traços
+`agile finesse nonlethal unarmed`, nome vindo de `PF2E.WeaponTypeUnarmed`.
+
+Não vale copiar esses valores para dentro do nosso código e esquecer: a fase 4
+extrai o bloco desse arquivo na ingestão e **falha alto se ele mudar de forma**,
+para o dia em que a Paizo mexer no Punho não passar calado.
+
 **`build-traits.mjs` precisa crescer:** hoje gera só traços de equipamento
 (`traits.equipment.json`, 83 KB). A ficha precisa dos de magia, feat, ação e
 condição — mesmo `en.json`, `PF2E.Trait*` e `PF2E.TraitDescription*`. Logar todo

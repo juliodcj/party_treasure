@@ -477,10 +477,16 @@ até voltar — melhor não acontecer nada do que um item que some sozinho depoi
 
 ```bash
 npm run dev          # o mesmo endereço, com recarga automática ao salvar
+npm test             # testes (node --test nativo, sem dependência nova)
 npm run smoke        # prova que a sincronização entre dois aparelhos funciona
 npm run lint:visual  # guarda da identidade visual (roda dentro do build)
 npm run build        # confere a identidade visual e compila
 ```
+
+Enquanto a ficha está sendo construída, `test/sheet.test.js` **falha de
+propósito**: é o gabarito do motor de cálculo, escrito antes do motor, conferido
+à mão contra o export do Pathbuilder. Ele fica vermelho até a fase 5 e é assim
+que tem que ser. `test/pathbuilder.test.js` tem que estar sempre verde.
 
 O `lint:visual` reclama de cor crua, tamanho de fonte cravado e `style={{}}` de
 aparência em qualquer lugar fora de `src/styles/tokens.css`. As doze violações

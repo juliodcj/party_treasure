@@ -12,6 +12,7 @@
     "lint:visual": "node scripts/lint-visual.mjs",
     "build:catalog": "node scripts/build-catalog.mjs",
     "build:traits": "node scripts/build-traits.mjs",
+    "test": "node --test \"test/**/*.test.js\"",
     "smoke": "node scripts/smoke-sync.mjs"
   },
   "dependencies": {
