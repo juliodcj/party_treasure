@@ -176,3 +176,38 @@ const LABEL_KIND = {
   action: 'Ação',
   glossary: 'Sentido',
 }
+
+/* ------------------------------------------------------------------ magias
+
+   Feats e ações resolvem pelo NOME, com o desempate de prioridade da
+   ingestão. Magia resolve diferente: o app já sabe que é magia (veio de
+   `spellCasters[].spells`, não de `feats`/`specials`), então pula o desempate
+   de prioridade e vai direto na chave `spell:<slug>` — mais robusto contra o
+   caso raro de um feat e uma magia terem o mesmo nome. */
+
+/** "Sure Strike" → "sure-strike". Aproximação do slug do Foundry, não o slug
+    em si — funciona porque o Foundry deriva o arquivo do nome do mesmo jeito
+    na maioria dos casos; quando não bate, a magia entra como não resolvida,
+    igual a qualquer nome que os packs não conhecem. */
+export const slugify = (name) =>
+  normalizeName(name)
+    .replace(/'/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+
+export const spellRef = (name) => `spell:${slugify(name)}`
+
+/**
+ * Busca o verbete de uma magia pelo nome, via slug adivinhado. Devolve `null`
+ * sem lançar quando não encontra — servidor fora do ar, ingestão não rodada,
+ * ou o slug adivinhado não bateu com o do Foundry.
+ */
+export async function fetchSpellByName(name, fetcher = fetch) {
+  try {
+    const response = await fetcher(`/api/entry/${encodeURIComponent(spellRef(name))}`)
+    if (!response.ok) return null
+    return await response.json()
+  } catch {
+    return null
+  }
+}

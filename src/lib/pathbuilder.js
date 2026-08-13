@@ -421,9 +421,32 @@ function readSpecials(raw) {
 }
 
 /**
- * Conjuração. O fixture do Rurik é bárbaro e traz `spellCasters: []`, então este
- * caminho **nunca foi exercitado contra dado real** (§18, risco 1). Lemos o que
- * o formato declara e registramos o que não reconhecemos, em vez de inventar.
+ * `[{ spellLevel, list: [nome, ...] }]` → `[{ rank, name }]`, achatado e sem os
+ * baldes por círculo. É a forma que a ficha e o motor de resolução consomem;
+ * a forma de balde é só como o Pathbuilder serializa.
+ */
+function flattenSpellList(raw, warn, campo) {
+  if (!Array.isArray(raw)) return []
+  const out = []
+  for (const balde of raw) {
+    if (!balde || typeof balde !== 'object' || !Array.isArray(balde.list)) {
+      warn(`${campo}: balde em formato inesperado, ignorado: ${JSON.stringify(balde)}.`)
+      continue
+    }
+    const rank = Math.round(toNumber(balde.spellLevel, 0))
+    for (const nome of balde.list) {
+      const name = toText(nome)
+      if (!name) continue
+      out.push({ rank, name })
+    }
+  }
+  return out
+}
+
+/**
+ * Conjuração. Testado contra um conjurador de verdade na fase 11 (mago
+ * humano nv 1, `docs/fixtures/wizard.json`) — até aqui só existia o fixture do
+ * Rurik, que é bárbaro e nunca exercitou este caminho (§18, risco 1, fechado).
  */
 function readSpellcasting(build, warn) {
   const casters = Array.isArray(build.spellCasters) ? build.spellCasters : []
@@ -439,18 +462,38 @@ function readSpellcasting(build, warn) {
     return null
   }
 
+  /* `build.focus` é aninhado por tradição e depois por atributo:
+     `{ arcane: { int: { focusCantrips: [], focusSpells: [...] } } }`. Chave
+     composta porque um multiclasse pode ter mais de um bloco. */
+  const tradicao = meaningful(caster.magicTradition)
+  const atributo = readKeyability(caster.ability, warn)
+  const focoDoBloco = build.focus?.[tradicao]?.[atributo]
+  const focusCantrips = Array.isArray(focoDoBloco?.focusCantrips)
+    ? focoDoBloco.focusCantrips.map(toText).filter(Boolean)
+    : []
+  const focusSpells = Array.isArray(focoDoBloco?.focusSpells)
+    ? focoDoBloco.focusSpells.map(toText).filter(Boolean)
+    : []
+
   return {
     name: meaningful(caster.name),
-    tradition: meaningful(caster.magicTradition),
+    tradition: tradicao,
     preparation: meaningful(caster.spellcastingType),
-    ability: readKeyability(caster.ability, warn),
+    ability: atributo,
     proficiency: Math.round(toNumber(caster.proficiency, 0)),
-    /* Guardado como veio. A aba Magias (fase 11) é quem sabe ler isto, e ela
-       espera um JSON de conjurador de verdade para ser escrita. */
+    /* Índice = círculo; índice 0 é a cota de truques. `[6,3,0,…]` do mago:
+       6 truques, 3 magias de círculo 1. */
     perDay: Array.isArray(caster.perDay) ? caster.perDay.map((n) => Math.round(toNumber(n, 0))) : [],
-    spells: Array.isArray(caster.spells) ? caster.spells : [],
-    prepared: Array.isArray(caster.prepared) ? caster.prepared : [],
-    focus: build.focus && typeof build.focus === 'object' ? build.focus : {},
+    /* O grimório: tudo que o conjurador sabe/pode preparar. Para espontâneo é
+       a lista de magias conhecidas — o Pathbuilder usa o mesmo campo `spells`
+       para os dois tipos. */
+    book: flattenSpellList(caster.spells, warn, 'spellCasters[].spells'),
+    /* Semente de `vitals.preparedSpells` no primeiro IMPORT_SHEET (D7: fato
+       de mesa, não se recalcula). Reimportar não mexe nisso — o jogador já
+       escolheu o que tem preparado hoje. */
+    initialPrepared: flattenSpellList(caster.prepared, warn, 'spellCasters[].prepared'),
+    focusCantrips,
+    focusSpells,
   }
 }
 

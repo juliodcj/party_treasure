@@ -140,12 +140,38 @@ const positive = (value) => {
   return Number.isFinite(n) && n > 0 ? n : 0
 }
 
+/** String limpa, ou `null` — nunca guarda um nome de magia em branco. */
+const toTrimmed = (value) => {
+  const s = String(value ?? '').trim()
+  return s || null
+}
+
 const hpMaxOf = (player) => Math.max(1, Math.round(Number(player.sheet?.hpMax) || 1))
 
 /** Sem HP gravado, o personagem está inteiro — nunca em zero. */
 const hpNow = (player) => {
   const hp = player.vitals?.hp
   return Number.isFinite(hp) ? hp : hpMaxOf(player)
+}
+
+/*
+ * O que fica preparado no primeiro import.
+ *
+ * `vitals.preparedSpells` é fato de mesa (D7): sobrevive à reimportação, e
+ * reimportar não pode apagar o que o jogador já escolheu preparar hoje. Só
+ * semeia quando ainda está vazio — no vínculo inicial, ou se a ficha ganhou
+ * conjuração que não tinha antes. Sem `spellcasting`, ou já com algo
+ * preparado, devolve o que já estava lá.
+ */
+function preparedSpellsFor(sheet, vitals) {
+  const atual = vitals.preparedSpells ?? []
+  if (atual.length > 0 || !sheet.spellcasting) return atual
+  return (sheet.spellcasting.initialPrepared ?? []).map(({ rank, name }) => ({
+    uid: makeId('spell'),
+    rank,
+    name,
+    used: false,
+  }))
 }
 
 /**
@@ -612,7 +638,11 @@ export function reducer(state, action) {
              reimportação. Se o novo máximo for menor (perdeu Con, por exemplo),
              o atual desce junto — mas nunca sobe sozinho para o teto novo. */
           const hp = Math.min(vitals.hp ?? hpMax, hpMax)
-          return { ...player, sheet, vitals: { ...vitals, hp } }
+          return {
+            ...player,
+            sheet,
+            vitals: { ...vitals, hp, preparedSpells: preparedSpellsFor(sheet, vitals) },
+          }
         }),
       }
     }
@@ -789,7 +819,15 @@ export function reducer(state, action) {
       return withVitals(state, action.playerId, (vitals, player) => {
         if (!player.sheet) return null
         const { curado, ...patch } = nightRest(player.sheet, vitals)
-        return patch
+        return {
+          ...patch,
+          /* "Repõe os slots preparados" (§10.7): a magia continua preparada,
+             só o gasto do dia zera. Truque (rank 0) nunca fica marcado usado —
+             não tem gasto para zerar — mas passar por aqui não faz mal. A
+             lista especial (item, ritual) não é tocada: o app não sabe a
+             regra de recarga dela, e chutar seria pior que deixar como está. */
+          preparedSpells: (vitals.preparedSpells ?? []).map((p) => ({ ...p, used: false })),
+        }
       })
 
     // ------------------------------------------------------- foco e escudo
@@ -828,6 +866,74 @@ export function reducer(state, action) {
         if (favorites[action.key]) delete favorites[action.key]
         else favorites[action.key] = true
         return { favorites }
+      })
+
+    // -------------------------------------------------------------- magias
+
+    /*
+     * Preparar gasta um slot do círculo; a lista especial (D6 do lado das
+     * magias: item, ritual, concessão do mestre) não gasta nada. As duas
+     * moram em `vitals` porque são fato de mesa — sobrevivem à reimportação —
+     * e nenhuma das duas entra no histórico: mudam demais por sessão.
+     */
+    case 'PREPARE_SPELL':
+      return withVitals(state, action.playerId, (vitals, player) => {
+        const spellcasting = player.sheet?.spellcasting
+        const name = toTrimmed(action.name)
+        if (!spellcasting || !name) return null
+
+        const rank = Math.max(0, Math.round(Number(action.rank) || 0))
+        const vagas = Math.max(0, Math.round(Number(spellcasting.perDay?.[rank]) || 0))
+        const preparadas = vitals.preparedSpells ?? []
+        const ocupadas = preparadas.filter((p) => p.rank === rank).length
+        if (ocupadas >= vagas) return null // sem slot livre neste círculo
+
+        return {
+          preparedSpells: [...preparadas, { uid: makeId('spell'), rank, name, used: false }],
+        }
+      })
+
+    /* Livre, sem limite de slot — a "Lista especial" (magia de item, ritual,
+       concessão do mestre). `rank` é só rótulo aqui: nada consome vaga. */
+    case 'ADD_SPELL':
+      return withVitals(state, action.playerId, (vitals, player) => {
+        const name = toTrimmed(action.name)
+        if (!player.sheet?.spellcasting || !name) return null
+        const rank = action.rank == null ? null : Math.max(0, Math.round(Number(action.rank) || 0))
+        return {
+          extraSpells: [...(vitals.extraSpells ?? []), { uid: makeId('spell'), rank, name, used: false }],
+        }
+      })
+
+    /* Uma instância só, identificada por uid — pode estar preparada ou na
+       lista especial, então procura nas duas em vez de pedir à tela para
+       dizer qual. */
+    case 'REMOVE_SPELL':
+      return withVitals(state, action.playerId, (vitals) => {
+        const preparedSpells = (vitals.preparedSpells ?? []).filter((p) => p.uid !== action.uid)
+        const extraSpells = (vitals.extraSpells ?? []).filter((p) => p.uid !== action.uid)
+        const mudouPreparada = preparedSpells.length !== (vitals.preparedSpells ?? []).length
+        const mudouExtra = extraSpells.length !== (vitals.extraSpells ?? []).length
+        if (!mudouPreparada && !mudouExtra) return null
+        return { preparedSpells, extraSpells }
+      })
+
+    /* Marca "já usei hoje" numa magia preparada ou da lista especial. Truque
+       não tem gasto — a tela não oferece a caixa para ele, e mesmo que
+       chegasse aqui, marcar e desmarcar não muda nada visível. */
+    case 'USE_SPELL_SLOT':
+      return withVitals(state, action.playerId, (vitals) => {
+        const alternar = (lista) =>
+          lista.map((p) => (p.uid === action.uid ? { ...p, used: !p.used } : p))
+        const preparadas = vitals.preparedSpells ?? []
+        const extras = vitals.extraSpells ?? []
+        if (preparadas.some((p) => p.uid === action.uid)) {
+          return { preparedSpells: alternar(preparadas) }
+        }
+        if (extras.some((p) => p.uid === action.uid)) {
+          return { extraSpells: alternar(extras) }
+        }
+        return null
       })
 
     case 'RESET':

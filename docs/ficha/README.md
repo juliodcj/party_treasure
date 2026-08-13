@@ -34,10 +34,10 @@ Fase 4 só é bloqueante para 10 e 11. Fases 2 e 3 podem correr antes da 1.
 
 ## Bloqueios conhecidos
 
-- **Fase 11 precisa de um JSON de conjurador** em `docs/fixtures/`. O Rurik é
-  bárbaro e não exercita nada de magia. Se não existir, pare e peça.
 - **Fase 8** depende da resposta sobre descanso noturno (§17 da espec).
-- **Fase 11** depende da resposta sobre filtro de conteúdo no compêndio.
+- ~~Fase 11 precisa de um JSON de conjurador em `docs/fixtures/`.~~ **Resolvido
+  em 13/08**: `docs/fixtures/wizard.json`, um mago humano nível 1 de verdade,
+  exportado do Pathbuilder.
 
 ## Regra geral
 

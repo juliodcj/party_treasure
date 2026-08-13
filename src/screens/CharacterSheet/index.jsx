@@ -7,6 +7,7 @@ import Resumo from './Resumo.jsx'
 import Ataques from './Ataques.jsx'
 import Feats from './Feats.jsx'
 import Acoes from './Acoes.jsx'
+import Magias from './Magias.jsx'
 
 /*
  * A aba Ficha.
@@ -66,16 +67,9 @@ export default function CharacterSheetScreen({ player, sub, onGoToGm }) {
 
       {sub === 'resumo' ? <Resumo player={player} view={view} onGoToGm={onGoToGm} /> : null}
       {sub === 'ataques' ? <Ataques player={player} view={view} /> : null}
+      {sub === 'magias' ? <Magias player={player} view={view} /> : null}
       {sub === 'feats' ? <Feats player={player} /> : null}
       {sub === 'acoes' ? <Acoes player={player} /> : null}
-
-      {sub === 'magias' ? (
-        <div className="empty">
-          Esta seção ainda está sendo construída.{'\n'}
-          Por enquanto a ficha guarda os dados, e o Inventário e a Loja funcionam
-          normalmente.
-        </div>
-      ) : null}
     </>
   )
 }

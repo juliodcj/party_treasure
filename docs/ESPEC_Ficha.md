@@ -640,20 +640,29 @@ divergir sem registro, não.
 | Modificador de Rage pré-preenchido | sugerido na fase 9 | **não feito.** O número da Fúria muda com instinto, nível e arma; preenchê-lo seria o app chutando, o oposto de D6. No lugar, uma nota no topo da aba contando que o campo existe. |
 | `REST` | fase 8 dispararia o descanso da tela | virou **ação do reducer**. Cura, foco, slots e Doomed mudam juntos ou não mudam; em quatro despachos, um Wi-Fi oscilando deixaria o personagem curado e ainda Doomed. |
 | `traits.equipment.json` | — | renomeado para `traits.json`: passou a cobrir magia, condição, feat e ação (242 → 385 traços). |
+| Resolução de magia (fase 11) | nome via `nameIndex`, como feat/ação | **slug adivinhado**: `spell:<slugify(nome)>`, buscado direto por `/api/entry/`. O nome já chega desambiguado pelo contexto (`spellCasters[].spells`), então não precisa do índice de prioridade — e evita colisão com magia homônima de feat/ação. Medido 10/10 no fixture do mago. |
+| Círculo de truque no compêndio (fase 11) | — (não previsto na espec) | o Foundry guarda truque como **rank 1** com o traço `cantrip`, não rank 0 como o Pathbuilder. Sem correção, o compêndio não mostrava o filtro "Truque" e o botão Preparar de um truque gastava uma vaga de círculo 1. `Compendio.jsx` traduz: `rankEfetivo = traço "cantrip" ? 0 : rank`. |
+| Conjuração espontânea/inata (fase 11) | implementar como preparada | **modo leitura**: lista de magias conhecidas agrupada por círculo, com aviso explícito de que a ficha não controla quantas já foram lançadas hoje. Só existe fixture de conjurador **preparado** (`wizard.json`); implementar o controle de espontâneo sem um export real para testar seria a ficha chutando, o oposto de D6. |
+| Lista especial (`vitals.extraSpells`, fase 11) | — (não prevista na espec) | magia de item/pergaminho/ritual/concessão do mestre, adicionada por nome livre, sem teto de círculo. `REST` não mexe nela — o app não sabe a regra de recarga de cada uma (D5). |
 
 ### O que ficou de fora, e continua de fora
 
 Runas · bulk e carga (D8) · contêineres · inventário por instância (o modificador
 manual vale para a pilha inteira, §8) · validação de número de mãos (§8) ·
-level-up, escolha de feat, rolagem de dado, iniciativa e controle de combate.
+level-up, escolha de feat, rolagem de dado, iniciativa e controle de combate ·
+contagem de magias já lançadas por conjurador espontâneo/inato (fase 11, sem
+fixture real para testar).
 
 **Anotado como sugestão futura, não implementado:** descanso do grupo inteiro na
 aba Mestre (a resposta 1 da §17 pediu por personagem).
 
 ## 18. Riscos
 
-1. **Aba Magias escrita contra dados inventados** até chegar um JSON de
-   conjurador. Maior risco aberto.
+1. ~~**Aba Magias escrita contra dados inventados** até chegar um JSON de
+   conjurador.~~ **Fechado em 13/08**: `docs/fixtures/wizard.json`, mago humano
+   nível 1, conjuração preparada. Cobre truque, círculo, foco e grimório; segue
+   sem fixture de conjurador **espontâneo/inato** — essa aba entra em modo
+   leitura nesse caso (§12.3, §17b).
 2. **Cálculo vai divergir do Pathbuilder** em Giant Instinct, weapon
    specialization e Rage. Preço de D2; a resposta é o modificador manual.
 3. **`player.sheet` nulo** em caminho não tratado.

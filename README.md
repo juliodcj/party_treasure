@@ -439,11 +439,13 @@ tesouro entre o grupo.
 Ícones/imagens de item, filtro por livros que eu possuo (daí a importância do
 `publication`), exportação JSON/PDF, i18n.
 
-**Ficha de personagem — fases 0 a 10 ✔, fase 11 parada**
-Importação do JSON do Pathbuilder, motor de cálculo, e as abas Resumo, Ataques,
-Feats e Ações. A aba **Magias está parada** de propósito: implementá-la exige um
-export do Pathbuilder de um personagem conjurador, e escrever a tela contra dado
-inventado é o maior risco aberto do projeto. Roadmap em treze fases:
+**Ficha de personagem — fases 0 a 12 ✔**
+Importação do JSON do Pathbuilder, motor de cálculo, e as cinco abas: Resumo,
+Ataques, Magias, Feats e Ações. A aba **Magias** cobre conjuração preparada
+(truques, círculos, grimório, foco, lista especial e compêndio filtrável por
+tradição/círculo/conteúdo); conjuração espontânea ou inata mostra a lista de
+magias conhecidas em modo leitura, porque nenhum export real desse tipo foi
+testado ainda. Roadmap em treze fases:
 [docs/ficha/README.md](docs/ficha/README.md); espec em
 [docs/ESPEC_Ficha.md](docs/ESPEC_Ficha.md), com o que divergiu na §17b.
 

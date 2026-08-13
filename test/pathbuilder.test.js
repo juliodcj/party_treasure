@@ -16,8 +16,11 @@ import { abilityMod, maxHp, parsePathbuilder, skillList } from '../src/lib/pathb
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const RURIK_TEXT = readFileSync(path.join(ROOT, 'docs/fixtures/rurik.json'), 'utf8')
 const RURIK = JSON.parse(RURIK_TEXT)
+const WIZARD_TEXT = readFileSync(path.join(ROOT, 'docs/fixtures/wizard.json'), 'utf8')
+const WIZARD = JSON.parse(WIZARD_TEXT)
 
 const rurik = () => parsePathbuilder(RURIK_TEXT)
+const wizard = () => parsePathbuilder(WIZARD_TEXT)
 
 test('lê o Rurik inteiro sem reclamar do que é normal', () => {
   const sheet = rurik()
@@ -194,6 +197,64 @@ test('lê um conjurador quando o export traz um', () => {
   assert.equal(spellcasting.ability, 'int')
   assert.equal(spellcasting.proficiency, 2)
   assert.deepEqual(spellcasting.perDay, [5, 2, 0])
+  assert.deepEqual(spellcasting.book, [{ rank: 1, name: 'Magic Missile' }])
+})
+
+/* ---------------------------------------------- o conjurador de verdade (fase 11)
+
+   Até aqui só existia o fixture do Rurik, que é bárbaro: `spellCasters` vazio
+   nunca exercitou este caminho contra dado real (§18, risco 1). O mago abaixo
+   fecha isso. */
+
+test('o mago tem conjuração arcana preparada, com DC e ataque calculáveis', () => {
+  const { spellcasting } = wizard()
+
+  assert.equal(spellcasting.tradition, 'arcane')
+  assert.equal(spellcasting.preparation, 'prepared')
+  assert.equal(spellcasting.ability, 'int')
+  assert.equal(spellcasting.proficiency, 2)
+  assert.deepEqual(spellcasting.perDay.slice(0, 2), [6, 3])
+})
+
+test('o grimório do mago vem achatado, sem os baldes por círculo', () => {
+  const { book } = wizard().spellcasting
+
+  assert.equal(book.length, 9)
+  assert.equal(book.filter((s) => s.rank === 0).length, 6, 'seis truques')
+  assert.equal(book.filter((s) => s.rank === 1).length, 3, 'três de círculo 1')
+  assert.ok(book.some((s) => s.name === 'Sure Strike' && s.rank === 1))
+})
+
+test('o preparado do dia do mago semeia a mesa, inclusive truque repetido', () => {
+  const { initialPrepared } = wizard().spellcasting
+
+  assert.equal(initialPrepared.length, 9)
+  // "Bullhorn" está preparado duas vezes entre os truques — é legítimo, e
+  // achatar não pode perder a repetição.
+  assert.equal(initialPrepared.filter((s) => s.name === 'Bullhorn').length, 2)
+})
+
+test('as magias de foco do mago vêm de build.focus, por tradição e atributo', () => {
+  const { focusSpells, focusCantrips } = wizard().spellcasting
+
+  assert.deepEqual(focusSpells, ['Charming Push'])
+  assert.deepEqual(focusCantrips, [])
+})
+
+test('o Rurik continua sem conjuração depois da mudança de forma', () => {
+  assert.equal(rurik().spellcasting, null)
+})
+
+test('balde de magia em formato torto vira aviso, não trava a importação', () => {
+  const { build } = JSON.parse(WIZARD_TEXT)
+  build.spellCasters[0].spells.push('não é um balde')
+  build.spellCasters[0].prepared = 'nem isso é uma lista'
+
+  const sheet = parsePathbuilder({ build })
+
+  assert.equal(sheet.spellcasting.book.length, 9, 'o balde torto foi descartado, o resto ficou')
+  assert.deepEqual(sheet.spellcasting.initialPrepared, [])
+  assert.ok(sheet.warnings.some((w) => w.includes('spells')))
 })
 
 test('D2, D3 e D5: item, dinheiro e número pronto não entram na ficha', () => {

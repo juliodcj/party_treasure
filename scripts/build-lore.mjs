@@ -223,6 +223,11 @@ for (const { pack, kind } of PACKS) {
         traits: entry.traits,
         rarity: entry.rarity,
         actionCost: entry.actionCost,
+        // Precisa vir junto para o compêndio aplicar o mesmo filtro de
+        // conteúdo do catálogo (resposta 1 da §17): ownedCategories olha
+        // source.title, remasterFilter olha source.remaster. Sem isso o
+        // compêndio não teria como saber o que filtrar.
+        source: entry.source,
       })
     }
     /* Só `basic` e `skill` vão no bundle: são 84 verbetes, valem para todo

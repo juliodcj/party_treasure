@@ -212,7 +212,10 @@ test('o índice de magias do bundle não carrega descrição', seComCorpus, () =
     assert.equal('descriptionText' in spell, false)
   }
   const tamanho = readFileSync(path.join(ROOT, 'src/data/index.spells.json')).length
-  assert.ok(tamanho < 600 * 1024, `índice de magias em ${(tamanho / 1024).toFixed(0)} KB, acima do teto`)
+  // Subiu de ~445 KB para ~605 KB na fase 11: o compêndio ganhou `source`
+  // (título e remaster do livro), sem o qual não dá para aplicar o mesmo
+  // filtro de conteúdo do catálogo (resposta 1 da §17).
+  assert.ok(tamanho < 700 * 1024, `índice de magias em ${(tamanho / 1024).toFixed(0)} KB, acima do teto`)
 })
 
 test('as 43 condições vêm inteiras, em inglês, e sabem quais têm valor', seComCorpus, () => {
