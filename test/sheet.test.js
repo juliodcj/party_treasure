@@ -477,3 +477,47 @@ test('o motor não importa React nem toca em disco', async () => {
   assert.equal(/from ['"]react/.test(fonte), false)
   assert.equal(/node:fs|require\(/.test(fonte), false)
 })
+
+/* ------------------------------------------------ REST como ação da mesa */
+
+test('REST é uma ação só: cura, foco, slots e Doomed mudam juntos', async () => {
+  const { reducer } = await import('../src/state/reducer.js')
+  const { emptySheetFields } = await import('../src/state/migrations.js')
+
+  const state = {
+    version: 6,
+    players: [
+      {
+        id: 'p-1',
+        name: 'Rurik',
+        items: {},
+        customItems: [],
+        itemNotes: {},
+        ...emptySheetFields(),
+        sheet: SHEET,
+        vitals: {
+          ...emptySheetFields().vitals,
+          hp: 10,
+          tempHp: 7,
+          conditions: { doomed: 2, frightened: 1 },
+          slotsUsed: { 1: 2 },
+        },
+      },
+    ],
+  }
+
+  const depois = reducer(state, { type: 'REST', playerId: 'p-1' }).players[0].vitals
+
+  assert.equal(depois.hp, 12, 'curou conMod × nível')
+  assert.equal(depois.tempHp, 0)
+  assert.equal(depois.conditions.doomed, 1, 'Doomed cai 1 e não zera')
+  assert.equal(depois.conditions.frightened, 1, 'o resto das condições fica')
+  assert.deepEqual(depois.slotsUsed, {})
+})
+
+test('REST em personagem sem ficha é ação vazia', async () => {
+  const { reducer } = await import('../src/state/reducer.js')
+  const { emptySheetFields } = await import('../src/state/migrations.js')
+  const state = { players: [{ id: 'p-1', name: 'X', items: {}, ...emptySheetFields() }] }
+  assert.equal(reducer(state, { type: 'REST', playerId: 'p-1' }), state)
+})

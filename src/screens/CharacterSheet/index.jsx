@@ -3,6 +3,7 @@ import { buildSheet } from '../../lib/sheet.js'
 import { playerInventory } from '../../lib/items.js'
 import { useStore } from '../../state/store.jsx'
 import { linhaAncestralidade } from './ImportSheet.jsx'
+import Resumo from './Resumo.jsx'
 
 /*
  * A aba Ficha.
@@ -24,7 +25,7 @@ const SUBABAS = [
   { id: 'acoes', label: 'Ações' },
 ]
 
-export default function CharacterSheetScreen({ player }) {
+export default function CharacterSheetScreen({ player, onGoToGm }) {
   const { state } = useStore()
   const [sub, setSub] = useState('resumo')
 
@@ -83,11 +84,15 @@ export default function CharacterSheetScreen({ player }) {
         </div>
       ) : null}
 
-      <div className="empty">
-        Esta seção ainda está sendo construída.{'\n'}
-        Por enquanto a ficha guarda os dados, e o Inventário e a Loja funcionam
-        normalmente.
-      </div>
+      {sub === 'resumo' ? <Resumo player={player} view={view} onGoToGm={onGoToGm} /> : null}
+
+      {sub !== 'resumo' ? (
+        <div className="empty">
+          Esta seção ainda está sendo construída.{'\n'}
+          Por enquanto a ficha guarda os dados, e o Inventário e a Loja funcionam
+          normalmente.
+        </div>
+      ) : null}
     </div>
   )
 }

@@ -213,7 +213,7 @@ export default function App() {
         {isInventory ? (
           <InventoryScreen player={player} filters={filters} openId={openId} onToggle={toggleItem} />
         ) : null}
-        {isSheet ? <CharacterSheetScreen player={player} /> : null}
+        {isSheet ? <CharacterSheetScreen player={player} onGoToGm={() => goTo('gm')} /> : null}
         {isShop ? (
           <ShopScreen
             player={player}

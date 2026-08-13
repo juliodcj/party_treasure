@@ -2,6 +2,7 @@ import { addCoins, simplifyWallet, spendCopper, toCopper, withWalletCopper } fro
 import { makeId, normalizeItem, resolveItem } from '../lib/items.js'
 import { SELL_RATE } from '../config.js'
 import { emptySheetFields } from './migrations.js'
+import { nightRest } from '../lib/sheet.js'
 
 /*
  * As regras da mesa. Desde a Fase 3 quem roda este arquivo é o SERVIDOR, não o
@@ -774,6 +775,22 @@ export function reducer(state, action) {
 
     case 'CLEAR_CONDITIONS':
       return withVitals(state, action.playerId, () => ({ conditions: {} }))
+
+    /*
+     * Descanso noturno (§10.7). Uma ação só, e não quatro despachos da tela:
+     * cura, HP temporário, foco, slots e Doomed mudam juntos ou não mudam. Em
+     * quatro idas ao servidor, um Wi-Fi que oscila no meio deixaria o
+     * personagem curado e ainda Doomed.
+     *
+     * Por personagem, aplicando só a ele (resposta 2 da §17). Um "descanso do
+     * grupo" na aba Mestre fica anotado como sugestão futura.
+     */
+    case 'REST':
+      return withVitals(state, action.playerId, (vitals, player) => {
+        if (!player.sheet) return null
+        const { curado, ...patch } = nightRest(player.sheet, vitals)
+        return patch
+      })
 
     // ------------------------------------------------------- foco e escudo
 
