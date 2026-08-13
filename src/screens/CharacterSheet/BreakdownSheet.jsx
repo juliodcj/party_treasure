@@ -48,10 +48,14 @@ export default function BreakdownSheet({ stat, onClose }) {
  * marca `altered` que o breakdown explica, para o aviso e a explicação nunca
  * discordarem.
  */
-export function StatCell({ label, stat, sub = null, onOpen }) {
+export function StatCell({ label, stat, sub = null, onOpen, className = '' }) {
   const valor = stat.kind === 'dc' ? String(stat.total) : sgn(stat.total)
   return (
-    <button type="button" className="statcell" onClick={() => onOpen(stat)}>
+    <button
+      type="button"
+      className={className ? `statcell ${className}` : 'statcell'}
+      onClick={() => onOpen(stat)}
+    >
       <span className="statcell__label">{label}</span>
       <span className={`statcell__value${stat.altered ? ' statcell__value--altered' : ''}`}>
         {valor}

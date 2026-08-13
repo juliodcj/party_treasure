@@ -87,10 +87,19 @@ export default function Resumo({ player, view, onGoToGm }) {
         </div>
       </Bloco>
 
-      {/* ------------------------------------------------------------ defesas */}
+      {/* ------------------------------------------------------------ defesas
+
+          CA e Escudo lado a lado, como no protótipo: são a mesma pergunta
+          ("o que me protege agora"), então dividem a primeira linha do
+          painel. Fortitude/Reflex/Will vêm depois, numa linha própria. */}
       <Bloco titulo="Defesas">
-        <div className="grid grid--4">
-          <StatCell label="CA" stat={view.ac} onOpen={abrir} />
+        <div className="defenses__top">
+          <StatCell className="statcell--ac" label="CA" stat={view.ac} onOpen={abrir} />
+          {/* Só com escudo empunhado: sem isso a linha prometeria um Erguer
+              que não existe (§10.6). */}
+          {view.shield ? <Escudo player={player} shield={view.shield} /> : null}
+        </div>
+        <div className="grid grid--3">
           <StatCell
             label="Fortitude"
             stat={view.saves.fortitude}
@@ -110,9 +119,6 @@ export default function Resumo({ player, view, onGoToGm }) {
             onOpen={abrir}
           />
         </div>
-        {/* Só com escudo empunhado: sem isso o bloco prometeria um Erguer que
-            não existe (§10.6). */}
-        {view.shield ? <Escudo player={player} shield={view.shield} /> : null}
       </Bloco>
 
       {/* -------------------------------------------------- outras estatísticas */}

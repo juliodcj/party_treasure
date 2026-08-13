@@ -50,6 +50,18 @@ export default function Magias({ player, view }) {
     .map((total, rank) => ({ rank, total }))
     .filter(({ rank, total }) => rank > 0 && total > 0)
 
+  /* Visão de conjunto de todos os círculos numa linha só, como no protótipo —
+     um resumo rápido de quanto sobrou antes de abrir cada balde individual.
+     Só para preparada: espontânea/inata não tem "pronto/total" por círculo,
+     porque a ficha não controla o que já foi lançado hoje (§17b). */
+  const tabelaSlots = espontanea
+    ? []
+    : (conj.perDay ?? []).map((total, rank) => {
+        if (!total) return { rank, vazio: true }
+        const prontas = preparadas.filter((p) => p.rank === rank && (rank === 0 || !p.used)).length
+        return { rank, vazio: false, prontas, total }
+      })
+
   return (
     <>
       <section className="list-group">
@@ -71,6 +83,21 @@ export default function Magias({ player, view }) {
               Foco {focoAtual}/{maxFoco}
             </span>
           </div>
+          {tabelaSlots.length > 0 ? (
+            <div
+              className="magias__slot-table"
+              style={{ gridTemplateColumns: `repeat(${tabelaSlots.length}, 1fr)` }}
+            >
+              {tabelaSlots.map((t) => (
+                <div className="magias__slot-cell" key={t.rank}>
+                  <div className="magias__slot-rank">{t.rank}</div>
+                  <div className={`magias__slot-value${t.vazio ? ' magias__slot-value--vazio' : ''}`}>
+                    {t.vazio ? '–' : `${t.prontas}/${t.total}`}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
       </section>
 

@@ -1329,6 +1329,23 @@
   color: var(--text-3);
 }
 
+/* Linha CA + Escudo (Resumo): as duas únicas células com borda própria do
+   app, porque aqui não há grade dividindo por `background` — são vizinhas
+   de tamanho desigual (caixa fixa + painel que estica), então cada uma
+   carrega o próprio contorno. */
+.defenses__top {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  padding: 10px 16px 11px;
+}
+
+.statcell--ac {
+  flex: 0 0 var(--w-ac);
+  border: 1px solid var(--line-input);
+  border-radius: var(--r-md);
+}
+
 /* --------------------------------------------------------------- HP e barra */
 
 .vitals {
@@ -1647,10 +1664,11 @@
 /* ------------------------------------------------------------------ escudo */
 
 .shield {
-  /* `.list-rows` não tem padding lateral (o grid acima dele é edge-to-edge de
-     propósito); o escudo, que é um cartão dentro do bloco, precisa do próprio
-     respiro dos lados — o `.panel` que sumiu dava isso de graça. */
-  margin: 10px 16px 12px;
+  /* Painel-irmão da caixa de CA dentro de `.defenses__top` (mesma linha,
+     lado a lado, como no protótipo) — por isso estica (`flex:1`) em vez de
+     ter largura própria. */
+  flex: 1;
+  min-width: 0;
   border: 1px solid var(--line-field);
   border-radius: var(--r-sm);
   overflow: hidden;
@@ -2075,6 +2093,47 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+/* Visão de conjunto dos círculos — uma coluna por rank, "pronto/total" ou um
+   travessão para o círculo que este conjurador não tem. `grid-template-columns`
+   é o único valor calculado em tempo de execução aqui (a contagem de colunas
+   varia por personagem), por isso vem em `style`. */
+.magias__slot-table {
+  display: grid;
+  border: 1px solid var(--line-input);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+
+.magias__slot-cell {
+  text-align: center;
+  border-left: 1px solid var(--line);
+}
+
+.magias__slot-cell:first-child {
+  border-left: none;
+}
+
+.magias__slot-rank {
+  font-size: var(--t-label);
+  font-weight: 700;
+  padding: 2px 0 1px;
+  color: var(--text-2);
+  background: var(--surface-sunken);
+  border-bottom: 1px solid var(--line-field);
+}
+
+.magias__slot-value {
+  font-size: var(--t-sm);
+  font-weight: 700;
+  padding: 4px 0 5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.magias__slot-value--vazio {
+  color: var(--text-3);
 }
 
 .magias__foco {

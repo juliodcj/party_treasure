@@ -127,6 +127,11 @@
   /* Respiro embaixo da lista para o botão flutuante não cobrir o último item */
   --fab-size: 52px;
   --fab-gutter: calc(var(--fab-size) + 28px);
+
+  /* Caixa fixa da CA ao lado do painel de Escudo (Resumo), medida do
+     protótipo — é a única largura fixa de célula do app, por isso não
+     virou um degrau de espaçamento geral. */
+  --w-ac: 72px;
 }
 
 /* Fora da aba (instalado na tela inicial, ou em tela cheia) a página é dona
