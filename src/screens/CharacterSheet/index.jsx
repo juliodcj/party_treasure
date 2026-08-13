@@ -4,6 +4,7 @@ import { playerInventory } from '../../lib/items.js'
 import { useStore } from '../../state/store.jsx'
 import { linhaAncestralidade } from './ImportSheet.jsx'
 import Resumo from './Resumo.jsx'
+import Ataques from './Ataques.jsx'
 
 /*
  * A aba Ficha.
@@ -85,8 +86,9 @@ export default function CharacterSheetScreen({ player, onGoToGm }) {
       ) : null}
 
       {sub === 'resumo' ? <Resumo player={player} view={view} onGoToGm={onGoToGm} /> : null}
+      {sub === 'ataques' ? <Ataques player={player} view={view} /> : null}
 
-      {sub !== 'resumo' ? (
+      {sub !== 'resumo' && sub !== 'ataques' ? (
         <div className="empty">
           Esta seção ainda está sendo construída.{'\n'}
           Por enquanto a ficha guarda os dados, e o Inventário e a Loja funcionam

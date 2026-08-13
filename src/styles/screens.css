@@ -1843,3 +1843,133 @@
   font-size: var(--t-meta);
   color: var(--text-3);
 }
+
+/* ------------------------------------------------------- ficha: aba Ataques */
+
+.atk {
+  display: flex;
+  flex-direction: column;
+}
+
+.atk__row + .atk__row {
+  border-top: 1px solid var(--line);
+}
+
+.atk__head {
+  display: flex;
+  align-items: center;
+  /* Vão maior que o resto do app de propósito: o stepper de arremesso fica na
+     ponta da coluna da esquerda e encostava nos números do MAP. */
+  gap: 12px;
+  min-height: var(--tap-md);
+  padding: 4px 0;
+}
+
+.atk__left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 3px 0;
+}
+
+.atk__name-btn {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-align: left;
+}
+
+/* Dano e quantidade embaixo do nome: numa linha só, o stepper de arremesso
+   espremia justamente o nome, que é como se acha a arma na lista. */
+.atk__under {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.atk__name {
+  display: block;
+  font-size: var(--t-body);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atk__dmg {
+  flex-shrink: 0;
+  font-size: var(--t-meta);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+/* Os três números do MAP juntos: é o que se lê no meio do turno. */
+.atk__mods {
+  flex-shrink: 0;
+  font-size: var(--t-body);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.atk__mods--altered {
+  color: var(--danger);
+}
+
+.atk__sep {
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+.atk__star {
+  flex-shrink: 0;
+  width: var(--tap-sm);
+  height: var(--tap-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--t-body);
+  color: var(--text-3);
+}
+
+.atk__star--on {
+  color: var(--gold);
+}
+
+.atk__body {
+  padding: 2px 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ------------------------------------------------ modificadores manuais */
+
+.mods__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.mods__row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: var(--r-md);
+  background: var(--surface-sunken);
+}
+
+.mods__numbers {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.mods__caveat {
+  margin-top: 10px;
+}
