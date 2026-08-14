@@ -281,13 +281,14 @@ function PlayersSection({ open, onOpenChange, onRequestDelete }) {
         <div className="list-rows">
           <div>
             <div className="gm__card-head">
+              <span className="gm__hint">Dividir moedas com o grupo</span>
               <button
                 type="button"
-                className="btn btn--tint btn--block"
+                className="btn btn--tint"
                 aria-expanded={groupOpen}
                 onClick={() => setGroupOpen((value) => !value)}
               >
-                Distribuir moedas ao grupo
+                Distribuir
               </button>
             </div>
             {groupOpen ? <GroupGivePanel onDone={() => setGroupOpen(false)} /> : null}
