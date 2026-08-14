@@ -286,6 +286,23 @@ export function CrownIcon() {
   )
 }
 
+/* Descanso noturno: uma cama de perfil — travesseiro, colchão e os dois pés. */
+export function BedIcon({ size = 15 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M3 6v12M3 12h18v6M21 18v-6a3 3 0 00-3-3h-6v3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="7.5" cy="10.5" r="1.8" fill="none" stroke="currentColor" strokeWidth="1.8" />
+    </svg>
+  )
+}
+
 /* Aba Ficha: uma folha pautada. Como todo ícone daqui, desenha em currentColor
    — quem decide a cor é o botão em volta, nunca o ícone. */
 export function SheetIcon() {

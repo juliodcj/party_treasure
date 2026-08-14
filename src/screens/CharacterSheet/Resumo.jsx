@@ -4,6 +4,7 @@ import Stepper from '../../components/Stepper.jsx'
 import { useStore } from '../../state/store.jsx'
 import { nightRest, sgn } from '../../lib/sheet.js'
 import { RANK_NAMES } from '../../lib/pathbuilder.js'
+import { BedIcon } from '../../components/Icons.jsx'
 import BreakdownSheet, { FactCell, StatCell } from './BreakdownSheet.jsx'
 import ConditionsSheet, { ConditionChips } from './ConditionsSheet.jsx'
 import HpSheet from './HpSheet.jsx'
@@ -65,9 +66,23 @@ export default function Resumo({ player, view, onGoToGm }) {
                 style={{ width: `${pct}%` }}
               />
             </div>
-            <button type="button" className="chip chip--sm" onClick={() => setHpAberto(true)}>
-              Dano / Cura
-            </button>
+            <div className="vitals__hp-actions">
+              <button type="button" className="chip chip--sm" onClick={() => setHpAberto(true)}>
+                Dano / Cura
+              </button>
+              {/* O descanso mora junto do HP porque é o que ele faz: encher a
+                  barra que está logo acima. Ícone, e não botão de texto — é uma
+                  vez por sessão, e o alvo é o `.icon-btn` inteiro. */}
+              <button
+                type="button"
+                className="icon-btn icon-btn--accent"
+                title="Descanso noturno"
+                aria-label="Descanso noturno"
+                onClick={() => setDescansando(true)}
+              >
+                <BedIcon />
+              </button>
+            </div>
           </div>
 
           <button type="button" className="vitals__cond" onClick={() => setCondAberto(true)}>
@@ -192,11 +207,6 @@ export default function Resumo({ player, view, onGoToGm }) {
         <Linha rotulo="Sentidos" valor={sentidos(sheet)} />
         <Linha rotulo="Idiomas" valor={sheet.languages?.join(' · ')} />
       </Bloco>
-
-      {/* ------------------------------------------------------------ descanso */}
-      <button type="button" className="btn btn--tint btn--block charsheet__rest" onClick={() => setDescansando(true)}>
-        Descanso noturno
-      </button>
 
       <div className="charsheet__foot">
         <span>

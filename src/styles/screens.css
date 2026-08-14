@@ -1461,6 +1461,14 @@
   background: var(--danger);
 }
 
+/* "Dano / Cura" e o descanso, lado a lado sob a barra: as duas coisas que
+   mexem no número de cima. */
+.vitals__hp-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .vitals__cond {
   flex: 1;
   min-width: 0;
@@ -1501,27 +1509,39 @@
   color: var(--text-3);
 }
 
+/* Só a lista rola; título e rodapé da folha ficam parados (`fill` em Sheet.jsx).
+   Um `max-height` próprio aqui somaria à rolagem da folha e desenharia uma
+   segunda moldura cortada no meio da tela. */
 .cond__list {
-  max-height: 46vh;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
 
 .cond__row {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 9px 0;
   border-bottom: 1px solid var(--line);
 }
 
-.cond__text {
+/* A linha fechada é só o nome e o controle: a descrição de condição do PF2e tem
+   parágrafo inteiro, e oito deles abertos não cabem numa tela de celular. */
+.cond__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+}
+
+/* O nome é o botão que abre a descrição — alvo de linha inteira, não um
+   chevron de 12px. */
+.cond__toggle {
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
 }
 
 .cond__name {
@@ -1534,10 +1554,16 @@
   color: var(--text);
 }
 
+.cond__caret {
+  color: var(--ornament);
+  display: flex;
+}
+
 .cond__desc {
   font-size: var(--t-meta);
   line-height: var(--lh-text);
   color: var(--text-3);
+  padding-bottom: 9px;
 }
 
 /* Caixa de marcar das condições sem valor. O alvo é a caixa inteira. */

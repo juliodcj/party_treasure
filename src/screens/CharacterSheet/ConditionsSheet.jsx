@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Sheet from '../../components/Sheet.jsx'
 import Stepper from '../../components/Stepper.jsx'
+import { ChevronRight } from '../../components/Icons.jsx'
 import CONDITIONS from '../../data/conditions.json' with { type: 'json' }
 import { MECHANICAL, conditionKey } from '../../lib/conditions.js'
 import { useStore } from '../../state/store.jsx'
@@ -18,7 +19,13 @@ import { useStore } from '../../state/store.jsx'
 
 const chaveDe = (condicao) => conditionKey(condicao.slug)
 
-const COM_EFEITO = CONDITIONS.filter((c) => MECHANICAL[chaveDe(c)])
+/* A ordem das oito é a de `MECHANICAL`, não a alfabética do pack: Frightened e
+   Sickened são as que mais aparecem na mesa e por isso abrem a lista. */
+const ORDEM = Object.keys(MECHANICAL)
+
+const COM_EFEITO = CONDITIONS.filter((c) => MECHANICAL[chaveDe(c)]).sort(
+  (a, b) => ORDEM.indexOf(chaveDe(a)) - ORDEM.indexOf(chaveDe(b)),
+)
 const SEM_EFEITO = CONDITIONS.filter((c) => !MECHANICAL[chaveDe(c)])
 
 /* Encumbered aparece na lista sem efeito de propósito: o bulk foi adiado (D8),
@@ -27,6 +34,7 @@ const SEM_EFEITO = CONDITIONS.filter((c) => !MECHANICAL[chaveDe(c)])
 export default function ConditionsSheet({ player, onClose }) {
   const { dispatch } = useStore()
   const [mostrarTodas, setMostrarTodas] = useState(false)
+  const [aberta, setAberta] = useState(null)
   const ativas = player.vitals?.conditions ?? {}
 
   const definir = (key, value) =>
@@ -35,39 +43,51 @@ export default function ConditionsSheet({ player, onClose }) {
   const lista = mostrarTodas ? [...COM_EFEITO, ...SEM_EFEITO] : COM_EFEITO
 
   return (
-    <Sheet title="Condições" onClose={onClose}>
+    <Sheet title="Condições" onClose={onClose} fill>
       <div className="cond__list">
         {lista.map((condicao) => {
           const key = chaveDe(condicao)
           const bruto = ativas[key]
           const valor = bruto === true ? 1 : Number(bruto) || 0
           const comValor = condicao.valued
+          const explicada = aberta === condicao.slug
 
           return (
             <div className={`cond__row${valor ? ' cond__row--on' : ''}`} key={condicao.slug}>
-              <div className="cond__text">
-                <span className="cond__name">{condicao.name}</span>
-                <span className="cond__desc">{condicao.descriptionText}</span>
-              </div>
-
-              {comValor ? (
-                <Stepper
-                  value={valor}
-                  label={condicao.name}
-                  canDec={valor > 0}
-                  onDec={() => definir(key, valor - 1)}
-                  onInc={() => definir(key, valor + 1)}
-                />
-              ) : (
+              <div className="cond__head">
                 <button
                   type="button"
-                  className={`cond__check${valor ? ' cond__check--on' : ''}`}
-                  role="switch"
-                  aria-checked={valor > 0}
-                  aria-label={condicao.name}
-                  onClick={() => definir(key, !valor)}
-                />
-              )}
+                  className="cond__toggle"
+                  aria-expanded={explicada}
+                  onClick={() => setAberta(explicada ? null : condicao.slug)}
+                >
+                  <span className="cond__name">{condicao.name}</span>
+                  <span className="cond__caret">
+                    <ChevronRight open={explicada} />
+                  </span>
+                </button>
+
+                {comValor ? (
+                  <Stepper
+                    value={valor}
+                    label={condicao.name}
+                    canDec={valor > 0}
+                    onDec={() => definir(key, valor - 1)}
+                    onInc={() => definir(key, valor + 1)}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    className={`cond__check${valor ? ' cond__check--on' : ''}`}
+                    role="switch"
+                    aria-checked={valor > 0}
+                    aria-label={condicao.name}
+                    onClick={() => definir(key, !valor)}
+                  />
+                )}
+              </div>
+
+              {explicada ? <p className="cond__desc">{condicao.descriptionText}</p> : null}
             </div>
           )
         })}

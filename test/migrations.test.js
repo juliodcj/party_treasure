@@ -123,13 +123,31 @@ test('withSheetFields é idempotente e não inventa nada', () => {
   assert.deepEqual(uma.gear, emptySheetFields().gear)
 })
 
-test('a mesa de exemplo nasce na versão atual, e sem ficha em ninguém', () => {
+test('a mesa de exemplo nasce na versão atual e sem nada equipado', () => {
   const seed = createInitialState()
   assert.equal(seed.version, VERSAO_ATUAL)
   for (const player of seed.players) {
-    assert.equal(player.sheet, null)
     assert.deepEqual(player.gear.equippedWeaponIds, [])
   }
+})
+
+/* Duas fichas vêm vinculadas para a aba Ficha abrir sem colar JSON, e a
+   terceira fica sem: personagem sem ficha é caso de primeira classe, e some
+   dos testes se a mesa de exemplo não guardar um. */
+test('a mesa de exemplo traz duas fichas vinculadas e um personagem sem ficha', () => {
+  const seed = createInitialState()
+  const comFicha = seed.players.filter((p) => p.sheet)
+
+  assert.equal(comFicha.length, 2)
+  assert.equal(seed.players.filter((p) => !p.sheet).length, 1)
+
+  for (const player of comFicha) {
+    // HP nasce cheio, como numa importação de verdade.
+    assert.equal(player.vitals.hp, player.sheet.hpMax)
+  }
+
+  // Uma delas conjura: é o que faz a aba Magias existir na mesa de exemplo.
+  assert.ok(comFicha.some((p) => p.sheet.spellcasting))
 })
 
 test('o saneamento do servidor completa jogador que chegou sem os campos novos', () => {

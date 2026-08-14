@@ -543,6 +543,11 @@
   overflow: auto;
 }
 
+/* A folha para de rolar e quem rola é o filho (ver `fill` em Sheet.jsx). */
+.sheet--fill {
+  overflow: hidden;
+}
+
 /* Diálogo centrado: traço, excluir, vender */
 .sheet--center {
   top: 50%;

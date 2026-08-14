@@ -4,8 +4,12 @@ import { useEffect } from 'react'
  * Cartão flutuante sobre um véu escuro, como no protótipo.
  * `center` é o diálogo curto (traço, excluir, vender); o padrão fica ancorado
  * logo acima da barra de abas.
+ *
+ * `fill` tira a rolagem da folha e entrega a altura a um filho, que rola
+ * sozinho — é o que mantém título e rodapé parados. Sem ele, uma lista que
+ * também rola vira caixa dentro de caixa, com dois cortes na tela.
  */
-export default function Sheet({ title, onClose, center = false, children }) {
+export default function Sheet({ title, onClose, center = false, fill = false, children }) {
   useEffect(() => {
     const onKey = (event) => {
       if (event.key === 'Escape') onClose()
@@ -23,7 +27,7 @@ export default function Sheet({ title, onClose, center = false, children }) {
     <>
       <div className="overlay" onClick={onClose} />
       <div
-        className={`sheet${center ? ' sheet--center' : ' sheet--bottom'}`}
+        className={`sheet${center ? ' sheet--center' : ' sheet--bottom'}${fill ? ' sheet--fill' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}
