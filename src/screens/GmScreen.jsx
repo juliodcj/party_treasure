@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import Sheet, { SheetActions } from '../components/Sheet.jsx'
+import SectionHead from '../components/SectionHead.jsx'
 import Stepper from '../components/Stepper.jsx'
 import Coins, { Price } from '../components/Coins.jsx'
 import { CoinInputs } from '../components/ItemForm.jsx'
@@ -8,6 +9,7 @@ import { ChevronRight, EditIcon, TrashIcon } from '../components/Icons.jsx'
 import EditWalletSheet from '../components/EditWalletSheet.jsx'
 import ShopEditScreen from './ShopEditScreen.jsx'
 import ImportSheet from './CharacterSheet/ImportSheet.jsx'
+import ConditionsSheet from './CharacterSheet/ConditionsSheet.jsx'
 import { useStore } from '../state/store.jsx'
 import { CATALOG } from '../data/catalog.js'
 import {
@@ -34,29 +36,6 @@ const dataCurta = (iso) => {
    o localStorage — é preferência da sessão, não dado da mesa, e tudo que entra
    no store passa pelo histórico de "Reverter". */
 let openSections = { players: true, shops: true, history: true }
-
-/**
- * Faixa de título que abre e fecha. A ação da direita ("+ Novo jogador",
- * "Limpar") fica fora do botão de propósito — ver o comentário do CSS.
- */
-function SectionHead({ title, count, open, onToggle, action = null }) {
-  return (
-    <h2 className="label list-group__title">
-      <button
-        type="button"
-        className="list-group__toggle"
-        onClick={onToggle}
-        aria-expanded={open}
-        aria-label={`${open ? 'Fechar' : 'Abrir'} ${title}`}
-      >
-        <ChevronRight open={open} />
-        <span>{title}</span>
-        {count != null ? <span className="list-group__count">{count}</span> : null}
-      </button>
-      {action}
-    </h2>
-  )
-}
 
 export default function GmScreen({ onOpenLibrary }) {
   // Uma única confirmação por vez, compartilhada entre jogadores e lojas.
@@ -422,6 +401,7 @@ function PlayerCard({ player, canDelete, onDelete }) {
   const [editingWallet, setEditingWallet] = useState(false)
   const [importing, setImporting] = useState(false)
   const [removing, setRemoving] = useState(false)
+  const [condicoes, setCondicoes] = useState(false)
 
   const catalog = useMemo(() => libraryItems(state), [state])
   const rows = catalog.filter(
@@ -441,7 +421,7 @@ function PlayerCard({ player, canDelete, onDelete }) {
 
   return (
     <div>
-      <div className="gm__card-head">
+      <div className="gm__card-head gm__card-head--player">
         <div className="gm__grow">
           <PlayerNameField player={player} />
           <button
@@ -487,6 +467,12 @@ function PlayerCard({ player, canDelete, onDelete }) {
           onClick={() => openPanel('sheet')}
         >
           Ficha
+        </button>
+        {/* Aplica direto, sem painel próprio: a folha de condições já é do
+            jogador (ConditionsSheet.jsx), só falta o mestre poder abri-la
+            daqui também. */}
+        <button type="button" className="btn btn--tint" onClick={() => setCondicoes(true)}>
+          Condições
         </button>
         <button
           type="button"
@@ -641,6 +627,8 @@ function PlayerCard({ player, canDelete, onDelete }) {
       {editingWallet ? (
         <EditWalletSheet player={player} onClose={() => setEditingWallet(false)} />
       ) : null}
+
+      {condicoes ? <ConditionsSheet player={player} onClose={() => setCondicoes(false)} /> : null}
     </div>
   )
 }

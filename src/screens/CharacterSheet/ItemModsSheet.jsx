@@ -28,12 +28,6 @@ export default function ItemModsSheet({ player, item, onClose }) {
 
   return (
     <Sheet title={`Modificadores de ${item.name}`} onClose={onClose}>
-      <p className="charsheet__note">
-        Para o que o app não calcula sozinho — Rage, Giant Instinct,
-        especialização, runa. O rótulo aparece no breakdown do ataque, junto das
-        outras parcelas.
-      </p>
-
       <div className="mods__list">
         {mods.map((mod, indice) => (
           // A ordem é a identidade aqui: dois modificadores podem ter o mesmo

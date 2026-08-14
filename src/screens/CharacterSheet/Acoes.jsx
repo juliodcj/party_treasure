@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import TraitList from '../../components/TraitList.jsx'
 import { ChevronRight } from '../../components/Icons.jsx'
+import SectionHead, { ExpandCollapseAll } from '../../components/SectionHead.jsx'
 import ACTION_INDEX from '../../data/index.actions.json' with { type: 'json' }
 import { traitLabel } from '../../data/traits.js'
 import { useStore } from '../../state/store.jsx'
 import { ActionCost } from './Feats.jsx'
+
+/* Quais grupos ficam abertos — sobrevive à troca de sub-aba. */
+let gruposAbertos = { class: true, skill: true, basic: true }
 
 /*
  * A aba Ações.
@@ -28,6 +32,14 @@ const GRUPOS = [
 export default function Acoes({ player }) {
   const [aberto, setAberto] = useState(null)
   const [traco, setTraco] = useState('')
+  const [grupos, setGrupos] = useState(gruposAbertos)
+
+  const setGrupo = (id, value) => {
+    setGrupos((atual) => {
+      gruposAbertos = { ...atual, [id]: value }
+      return gruposAbertos
+    })
+  }
 
   /* As de classe são as que a importação resolveu como ação; as outras duas
      saem do índice do bundle. */
@@ -74,26 +86,36 @@ export default function Acoes({ player }) {
         <div className="empty">Nada aqui com esse filtro.</div>
       ) : null}
 
+      <ExpandCollapseAll
+        onExpand={() => setGrupos((gruposAbertos = { class: true, skill: true, basic: true }))}
+        onCollapse={() => setGrupos((gruposAbertos = { class: false, skill: false, basic: false }))}
+      />
+
       {GRUPOS.map((grupo) => {
         const itens = filtradas.filter((acao) => acao.group === grupo.id)
         if (!itens.length) return null
+        const open = grupos[grupo.id] ?? true
         return (
           <section className="list-group" key={grupo.id}>
-            <h3 className="label list-group__title">
-              <span>{grupo.titulo}</span>
-              <span className="list-group__count">{itens.length}</span>
-            </h3>
-            <div className="list-rows entries">
-              {itens.map((acao) => (
-                <Linha
-                  key={acao.id}
-                  acao={acao}
-                  player={player}
-                  aberto={aberto}
-                  setAberto={setAberto}
-                />
-              ))}
-            </div>
+            <SectionHead
+              title={grupo.titulo}
+              count={itens.length}
+              open={open}
+              onToggle={() => setGrupo(grupo.id, !open)}
+            />
+            {open ? (
+              <div className="list-rows entries">
+                {itens.map((acao) => (
+                  <Linha
+                    key={acao.id}
+                    acao={acao}
+                    player={player}
+                    aberto={aberto}
+                    setAberto={setAberto}
+                  />
+                ))}
+              </div>
+            ) : null}
           </section>
         )
       })}

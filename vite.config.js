@@ -12,7 +12,14 @@ export default defineConfig({
   server: {
     host: true,
     port: 3000,
-    proxy: { '/socket.io': { target: 'http://localhost:3001', ws: true } },
+    // Libera o link do túnel (tunel.bat): sem isso o Vite recusa o Host
+    // "algumacoisa.trycloudflare.com" com "Blocked request... allowedHosts".
+    // Subdomínio sorteado a cada túnel novo, por isso o curinga.
+    allowedHosts: ['.trycloudflare.com'],
+    proxy: {
+      '/socket.io': { target: 'http://localhost:3001', ws: true },
+      '/api': 'http://localhost:3001',
+    },
   },
-  preview: { host: true, port: 3000 },
+  preview: { host: true, port: 3000, allowedHosts: ['.trycloudflare.com'] },
 })

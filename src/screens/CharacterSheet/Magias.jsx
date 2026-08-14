@@ -3,11 +3,17 @@ import Sheet from '../../components/Sheet.jsx'
 import Stepper from '../../components/Stepper.jsx'
 import TraitList from '../../components/TraitList.jsx'
 import { ChevronRight } from '../../components/Icons.jsx'
+import SectionHead, { ExpandCollapseAll } from '../../components/SectionHead.jsx'
 import { useStore } from '../../state/store.jsx'
 import { refocus } from '../../lib/sheet.js'
 import { spellRef } from '../../lib/loreResolve.js'
 import BreakdownSheet, { StatCell } from './BreakdownSheet.jsx'
 import Compendio from './Compendio.jsx'
+import { ActionCost } from './Feats.jsx'
+
+/* Quais seções ficam abertas — sobrevive à troca de sub-aba. Chave dinâmica
+   (círculo varia por personagem): id desconhecido nasce aberto. */
+let secoesAbertas = {}
 
 /*
  * A aba Magias.
@@ -27,6 +33,15 @@ export default function Magias({ player, view }) {
   const [aberto, setAberto] = useState(null)
   const [escolhendo, setEscolhendo] = useState(null) // rank do slot vazio tocado
   const [compendioAberto, setCompendioAberto] = useState(false)
+  const [secoes, setSecoes] = useState(secoesAbertas)
+
+  const aberta = (id) => secoes[id] ?? true
+  const setSecao = (id, value) => {
+    setSecoes((atual) => {
+      secoesAbertas = { ...atual, [id]: value }
+      return secoesAbertas
+    })
+  }
 
   const sheet = player.sheet
   const conj = sheet?.spellcasting
@@ -35,6 +50,8 @@ export default function Magias({ player, view }) {
   const extras = vitals.extraSpells ?? []
 
   if (!conj) return null // a aba nem aparece sem conjuração (§12.3); é defesa a mais
+
+  const custos = conj.spellCosts ?? {}
 
   const espontanea = conj.preparation !== 'prepared'
   const maxFoco = Math.max(0, Number(sheet.focusPoints) || 0)
@@ -62,9 +79,23 @@ export default function Magias({ player, view }) {
         return { rank, vazio: false, prontas, total }
       })
 
+  /* Toda seção que existe nesta ficha, para o par Expandir/Recolher mexer só
+     no que está de fato na tela. */
+  const idsDeSecoes = [
+    maxFoco > 0 ? 'foco' : null,
+    espontanea ? 'conhecidas' : null,
+    !espontanea ? 'truques' : null,
+    ...(!espontanea ? circulos.map(({ rank }) => `circulo-${rank}`) : []),
+    !espontanea ? 'grimorio' : null,
+    'especial',
+  ].filter(Boolean)
+
   return (
     <>
       <section className="list-group">
+        <h3 className="label list-group__title">
+          <span>Conjuração</span>
+        </h3>
         <div className="list-rows magias__conjuracao">
           <div className="magias__conj-linha">
             <span className="magias__conj-nome">
@@ -101,71 +132,103 @@ export default function Magias({ player, view }) {
         </div>
       </section>
 
+      <ExpandCollapseAll
+        onExpand={() =>
+          setSecoes((secoesAbertas = Object.fromEntries(idsDeSecoes.map((id) => [id, true]))))
+        }
+        onCollapse={() =>
+          setSecoes((secoesAbertas = Object.fromEntries(idsDeSecoes.map((id) => [id, false]))))
+        }
+      />
+
       {maxFoco > 0 ? (
         <section className="list-group">
-          <h3 className="label list-group__title">
-            <span>Foco</span>
-          </h3>
-          <div className="list-rows magias__foco">
-            <Stepper
-              value={focoAtual}
-              label="pontos de foco"
-              canDec={focoAtual > 0}
-              canInc={focoAtual < maxFoco}
-              onDec={() => dispatch({ type: 'SET_FOCUS', playerId: player.id, value: focoAtual - 1 })}
-              onInc={() => dispatch({ type: 'SET_FOCUS', playerId: player.id, value: focoAtual + 1 })}
-            />
-            <button
-              type="button"
-              className="btn btn--tint"
-              disabled={!podeRefocus}
-              onClick={() => {
-                const patch = refocus(sheet, vitals)
-                if (patch) dispatch({ type: 'SET_FOCUS', playerId: player.id, value: patch.focusPoints })
-              }}
-            >
-              Refocus (+1)
-            </button>
-          </div>
-          {(conj.focusCantrips.length || conj.focusSpells.length) > 0 ? (
-            <div className="list-rows">
-              {conj.focusCantrips.map((nome) => (
-                <SpellRow key={`fc-${nome}`} nome={nome} rankTag="Truque" aberto={aberto} setAberto={setAberto} />
-              ))}
-              {conj.focusSpells.map((nome) => (
-                <SpellRow key={`fs-${nome}`} nome={nome} rankTag="Foco" aberto={aberto} setAberto={setAberto} />
-              ))}
-            </div>
+          <SectionHead title="Foco" open={aberta('foco')} onToggle={() => setSecao('foco', !aberta('foco'))} />
+          {aberta('foco') ? (
+            <>
+              <div className="list-rows magias__foco">
+                <Stepper
+                  value={focoAtual}
+                  label="pontos de foco"
+                  canDec={focoAtual > 0}
+                  canInc={focoAtual < maxFoco}
+                  onDec={() => dispatch({ type: 'SET_FOCUS', playerId: player.id, value: focoAtual - 1 })}
+                  onInc={() => dispatch({ type: 'SET_FOCUS', playerId: player.id, value: focoAtual + 1 })}
+                />
+                <button
+                  type="button"
+                  className="btn btn--tint"
+                  disabled={!podeRefocus}
+                  onClick={() => {
+                    const patch = refocus(sheet, vitals)
+                    if (patch) dispatch({ type: 'SET_FOCUS', playerId: player.id, value: patch.focusPoints })
+                  }}
+                >
+                  Refocus (+1)
+                </button>
+              </div>
+              {(conj.focusCantrips.length || conj.focusSpells.length) > 0 ? (
+                <div className="list-rows">
+                  {conj.focusCantrips.map((nome) => (
+                    <SpellRow
+                      key={`fc-${nome}`}
+                      nome={nome}
+                      rankTag="Truque"
+                      custo={custos[nome]}
+                      aberto={aberto}
+                      setAberto={setAberto}
+                    />
+                  ))}
+                  {conj.focusSpells.map((nome) => (
+                    <SpellRow
+                      key={`fs-${nome}`}
+                      nome={nome}
+                      rankTag="Foco"
+                      custo={custos[nome]}
+                      aberto={aberto}
+                      setAberto={setAberto}
+                    />
+                  ))}
+                </div>
+              ) : null}
+            </>
           ) : null}
         </section>
       ) : null}
 
       {espontanea ? (
         <section className="list-group">
-          <h3 className="label list-group__title">
-            <span>Magias conhecidas</span>
-            <span className="list-group__count">{conj.book.length}</span>
-          </h3>
-          <div className="list-rows">
-            {agruparPorRank(conj.book).map(([rank, itens]) => (
-              <div className="magias__rank-bucket" key={rank}>
-                <div className="field-label magias__rank-label">{rotuloRank(rank)}</div>
-                {itens.map((sp, i) => (
-                  <SpellRow
-                    key={`${rank}-${sp.name}-${i}`}
-                    nome={sp.name}
-                    aberto={aberto}
-                    setAberto={setAberto}
-                  />
+          <SectionHead
+            title="Magias conhecidas"
+            count={conj.book.length}
+            open={aberta('conhecidas')}
+            onToggle={() => setSecao('conhecidas', !aberta('conhecidas'))}
+          />
+          {aberta('conhecidas') ? (
+            <>
+              <div className="list-rows">
+                {agruparPorRank(conj.book).map(([rank, itens]) => (
+                  <div className="magias__rank-bucket" key={rank}>
+                    <div className="field-label magias__rank-label">{rotuloRank(rank)}</div>
+                    {itens.map((sp, i) => (
+                      <SpellRow
+                        key={`${rank}-${sp.name}-${i}`}
+                        nome={sp.name}
+                        custo={custos[sp.name]}
+                        aberto={aberto}
+                        setAberto={setAberto}
+                      />
+                    ))}
+                  </div>
                 ))}
               </div>
-            ))}
-          </div>
-          <p className="charsheet__note magias__note">
-            Conjuração espontânea: esta ficha ainda não controla quantas magias
-            você já lançou hoje. Marque na mesa mesmo — nenhum fixture real de
-            conjurador espontâneo foi testado até agora.
-          </p>
+              <p className="charsheet__note magias__note">
+                Conjuração espontânea: esta ficha ainda não controla quantas magias
+                você já lançou hoje. Marque na mesa mesmo — nenhum fixture real de
+                conjurador espontâneo foi testado até agora.
+              </p>
+            </>
+          ) : null}
         </section>
       ) : (
         <>
@@ -175,9 +238,12 @@ export default function Magias({ player, view }) {
             rank={0}
             total={capCantrips}
             preparadas={preparadas.filter((p) => p.rank === 0)}
+            custos={custos}
             player={player}
             aberto={aberto}
             setAberto={setAberto}
+            open={aberta('truques')}
+            onToggle={() => setSecao('truques', !aberta('truques'))}
             onSlotVazio={() => setEscolhendo(0)}
             cantrip
           />
@@ -190,48 +256,58 @@ export default function Magias({ player, view }) {
               rank={rank}
               total={total}
               preparadas={preparadas.filter((p) => p.rank === rank)}
+              custos={custos}
               player={player}
               aberto={aberto}
               setAberto={setAberto}
+              open={aberta(`circulo-${rank}`)}
+              onToggle={() => setSecao(`circulo-${rank}`, !aberta(`circulo-${rank}`))}
               onSlotVazio={() => setEscolhendo(rank)}
             />
           ))}
 
           {/* -------------------------------------------------------- grimório */}
           <section className="list-group">
-            <h3 className="label list-group__title">
-              <span>Grimório</span>
-              <span className="list-group__count">{conj.book.length}</span>
-            </h3>
-            <div className="list-rows">
-              {conj.book.map((sp, i) => (
-                <SpellRow
-                  key={`book-${sp.rank}-${sp.name}-${i}`}
-                  nome={sp.name}
-                  rankTag={rotuloRank(sp.rank)}
-                  aberto={aberto}
-                  setAberto={setAberto}
-                />
-              ))}
-            </div>
+            <SectionHead
+              title="Grimório"
+              count={conj.book.length}
+              open={aberta('grimorio')}
+              onToggle={() => setSecao('grimorio', !aberta('grimorio'))}
+            />
+            {aberta('grimorio') ? (
+              <div className="list-rows">
+                {conj.book.map((sp, i) => (
+                  <SpellRow
+                    key={`book-${sp.rank}-${sp.name}-${i}`}
+                    nome={sp.name}
+                    rankTag={rotuloRank(sp.rank)}
+                    custo={custos[sp.name]}
+                    aberto={aberto}
+                    setAberto={setAberto}
+                  />
+                ))}
+              </div>
+            ) : null}
           </section>
         </>
       )}
 
       {/* ------------------------------------------------------ lista especial */}
       <section className="list-group">
-        <h3 className="label list-group__title">
-          <span>Especial</span>
-          <span className="list-group__count">
-            {extras.length ? `${extras.filter((e) => !e.used).length} / ${extras.length}` : 'vazio'}
-          </span>
-        </h3>
-        <div className="list-rows">
-          {extras.map((sp) => (
-            <ExtraRow key={sp.uid} sp={sp} player={player} aberto={aberto} setAberto={setAberto} />
-          ))}
-          <AddExtraRow player={player} />
-        </div>
+        <SectionHead
+          title="Especial"
+          count={extras.length ? `${extras.filter((e) => !e.used).length} / ${extras.length}` : 'vazio'}
+          open={aberta('especial')}
+          onToggle={() => setSecao('especial', !aberta('especial'))}
+        />
+        {aberta('especial') ? (
+          <div className="list-rows">
+            {extras.map((sp) => (
+              <ExtraRow key={sp.uid} sp={sp} player={player} aberto={aberto} setAberto={setAberto} />
+            ))}
+            <AddExtraRow player={player} />
+          </div>
+        ) : null}
       </section>
 
       <button
@@ -278,41 +354,59 @@ function agruparPorRank(lista) {
 }
 
 /** Um círculo de slots: as preparadas + os vazios que faltam até o total. */
-function RankBucket({ titulo, rank, total, preparadas, player, aberto, setAberto, onSlotVazio, cantrip = false }) {
+function RankBucket({
+  titulo,
+  rank,
+  total,
+  preparadas,
+  custos,
+  player,
+  aberto,
+  setAberto,
+  open,
+  onToggle,
+  onSlotVazio,
+  cantrip = false,
+}) {
   const vazios = Math.max(0, total - preparadas.length)
 
   return (
     <section className="list-group">
-      <h3 className="label list-group__title">
-        <span>{titulo}</span>
-        <span className="list-group__count">
-          {cantrip ? `${preparadas.length}/${total} preparados` : `${preparadas.filter((p) => !p.used).length}/${total} disponíveis`}
-        </span>
-      </h3>
-      <div className="list-rows">
-        {preparadas.map((sp) => (
-          <PreparadaRow
-            key={sp.uid}
-            sp={sp}
-            cantrip={cantrip}
-            player={player}
-            aberto={aberto}
-            setAberto={setAberto}
-          />
-        ))}
-        {Array.from({ length: vazios }, (_, i) => (
-          <button key={`vazio-${rank}-${i}`} type="button" className="magias__slot-vazio" onClick={onSlotVazio}>
-            <span className="magias__slot-box" />
-            <span className="magias__slot-label">Slot vazio</span>
-            <span className="magias__slot-action">Preparar</span>
-          </button>
-        ))}
-      </div>
+      <SectionHead
+        title={titulo}
+        count={
+          cantrip ? `${preparadas.length}/${total} preparados` : `${preparadas.filter((p) => !p.used).length}/${total} disponíveis`
+        }
+        open={open}
+        onToggle={onToggle}
+      />
+      {open ? (
+        <div className="list-rows">
+          {preparadas.map((sp) => (
+            <PreparadaRow
+              key={sp.uid}
+              sp={sp}
+              cantrip={cantrip}
+              custo={custos[sp.name]}
+              player={player}
+              aberto={aberto}
+              setAberto={setAberto}
+            />
+          ))}
+          {Array.from({ length: vazios }, (_, i) => (
+            <button key={`vazio-${rank}-${i}`} type="button" className="magias__slot-vazio" onClick={onSlotVazio}>
+              <span className="magias__slot-box" />
+              <span className="magias__slot-label">Slot vazio</span>
+              <span className="magias__slot-action">Preparar</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
     </section>
   )
 }
 
-function PreparadaRow({ sp, cantrip, player, aberto, setAberto }) {
+function PreparadaRow({ sp, cantrip, custo, player, aberto, setAberto }) {
   const { dispatch } = useStore()
   return (
     <div className="magias__prep-row">
@@ -327,6 +421,7 @@ function PreparadaRow({ sp, cantrip, player, aberto, setAberto }) {
       ) : null}
       <SpellRow
         nome={sp.name}
+        custo={custo}
         aberto={aberto}
         setAberto={setAberto}
         riscado={!cantrip && sp.used}
@@ -404,7 +499,7 @@ function AddExtraRow({ player }) {
 }
 
 /** Linha simples de magia: nome, custo/rank, abre para a descrição sob demanda. */
-function SpellRow({ nome, rankTag = null, aberto, setAberto, riscado = false, semBorda = false }) {
+function SpellRow({ nome, rankTag = null, custo = null, aberto, setAberto, riscado = false, semBorda = false }) {
   const id = `spell-${nome}`
   const open = aberto === id
   const descricao = useSpellDescription(nome, open)
@@ -419,6 +514,7 @@ function SpellRow({ nome, rankTag = null, aberto, setAberto, riscado = false, se
       >
         <span className="entry__title">
           <span className={`entry__name${riscado ? ' magias__name--used' : ''}`}>{nome}</span>
+          <ActionCost cost={custo} />
           {rankTag ? <span className="entry__sub">{rankTag}</span> : null}
         </span>
       </button>

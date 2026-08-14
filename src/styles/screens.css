@@ -429,6 +429,15 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Par "Expandir/Recolher" no topo de uma aba da ficha — mexe em toda seção
+   de uma vez, como no protótipo. */
+.section-toggle-all {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 4px 16px;
+}
+
 .list-rows {
   background: var(--surface);
   border-top: 1px solid var(--line);
@@ -732,14 +741,23 @@
 
 /* Ícone real de "Ativar 1/2/3 ações", reação e ação livre — vem como uma
    letra crua (A, F, R...) no HTML importado; esta fonte a transforma no
-   glifo oficial do PF2e. */
-.item__desc .action-glyph {
+   glifo oficial do PF2e. Reaproveitado também fora do HTML importado, no
+   badge de custo de ação de Feats/Ações (.entry__cost). */
+.action-glyph {
   font-family: 'Pathfinder2eActions', sans-serif;
-  font-size: var(--t-lg);
   font-weight: 400;
   line-height: 1;
   vertical-align: -2px;
   margin: 0 1px;
+}
+
+.item__desc .action-glyph {
+  font-size: var(--t-lg);
+}
+
+.entry__cost .action-glyph {
+  font-size: var(--t-sm);
+  color: var(--ornament);
 }
 
 .item__desc table {
@@ -831,6 +849,13 @@
   min-height: 56px;
   width: 100%;
   text-align: left;
+}
+
+/* A linha do jogador carrega mais botão que a da loja (Dinheiro, Item, Ficha,
+   Condições) — mais alta para não apertar o alvo de toque de cada um. */
+.gm__card-head--player {
+  padding: 14px 16px;
+  min-height: 64px;
 }
 
 .folder__name {

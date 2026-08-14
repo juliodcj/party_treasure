@@ -2,11 +2,17 @@ import { useState } from 'react'
 import Stepper from '../../components/Stepper.jsx'
 import TraitList from '../../components/TraitList.jsx'
 import { ChevronRight } from '../../components/Icons.jsx'
+import SectionHead, { ExpandCollapseAll } from '../../components/SectionHead.jsx'
 import { useStore } from '../../state/store.jsx'
 import { sgn } from '../../lib/sheet.js'
 import { titleCase } from '../../lib/text.js'
 import BreakdownSheet from './BreakdownSheet.jsx'
 import ItemModsSheet from './ItemModsSheet.jsx'
+
+/* Quais grupos ficam abertos — mora fora do componente pelo mesmo motivo do
+   Mestre (GmScreen.jsx): a aba desmonta ao trocar de sub-aba na ficha, e
+   guardar só em useState faria a seção reabrir sozinha a cada volta. */
+let gruposAbertos = { fav: true, melee: true, ranged: true }
 
 /*
  * A aba Ataques.
@@ -31,6 +37,14 @@ export default function Ataques({ player, view }) {
   const [aberto, setAberto] = useState(null)
   const [breakdown, setBreakdown] = useState(null)
   const [editando, setEditando] = useState(null)
+  const [grupos, setGrupos] = useState(gruposAbertos)
+
+  const setGrupo = (id, value) => {
+    setGrupos((atual) => {
+      gruposAbertos = { ...atual, [id]: value }
+      return gruposAbertos
+    })
+  }
 
   const favoritos = player.vitals?.favorites ?? {}
   const ehFavorito = (attack) => Boolean(favoritos[attack.id])
@@ -52,29 +66,40 @@ export default function Ataques({ player, view }) {
 
   return (
     <>
-      {/*
-        A fase sugeria oferecer o modificador de Rage já preenchido na
-        importação. Não foi feito, e de propósito: o número da Fúria muda com o
-        instinto, com o nível e com a arma, então preenchê-lo seria o app
-        chutando — justamente o que D6 e o princípio "onde o app não sabe, ele
-        admite" existem para evitar. O que dá para fazer sem mentir é contar que
-        o campo existe, que é o problema real: ninguém acha um botão que não
-        sabe que procura.
-      */}
-      <p className="charsheet__note">
-        O app soma atributo, proficiência e a arma. O que vem da sua classe —
-        fúria, instinto, especialização — e o que vem de runa entram pelo
-        <strong> Acrescentar modificador</strong>, com o rótulo que você escrever.
-      </p>
+      <ExpandCollapseAll
+        onExpand={() => setGrupos((gruposAbertos = { fav: true, melee: true, ranged: true }))}
+        onCollapse={() => setGrupos((gruposAbertos = { fav: false, melee: false, ranged: false }))}
+      />
 
       {favoritas.length > 0 ? (
-        <Grupo titulo="Favoritos" ataques={favoritas} chave="fav" {...props} />
+        <Grupo
+          titulo="Favoritos"
+          ataques={favoritas}
+          chave="fav"
+          open={grupos.fav}
+          onToggle={() => setGrupo('fav', !grupos.fav)}
+          {...props}
+        />
       ) : null}
 
-      <Grupo titulo="Corpo a corpo" ataques={corpoACorpo} chave="melee" {...props} />
+      <Grupo
+        titulo="Corpo a corpo"
+        ataques={corpoACorpo}
+        chave="melee"
+        open={grupos.melee}
+        onToggle={() => setGrupo('melee', !grupos.melee)}
+        {...props}
+      />
 
       {aDistancia.length > 0 ? (
-        <Grupo titulo="À distância" ataques={aDistancia} chave="ranged" {...props} />
+        <Grupo
+          titulo="À distância"
+          ataques={aDistancia}
+          chave="ranged"
+          open={grupos.ranged}
+          onToggle={() => setGrupo('ranged', !grupos.ranged)}
+          {...props}
+        />
       ) : null}
 
       {breakdown ? <BreakdownSheet stat={breakdown} onClose={() => setBreakdown(null)} /> : null}
@@ -85,18 +110,17 @@ export default function Ataques({ player, view }) {
   )
 }
 
-function Grupo({ titulo, ataques, chave, ...props }) {
+function Grupo({ titulo, ataques, chave, open, onToggle, ...props }) {
   return (
     <section className="list-group">
-      <h3 className="label list-group__title">
-        <span>{titulo}</span>
-        <span className="list-group__count">{ataques.length}</span>
-      </h3>
-      <div className="list-rows atk">
-        {ataques.map((attack) => (
-          <Linha key={`${chave}-${attack.id}`} attack={attack} grupo={chave} {...props} />
-        ))}
-      </div>
+      <SectionHead title={titulo} count={ataques.length} open={open} onToggle={onToggle} />
+      {open ? (
+        <div className="list-rows atk">
+          {ataques.map((attack) => (
+            <Linha key={`${chave}-${attack.id}`} attack={attack} grupo={chave} {...props} />
+          ))}
+        </div>
+      ) : null}
     </section>
   )
 }

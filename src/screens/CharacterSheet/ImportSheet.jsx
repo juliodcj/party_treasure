@@ -1,7 +1,13 @@
 import { useState } from 'react'
 import Sheet, { SheetActions } from '../../components/Sheet.jsx'
 import { parsePathbuilder } from '../../lib/pathbuilder.js'
-import { applyResolution, fetchEntriesByName, namesToResolve } from '../../lib/loreResolve.js'
+import {
+  applyResolution,
+  fetchEntriesByName,
+  fetchSpellCostsByName,
+  namesToResolve,
+  spellNamesToResolve,
+} from '../../lib/loreResolve.js'
 import { useStore } from '../../state/store.jsx'
 
 /*
@@ -41,9 +47,16 @@ export default function ImportSheet({ player, onClose }) {
 
     setCarregando(true)
     const resolucao = await fetchEntriesByName(namesToResolve(ficha))
+    const custosDeMagia = await fetchSpellCostsByName(spellNamesToResolve(ficha))
     setCarregando(false)
 
     const resolvida = applyResolution(ficha, resolucao)
+    /* Custo de ação de cada magia do grimório/foco, para a aba Magias mostrar
+       o pip sem precisar abrir cada linha — mesma ideia de `actionCost` em
+       feats/ações, só que a magia resolve pelo slug (comentário acima). */
+    if (resolvida.spellcasting) {
+      resolvida.spellcasting = { ...resolvida.spellcasting, spellCosts: custosDeMagia }
+    }
     /* Servidor fora do ar ou sem a ingestão: a ficha entra assim mesmo, sem
        descrição. Ficha sem descrição é pior que ficha com — e muito melhor que
        importação recusada no meio da sessão. */

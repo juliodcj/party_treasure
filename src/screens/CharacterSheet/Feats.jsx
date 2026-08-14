@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import TraitList from '../../components/TraitList.jsx'
 import { ChevronRight } from '../../components/Icons.jsx'
+import SectionHead, { ExpandCollapseAll } from '../../components/SectionHead.jsx'
 import { useStore } from '../../state/store.jsx'
 
 /*
@@ -41,14 +42,28 @@ const GRUPOS = [
   { id: 'outros', titulo: 'Outros', cabe: () => true },
 ]
 
+/* Quais grupos ficam abertos — sobrevive à troca de sub-aba (mesmo motivo de
+   Ataques.jsx e GmScreen.jsx). "fav" entra junto mesmo não sendo um id de
+   GRUPOS: chave própria, sem conflito. */
+let gruposAbertos = { fav: true, 'class-feature': true, class: true, ancestry: true, outros: true }
+
 export default function Feats({ player }) {
   const [aberto, setAberto] = useState(null)
+  const [grupos, setGrupos] = useState(gruposAbertos)
   const feats = player.sheet?.feats ?? []
   const favoritos = player.vitals?.favorites ?? {}
 
+  const setGrupo = (id, value) => {
+    setGrupos((atual) => {
+      gruposAbertos = { ...atual, [id]: value }
+      return gruposAbertos
+    })
+  }
+
   /* Cada feat cai no PRIMEIRO grupo que o aceita, então "Outros" recolhe o que
      sobrou em vez de duplicar. */
-  const grupos = GRUPOS.map((grupo) => ({
+  const idsVisiveis = GRUPOS.map((g) => g.id)
+  const gruposComItens = GRUPOS.map((grupo) => ({
     ...grupo,
     itens: feats.filter((feat) => grupo.cabe(feat) && !jaCaiu(feat, grupo, feats)),
   })).filter((grupo) => grupo.itens.length)
@@ -57,6 +72,15 @@ export default function Feats({ player }) {
 
   return (
     <>
+      <ExpandCollapseAll
+        onExpand={() =>
+          setGrupos((gruposAbertos = Object.fromEntries(['fav', ...idsVisiveis].map((id) => [id, true]))))
+        }
+        onCollapse={() =>
+          setGrupos((gruposAbertos = Object.fromEntries(['fav', ...idsVisiveis].map((id) => [id, false]))))
+        }
+      />
+
       {favoritas.length ? (
         <Grupo
           titulo="Favoritos"
@@ -65,10 +89,12 @@ export default function Feats({ player }) {
           player={player}
           aberto={aberto}
           setAberto={setAberto}
+          open={grupos.fav}
+          onToggle={() => setGrupo('fav', !grupos.fav)}
         />
       ) : null}
 
-      {grupos.map((grupo) => (
+      {gruposComItens.map((grupo) => (
         <Grupo
           key={grupo.id}
           titulo={grupo.titulo}
@@ -77,6 +103,8 @@ export default function Feats({ player }) {
           player={player}
           aberto={aberto}
           setAberto={setAberto}
+          open={grupos[grupo.id] ?? true}
+          onToggle={() => setGrupo(grupo.id, !(grupos[grupo.id] ?? true))}
         />
       ))}
 
@@ -96,25 +124,24 @@ function jaCaiu(feat, grupo, todos) {
 
 const chave = (feat) => `feat:${feat.id ?? feat.name}`
 
-function Grupo({ titulo, itens, prefixo, player, aberto, setAberto }) {
+function Grupo({ titulo, itens, prefixo, player, aberto, setAberto, open, onToggle }) {
   return (
     <section className="list-group">
-      <h3 className="label list-group__title">
-        <span>{titulo}</span>
-        <span className="list-group__count">{itens.length}</span>
-      </h3>
-      <div className="list-rows entries">
-        {itens.map((feat, indice) => (
-          <Linha
-            key={`${prefixo}-${feat.id ?? feat.name}-${indice}`}
-            feat={feat}
-            id={`${prefixo}-${feat.id ?? feat.name}`}
-            player={player}
-            aberto={aberto}
-            setAberto={setAberto}
-          />
-        ))}
-      </div>
+      <SectionHead title={titulo} count={itens.length} open={open} onToggle={onToggle} />
+      {open ? (
+        <div className="list-rows entries">
+          {itens.map((feat, indice) => (
+            <Linha
+              key={`${prefixo}-${feat.id ?? feat.name}-${indice}`}
+              feat={feat}
+              id={`${prefixo}-${feat.id ?? feat.name}`}
+              player={player}
+              aberto={aberto}
+              setAberto={setAberto}
+            />
+          ))}
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -189,30 +216,35 @@ function Linha({ feat, id, player, aberto, setAberto }) {
 }
 
 /*
- * O custo em ações, como o PF2e o desenha: losangos para ações, seta curva para
- * reação. O dado é estruturado (`{ type, value }`) e quem desenha é aqui —
- * assim o glifo nunca vira o dado guardado.
+ * O custo em ações. O dado é estruturado (`{ type, value }`) e quem desenha
+ * é aqui — assim o glifo nunca vira o dado guardado.
  */
+/* Glifo da fonte oficial Pathfinder2eActions (base.css), a mesma que já
+   desenha "Ativar" dentro da descrição importada (.action-glyph) — aqui é só
+   o mesmo caractere, fora do HTML do pack. */
+const GLYPH_ACAO = { 1: '1', 2: '2', 3: '3' }
+
 export function ActionCost({ cost }) {
   if (!cost) return null
   if (cost.type === 'action') {
+    const valor = Math.max(1, Math.min(3, cost.value ?? 1))
     return (
-      <span className="entry__cost" aria-label={`${cost.value} ${cost.value === 1 ? 'ação' : 'ações'}`}>
-        {'◆'.repeat(Math.max(1, Math.min(3, cost.value ?? 1)))}
+      <span className="entry__cost" aria-label={`${valor} ${valor === 1 ? 'ação' : 'ações'}`}>
+        <span className="action-glyph">{GLYPH_ACAO[valor]}</span>
       </span>
     )
   }
   if (cost.type === 'reaction') {
     return (
-      <span className="entry__cost entry__cost--reaction" aria-label="reação">
-        ↻
+      <span className="entry__cost" aria-label="reação">
+        <span className="action-glyph">r</span>
       </span>
     )
   }
   if (cost.type === 'free') {
     return (
-      <span className="entry__cost entry__cost--free" aria-label="ação livre">
-        ◇
+      <span className="entry__cost" aria-label="ação livre">
+        <span className="action-glyph">f</span>
       </span>
     )
   }

@@ -211,3 +211,55 @@ export async function fetchSpellByName(name, fetcher = fetch) {
     return null
   }
 }
+
+/** Todo nome de magia que o grimório/foco trazem na importação — para
+    resolver o custo em ação de uma vez, sem esperar cada linha abrir. */
+export function spellNamesToResolve(sheet) {
+  const conj = sheet?.spellcasting
+  if (!conj) return []
+  const nomes = [
+    ...(conj.book ?? []).map((sp) => sp.name),
+    ...(conj.focusCantrips ?? []),
+    ...(conj.focusSpells ?? []),
+  ]
+  return [...new Set(nomes.filter(Boolean))]
+}
+
+/**
+ * Busca o custo em ação de várias magias de uma vez, pelo slug — não pelo
+ * nome (§ acima: magia não entra no desempate de prioridade de feat/ação).
+ * Em lote pelo mesmo motivo de `fetchEntriesByName`: uma URL por magia
+ * estouraria rápido num grimório de mago.
+ */
+export async function fetchSpellCostsByName(names, fetcher = fetch) {
+  const lista = [...new Set(names.filter(Boolean))]
+  if (!lista.length) return {}
+
+  const porSlug = new Map()
+  for (const nome of lista) {
+    const slug = spellRef(nome)
+    if (!porSlug.has(slug)) porSlug.set(slug, [])
+    porSlug.get(slug).push(nome)
+  }
+
+  const LOTE = 80
+  const slugs = [...porSlug.keys()]
+  const custos = {}
+
+  for (let i = 0; i < slugs.length; i += LOTE) {
+    const fatia = slugs.slice(i, i + LOTE)
+    try {
+      const response = await fetcher(`/api/entries?slugs=${fatia.map(encodeURIComponent).join(',')}`)
+      if (!response.ok) continue
+      const payload = await response.json()
+      for (const entry of Object.values(payload.entries ?? {})) {
+        for (const nome of porSlug.get(entry.id) ?? []) custos[nome] = entry.actionCost ?? null
+      }
+    } catch {
+      /* Sem servidor ou sem corpus: a magia fica sem o pip, igual a hoje —
+         a linha ainda abre e mostra descrição sob demanda como sempre. */
+    }
+  }
+
+  return custos
+}

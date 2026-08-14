@@ -181,8 +181,8 @@ export default function Resumo({ player, view, onGoToGm }) {
       {/* ------------------------------------------------------ proficiências */}
       <Bloco titulo="Proficiências">
         <div className="grid grid--2">
-          <ListaDeGraus titulo="Armas" chaves={[['unarmed', 'Unarmed'], ['simple', 'Simple'], ['martial', 'Martial'], ['advanced', 'Advanced']]} sheet={sheet} />
-          <ListaDeGraus titulo="Armaduras" chaves={[['unarmored', 'Unarmored'], ['light', 'Light'], ['medium', 'Medium'], ['heavy', 'Heavy']]} sheet={sheet} />
+          <ListaDeGraus titulo="Armas" chaves={[['unarmed', 'Sem arma'], ['simple', 'Simples'], ['martial', 'Marciais'], ['advanced', 'Avançadas']]} sheet={sheet} />
+          <ListaDeGraus titulo="Armaduras" chaves={[['unarmored', 'Sem armadura'], ['light', 'Leve'], ['medium', 'Média'], ['heavy', 'Pesada']]} sheet={sheet} />
         </div>
       </Bloco>
 

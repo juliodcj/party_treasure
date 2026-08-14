@@ -194,7 +194,7 @@
 .chip {
   padding: 7px 14px;
   border-radius: var(--r-pill);
-  background: var(--surface);
+  background: var(--surface-raised);
   border: 1px solid var(--line-field);
 }
 
