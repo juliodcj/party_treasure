@@ -85,19 +85,34 @@ export default function Acoes({ player }) {
       ? filtradas.filter((acao) => favoritas[acao.id])
       : filtradas.filter((acao) => acao.group === aba)
 
-  /* As de perícia se dividem por perícia, e a perícia vem do pack (o segundo
-     nível de pasta em `actions/skill/`). Quando ela não veio — pack antigo,
-     ingestão não refeita — a ação cai num balde só, com o nome que tem, em vez
-     de sumir da tela. */
-  const porPericia =
-    aba === 'skill'
-      ? [...daAba.reduce((mapa, acao) => {
-          const chave = acao.skill ?? SEM_PERICIA
-          if (!mapa.has(chave)) mapa.set(chave, [])
-          mapa.get(chave).push(acao)
-          return mapa
-        }, new Map())].sort(([a], [b]) => a.localeCompare(b))
-      : []
+  /*
+   * As seções da aba escolhida, como `[chave, título, itens]`.
+   *
+   * Perícia se divide pela perícia, que vem do pack (o segundo nível de pasta
+   * em `actions/skill/`); quando ela não veio — ingestão não refeita — a ação
+   * cai num balde só, com o nome que tem, em vez de sumir da tela.
+   *
+   * Favoritas se divide pela categoria de origem, na ordem das abas: a lista é
+   * curta e misturada, e sem a faixa não dá para saber se "Escapar" veio de
+   * perícia ou da classe.
+   *
+   * Classe e Básicas já são uma categoria só — não ganham faixa nenhuma.
+   */
+  const secoes = useMemo(() => {
+    if (aba === 'skill') {
+      return agrupar(daAba, (acao) => acao.skill ?? SEM_PERICIA)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([pericia, itens]) => [`skill-${pericia}`, pericia, itens])
+    }
+    if (aba === 'fav') {
+      return GRUPOS.map(({ id, titulo }) => [
+        `fav-${id}`,
+        titulo,
+        daAba.filter((acao) => acao.group === id),
+      ]).filter(([, , itens]) => itens.length > 0)
+    }
+    return []
+  }, [aba, daAba])
 
   return (
     <>
@@ -133,24 +148,26 @@ export default function Acoes({ player }) {
         </select>
       </label>
 
-      <ExpandCollapseAll
-        onExpand={() => setGrupos((gruposAbertos = abrirTodos(porPericia, true)))}
-        onCollapse={() => setGrupos((gruposAbertos = abrirTodos(porPericia, false)))}
-      />
+      {/* Só faz sentido onde há faixa para abrir e fechar. */}
+      {secoes.length > 0 ? (
+        <ExpandCollapseAll
+          onExpand={() => setGrupos((gruposAbertos = abrirTodas(secoes, true)))}
+          onCollapse={() => setGrupos((gruposAbertos = abrirTodas(secoes, false)))}
+        />
+      ) : null}
 
       {daAba.length === 0 ? <div className="empty">{VAZIO[aba]}</div> : null}
 
-      {/* Perícia se subdivide por perícia; as outras abas são uma lista só. */}
-      {aba === 'skill'
-        ? porPericia.map(([pericia, itens]) => {
-            const open = grupos[`skill-${pericia}`] ?? true
+      {secoes.length > 0
+        ? secoes.map(([chave, titulo, itens]) => {
+            const open = grupos[chave] ?? true
             return (
-              <section className="list-group" key={pericia}>
+              <section className="list-group" key={chave}>
                 <SectionHead
-                  title={pericia}
+                  title={titulo}
                   count={itens.length}
                   open={open}
-                  onToggle={() => setGrupo(`skill-${pericia}`, !open)}
+                  onToggle={() => setGrupo(chave, !open)}
                 />
                 {open ? (
                   <div className="list-rows entries">
@@ -186,8 +203,19 @@ const VAZIO = {
   basic: 'Nada aqui com esse filtro.',
 }
 
-const abrirTodos = (porPericia, valor) =>
-  Object.fromEntries(porPericia.map(([pericia]) => [`skill-${pericia}`, valor]))
+/** Agrupa mantendo a ordem de chegada dentro de cada balde. */
+function agrupar(lista, chaveDe) {
+  const mapa = new Map()
+  for (const item of lista) {
+    const chave = chaveDe(item)
+    if (!mapa.has(chave)) mapa.set(chave, [])
+    mapa.get(chave).push(item)
+  }
+  return [...mapa]
+}
+
+const abrirTodas = (secoes, valor) =>
+  Object.fromEntries(secoes.map(([chave]) => [chave, valor]))
 
 function Linha({ acao, player, aberto, setAberto }) {
   const { dispatch } = useStore()
