@@ -29,10 +29,26 @@ const GRUPOS = [
   { id: 'basic', titulo: 'Básicas' },
 ]
 
+/* As abas do topo. "Favoritas" não é um grupo do pack: é o que a pessoa marcou
+   com a estrela, e por isso vem primeiro — é a lista que ela abre no meio do
+   turno. As outras três são as pastas da Paizo, uma de cada vez. */
+const ABAS = [
+  { id: 'fav', titulo: 'Favoritas' },
+  { id: 'class', titulo: 'Classe' },
+  { id: 'skill', titulo: 'Perícia' },
+  { id: 'basic', titulo: 'Básicas' },
+]
+
+/* Aba escolhida — sobrevive à troca de sub-aba, como os grupos abertos. */
+let abaAtual = 'fav'
+
 export default function Acoes({ player }) {
   const [aberto, setAberto] = useState(null)
   const [traco, setTraco] = useState('')
+  const [aba, setAbaState] = useState(abaAtual)
   const [grupos, setGrupos] = useState(gruposAbertos)
+
+  const setAba = (id) => setAbaState((abaAtual = id))
 
   const setGrupo = (id, value) => {
     setGrupos((atual) => {
@@ -63,8 +79,43 @@ export default function Acoes({ player }) {
 
   const filtradas = traco ? todas.filter((acao) => (acao.traits ?? []).includes(traco)) : todas
 
+  const favoritas = player.vitals?.favorites ?? {}
+  const daAba =
+    aba === 'fav'
+      ? filtradas.filter((acao) => favoritas[acao.id])
+      : filtradas.filter((acao) => acao.group === aba)
+
+  /* As de perícia se dividem por perícia, e a perícia vem do pack (o segundo
+     nível de pasta em `actions/skill/`). Quando ela não veio — pack antigo,
+     ingestão não refeita — a ação cai num balde só, com o nome que tem, em vez
+     de sumir da tela. */
+  const porPericia =
+    aba === 'skill'
+      ? [...daAba.reduce((mapa, acao) => {
+          const chave = acao.skill ?? SEM_PERICIA
+          if (!mapa.has(chave)) mapa.set(chave, [])
+          mapa.get(chave).push(acao)
+          return mapa
+        }, new Map())].sort(([a], [b]) => a.localeCompare(b))
+      : []
+
   return (
     <>
+      <div className="seg acoes__abas" role="tablist" aria-label="Grupos de ação">
+        {ABAS.map(({ id, titulo }) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={aba === id}
+            className={`seg__tab${aba === id ? ' seg__tab--on' : ''}`}
+            onClick={() => setAba(id)}
+          >
+            {titulo}
+          </button>
+        ))}
+      </div>
+
       <label className="acoes__filtro">
         <span className="field-label">Traço</span>
         <select
@@ -82,46 +133,61 @@ export default function Acoes({ player }) {
         </select>
       </label>
 
-      {filtradas.length === 0 ? (
-        <div className="empty">Nada aqui com esse filtro.</div>
-      ) : null}
-
       <ExpandCollapseAll
-        onExpand={() => setGrupos((gruposAbertos = { class: true, skill: true, basic: true }))}
-        onCollapse={() => setGrupos((gruposAbertos = { class: false, skill: false, basic: false }))}
+        onExpand={() => setGrupos((gruposAbertos = abrirTodos(porPericia, true)))}
+        onCollapse={() => setGrupos((gruposAbertos = abrirTodos(porPericia, false)))}
       />
 
-      {GRUPOS.map((grupo) => {
-        const itens = filtradas.filter((acao) => acao.group === grupo.id)
-        if (!itens.length) return null
-        const open = grupos[grupo.id] ?? true
-        return (
-          <section className="list-group" key={grupo.id}>
-            <SectionHead
-              title={grupo.titulo}
-              count={itens.length}
-              open={open}
-              onToggle={() => setGrupo(grupo.id, !open)}
-            />
-            {open ? (
+      {daAba.length === 0 ? <div className="empty">{VAZIO[aba]}</div> : null}
+
+      {/* Perícia se subdivide por perícia; as outras abas são uma lista só. */}
+      {aba === 'skill'
+        ? porPericia.map(([pericia, itens]) => {
+            const open = grupos[`skill-${pericia}`] ?? true
+            return (
+              <section className="list-group" key={pericia}>
+                <SectionHead
+                  title={pericia}
+                  count={itens.length}
+                  open={open}
+                  onToggle={() => setGrupo(`skill-${pericia}`, !open)}
+                />
+                {open ? (
+                  <div className="list-rows entries">
+                    {itens.map((acao) => (
+                      <Linha key={acao.id} acao={acao} player={player} aberto={aberto} setAberto={setAberto} />
+                    ))}
+                  </div>
+                ) : null}
+              </section>
+            )
+          })
+        : daAba.length > 0 && (
+            <section className="list-group">
               <div className="list-rows entries">
-                {itens.map((acao) => (
-                  <Linha
-                    key={acao.id}
-                    acao={acao}
-                    player={player}
-                    aberto={aberto}
-                    setAberto={setAberto}
-                  />
+                {daAba.map((acao) => (
+                  <Linha key={acao.id} acao={acao} player={player} aberto={aberto} setAberto={setAberto} />
                 ))}
               </div>
-            ) : null}
-          </section>
-        )
-      })}
+            </section>
+          )}
     </>
   )
 }
+
+/* Rótulo do balde de quem não trouxe perícia do pack. Some sozinho quando a
+   ingestão é refeita — e enquanto não for, a ação continua na tela. */
+const SEM_PERICIA = 'Outras'
+
+const VAZIO = {
+  fav: 'Nenhuma ação favoritada. Toque na estrela de uma ação para trazê-la para cá.',
+  class: 'Nenhuma ação de classe nesta ficha.',
+  skill: 'Nada aqui com esse filtro.',
+  basic: 'Nada aqui com esse filtro.',
+}
+
+const abrirTodos = (porPericia, valor) =>
+  Object.fromEntries(porPericia.map(([pericia]) => [`skill-${pericia}`, valor]))
 
 function Linha({ acao, player, aberto, setAberto }) {
   const { dispatch } = useStore()

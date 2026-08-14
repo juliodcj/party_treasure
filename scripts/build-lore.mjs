@@ -175,7 +175,13 @@ for (const { pack, kind } of PACKS) {
     /* A primeira pasta dentro do pack. No `actions` ela é o agrupamento que a
        ficha mostra — `basic/`, `skill/`, `class/` —, e vem da organização da
        própria Paizo em vez de uma lista nossa. */
-    const grupo = path.relative(dir, file).split(path.sep)[0].replace(/\.json$/, '') || null
+    const partes = path.relative(dir, file).split(path.sep)
+    const grupo = partes[0].replace(/\.json$/, '') || null
+    /* Dentro de `skill/` a Paizo separa por perícia (`skill/athletics/...`), e é
+       essa pasta que vira o agrupamento da aba Ações. Pack sem esse nível
+       devolve null, e a tela junta tudo num balde só em vez de sumir com a
+       ação. Perícia continua em inglês, como o resto do pack (D12). */
+    const pericia = grupo === 'skill' && partes.length > 2 ? partes[1] : null
     const html = sanitizeDescription(system?.description?.value ?? '')
     const traitBlock = system?.traits ?? {}
 
@@ -240,6 +246,7 @@ for (const { pack, kind } of PACKS) {
         slug,
         name: entry.name,
         group: grupo,
+        skill: pericia,
         actionCost: entry.actionCost,
         traits: entry.traits,
         rarity: entry.rarity,

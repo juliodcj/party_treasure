@@ -1357,7 +1357,14 @@
   color: var(--text-2);
 }
 
+/* O rótulo fica ancorado no topo (regra acima), mas o valor centraliza no que
+   sobra da célula: assim a célula sem legenda de grau não deixa um vão embaixo
+   com o número grudado no rótulo. */
 .statcell__value {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: var(--t-lg);
   font-weight: 700;
   line-height: var(--lh-tight);
@@ -1375,6 +1382,12 @@
 .statcell__sub {
   font-size: var(--t-label);
   color: var(--text-3);
+}
+
+/* O valor virou flex (regra acima) e o flex come o espaço do texto: a unidade
+   recupera o respiro por margem. */
+.statcell__unit {
+  margin-left: 3px;
 }
 
 /* Linha CA + Escudo (Resumo): as duas únicas células com borda própria do
@@ -2139,6 +2152,12 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* As quatro abas da aba Ações. Mesmo `.seg` das sub-abas da ficha — a barra
+   respira do filtro de traço logo abaixo. */
+.acoes__abas {
+  margin-bottom: 10px;
 }
 
 .acoes__filtro {
