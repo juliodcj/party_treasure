@@ -356,7 +356,9 @@ function Escudo({ player, shield }) {
   )
 }
 
-function DescansoSheet({ player, onClose, onConfirm }) {
+/* Exportado porque a aba Magias também descansa: o botão "Descansar" da faixa
+   de conjuração abre esta mesma confirmação, não uma cópia dela. */
+export function DescansoSheet({ player, onClose, onConfirm }) {
   const patch = nightRest(player.sheet, player.vitals)
   return (
     <Sheet center onClose={onClose}>

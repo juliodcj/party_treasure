@@ -5,11 +5,12 @@ import TraitList from '../../components/TraitList.jsx'
 import { ChevronRight } from '../../components/Icons.jsx'
 import SectionHead, { ExpandCollapseAll } from '../../components/SectionHead.jsx'
 import { useStore } from '../../state/store.jsx'
-import { refocus } from '../../lib/sheet.js'
+import { refocus, sgn } from '../../lib/sheet.js'
 import { spellRef } from '../../lib/loreResolve.js'
-import BreakdownSheet, { StatCell } from './BreakdownSheet.jsx'
+import BreakdownSheet from './BreakdownSheet.jsx'
 import Compendio from './Compendio.jsx'
 import { ActionCost } from './Feats.jsx'
+import { DescansoSheet } from './Resumo.jsx'
 
 /* Quais seções ficam abertas — sobrevive à troca de sub-aba. Chave dinâmica
    (círculo varia por personagem): id desconhecido nasce aberto. */
@@ -33,6 +34,7 @@ export default function Magias({ player, view }) {
   const [aberto, setAberto] = useState(null)
   const [escolhendo, setEscolhendo] = useState(null) // rank do slot vazio tocado
   const [compendioAberto, setCompendioAberto] = useState(false)
+  const [descansando, setDescansando] = useState(false)
   const [secoes, setSecoes] = useState(secoesAbertas)
 
   const aberta = (id) => secoes[id] ?? true
@@ -70,14 +72,20 @@ export default function Magias({ player, view }) {
   /* Visão de conjunto de todos os círculos numa linha só, como no protótipo —
      um resumo rápido de quanto sobrou antes de abrir cada balde individual.
      Só para preparada: espontânea/inata não tem "pronto/total" por círculo,
-     porque a ficha não controla o que já foi lançado hoje (§17b). */
+     porque a ficha não controla o que já foi lançado hoje (§17b).
+
+     Começa no círculo 1: os truques têm o próprio chip logo acima, e repeti-los
+     na tabela gastaria uma coluna com o número que já está do lado. */
   const tabelaSlots = espontanea
     ? []
-    : (conj.perDay ?? []).map((total, rank) => {
-        if (!total) return { rank, vazio: true }
-        const prontas = preparadas.filter((p) => p.rank === rank && (rank === 0 || !p.used)).length
-        return { rank, vazio: false, prontas, total }
-      })
+    : (conj.perDay ?? [])
+        .map((total, rank) => ({ total, rank }))
+        .filter(({ rank }) => rank > 0)
+        .map(({ total, rank }) => {
+          if (!total) return { rank, vazio: true }
+          const prontas = preparadas.filter((p) => p.rank === rank && !p.used).length
+          return { rank, vazio: false, prontas, total }
+        })
 
   /* Toda seção que existe nesta ficha, para o par Expandir/Recolher mexer só
      no que está de fato na tela. */
@@ -101,9 +109,20 @@ export default function Magias({ player, view }) {
             <span className="magias__conj-nome">
               {rotuloTradicao(conj.tradition)} · {rotuloPreparo(conj.preparation)}
             </span>
-            {view.spellDc ? <StatCell label="DC" stat={view.spellDc} onOpen={setBreakdown} /> : null}
+            {/* DC e Ataque como par rótulo-valor na mesma linha, e não como
+                caixa: aqui eles são a legenda da conjuração, não uma célula da
+                grade. Continuam tocáveis, que é o ponto da aba. */}
+            {view.spellDc ? (
+              <button type="button" className="magias__conj-stat" onClick={() => setBreakdown(view.spellDc)}>
+                <span className="magias__conj-stat-label">DC</span>
+                <span className="magias__conj-stat-value">{view.spellDc.total}</span>
+              </button>
+            ) : null}
             {view.spellAttack ? (
-              <StatCell label="Ataque" stat={view.spellAttack} onOpen={setBreakdown} />
+              <button type="button" className="magias__conj-stat" onClick={() => setBreakdown(view.spellAttack)}>
+                <span className="magias__conj-stat-label">Ataque</span>
+                <span className="magias__conj-stat-value">{sgn(view.spellAttack.total)}</span>
+              </button>
             ) : null}
           </div>
           <div className="magias__conj-chips">
@@ -113,6 +132,15 @@ export default function Magias({ player, view }) {
             <span className="chip chip--sm">
               Foco {focoAtual}/{maxFoco}
             </span>
+            {/* O descanso é o que devolve slot e foco: fica na faixa que os
+                mostra, e não numa aba distante. */}
+            <button
+              type="button"
+              className="btn btn--solid magias__conj-rest"
+              onClick={() => setDescansando(true)}
+            >
+              Descansar
+            </button>
           </div>
           {tabelaSlots.length > 0 ? (
             <div
@@ -143,37 +171,28 @@ export default function Magias({ player, view }) {
 
       {maxFoco > 0 ? (
         <section className="list-group">
-          <SectionHead title="Foco" open={aberta('foco')} onToggle={() => setSecao('foco', !aberta('foco'))} />
+          {/* As bolinhas ficam na faixa do título, como no protótipo: o quanto
+              sobrou de foco se lê sem abrir a seção. */}
+          <SectionHead
+            title="Magias de foco"
+            open={aberta('foco')}
+            onToggle={() => setSecao('foco', !aberta('foco'))}
+            action={
+              <FocoDots
+                atual={focoAtual}
+                max={maxFoco}
+                onSet={(value) => dispatch({ type: 'SET_FOCUS', playerId: player.id, value })}
+              />
+            }
+          />
           {aberta('foco') ? (
             <>
-              <div className="list-rows magias__foco">
-                <Stepper
-                  value={focoAtual}
-                  label="pontos de foco"
-                  canDec={focoAtual > 0}
-                  canInc={focoAtual < maxFoco}
-                  onDec={() => dispatch({ type: 'SET_FOCUS', playerId: player.id, value: focoAtual - 1 })}
-                  onInc={() => dispatch({ type: 'SET_FOCUS', playerId: player.id, value: focoAtual + 1 })}
-                />
-                <button
-                  type="button"
-                  className="btn btn--tint"
-                  disabled={!podeRefocus}
-                  onClick={() => {
-                    const patch = refocus(sheet, vitals)
-                    if (patch) dispatch({ type: 'SET_FOCUS', playerId: player.id, value: patch.focusPoints })
-                  }}
-                >
-                  Refocus (+1)
-                </button>
-              </div>
               {(conj.focusCantrips.length || conj.focusSpells.length) > 0 ? (
                 <div className="list-rows">
                   {conj.focusCantrips.map((nome) => (
                     <SpellRow
                       key={`fc-${nome}`}
                       nome={nome}
-                      rankTag="Truque"
                       custo={custos[nome]}
                       aberto={aberto}
                       setAberto={setAberto}
@@ -183,7 +202,6 @@ export default function Magias({ player, view }) {
                     <SpellRow
                       key={`fs-${nome}`}
                       nome={nome}
-                      rankTag="Foco"
                       custo={custos[nome]}
                       aberto={aberto}
                       setAberto={setAberto}
@@ -191,6 +209,19 @@ export default function Magias({ player, view }) {
                   ))}
                 </div>
               ) : null}
+              <div className="list-rows">
+                <button
+                  type="button"
+                  className="magias__link-row"
+                  disabled={!podeRefocus}
+                  onClick={() => {
+                    const patch = refocus(sheet, vitals)
+                    if (patch) dispatch({ type: 'SET_FOCUS', playerId: player.id, value: patch.focusPoints })
+                  }}
+                >
+                  Refocus (+1)
+                </button>
+              </div>
             </>
           ) : null}
         </section>
@@ -229,7 +260,7 @@ export default function Magias({ player, view }) {
         <>
           {/* ------------------------------------------------ truques preparados */}
           <RankBucket
-            titulo="Truques"
+            titulo="Preparadas · Truques"
             rank={0}
             total={capCantrips}
             preparadas={preparadas.filter((p) => p.rank === 0)}
@@ -247,7 +278,7 @@ export default function Magias({ player, view }) {
           {circulos.map(({ rank, total }) => (
             <RankBucket
               key={rank}
-              titulo={`Círculo ${rank}`}
+              titulo={`Preparadas · Rank ${rank}`}
               rank={rank}
               total={total}
               preparadas={preparadas.filter((p) => p.rank === rank)}
@@ -290,7 +321,7 @@ export default function Magias({ player, view }) {
       {/* ------------------------------------------------------ lista especial */}
       <section className="list-group">
         <SectionHead
-          title="Especial"
+          title="Preparadas · Especial"
           count={extras.length ? `${extras.filter((e) => !e.used).length} / ${extras.length}` : 'vazio'}
           open={aberta('especial')}
           onToggle={() => setSecao('especial', !aberta('especial'))}
@@ -325,11 +356,52 @@ export default function Magias({ player, view }) {
       {compendioAberto ? (
         <Compendio player={player} conj={conj} onClose={() => setCompendioAberto(false)} />
       ) : null}
+      {descansando ? (
+        <DescansoSheet
+          player={player}
+          onClose={() => setDescansando(false)}
+          onConfirm={() => {
+            dispatch({ type: 'REST', playerId: player.id })
+            setDescansando(false)
+          }}
+        />
+      ) : null}
     </>
   )
 }
 
 /* ------------------------------------------------------------------ peças */
+
+/*
+ * Os pontos de foco como bolinhas, no cabeçalho da seção — como no protótipo.
+ *
+ * Cheia é ponto disponível, vazia é ponto gasto. Tocar numa bolinha leva o foco
+ * até ela: gastar é tocar na última cheia, recuperar é tocar na primeira vazia.
+ * Um stepper daria o mesmo, com o dobro de toques e sem dizer de relance quanto
+ * sobrou — que é a pergunta que se faz no meio da mesa.
+ */
+function FocoDots({ atual, max, onSet }) {
+  return (
+    <span className="foco-dots" role="group" aria-label={`Pontos de foco: ${atual} de ${max}`}>
+      {Array.from({ length: max }, (_, i) => {
+        const cheia = i < atual
+        /* Tocar na bolinha que já é a última cheia zera aquele ponto; qualquer
+           outra leva o foco até ela. */
+        const alvo = cheia && i + 1 === atual ? i : i + 1
+        return (
+          <button
+            key={i}
+            type="button"
+            className={`foco-dot${cheia ? ' foco-dot--on' : ''}`}
+            aria-label={`Foco ${i + 1} de ${max}`}
+            aria-pressed={cheia}
+            onClick={() => onSet(alvo)}
+          />
+        )
+      })}
+    </span>
+  )
+}
 
 const rotuloTradicao = (tradition) => TRADICOES[tradition] ?? tradition ?? '—'
 const TRADICOES = { arcane: 'Arcana', divine: 'Divina', occult: 'Oculta', primal: 'Primal' }

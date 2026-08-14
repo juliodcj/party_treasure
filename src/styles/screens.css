@@ -1329,16 +1329,26 @@
 .grid--6 { grid-template-columns: repeat(6, 1fr); }
 
 /* Uma célula de número. Tocável abre o breakdown; a de fato, não. */
+/* Conteúdo ancorado no topo, e não centrado: numa linha de células em que só
+   algumas têm legenda de grau embaixo (Percepção tem "Expert", Velocidade não
+   tem nada), centrar deixa cada rótulo numa altura diferente. Ancorado, os
+   rótulos da linha inteira ficam no mesmo prumo. */
 .statcell {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 1px;
   padding: 8px 4px 9px;
   min-height: var(--tap-md);
   background: var(--surface);
   text-align: center;
+}
+
+/* A caixa da CA é a exceção: alta, sozinha na coluna e sem legenda embaixo —
+   ali o centro é o lugar certo. */
+.statcell--ac {
+  justify-content: center;
 }
 
 .statcell__label {
@@ -2207,11 +2217,66 @@
   color: var(--text-3);
 }
 
-.magias__foco {
-  padding: 11px 16px 12px;
+/* "Descansar" empurrado para a direita da faixa de chips, como no protótipo. */
+.magias__conj-rest {
+  margin-left: auto;
+}
+
+/* DC e Ataque na faixa de conjuração: rótulo cinza e valor forte na mesma
+   linha, e não a caixa de `.statcell` — aqui eles legendam a conjuração. */
+.magias__conj-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.magias__conj-stat-label {
+  font-size: var(--t-meta);
+  color: var(--text-2);
+}
+
+.magias__conj-stat-value {
+  font-size: var(--t-body);
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Bolinhas de ponto de foco, na faixa de título de "Magias de foco". Cheia é
+   ponto disponível; vazia é ponto gasto. */
+.foco-dots {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 5px;
+}
+
+.foco-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--line-check);
+  flex-shrink: 0;
+}
+
+.foco-dot--on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Ação de lista escrita como link centrado ("Refocus", "Adicionar magia"): é
+   uma linha da lista, não um botão flutuando sobre ela. */
+.magias__link-row {
+  width: 100%;
+  padding: 11px 16px 12px;
+  text-align: center;
+  font-size: var(--t-sm);
+  font-weight: 700;
+  color: var(--accent-ink);
+}
+
+.magias__link-row:disabled {
+  opacity: var(--disabled);
 }
 
 /* Bucket de rank dentro de "Magias conhecidas" (conjuração espontânea). */
