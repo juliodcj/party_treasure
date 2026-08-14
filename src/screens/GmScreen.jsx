@@ -5,7 +5,7 @@ import Stepper from '../components/Stepper.jsx'
 import Coins, { Price } from '../components/Coins.jsx'
 import { CoinInputs } from '../components/ItemForm.jsx'
 import { EMPTY_FILTERS, FiltersBar } from '../components/ItemFilters.jsx'
-import { ChevronRight, EditIcon, TrashIcon } from '../components/Icons.jsx'
+import { ChevronRight, EditIcon, SheetIcon, TrashIcon } from '../components/Icons.jsx'
 import EditWalletSheet from '../components/EditWalletSheet.jsx'
 import ShopEditScreen from './ShopEditScreen.jsx'
 import ImportSheet from './CharacterSheet/ImportSheet.jsx'
@@ -439,8 +439,33 @@ function PlayerCard({ player, canDelete, onDelete }) {
             />
           </button>
         </div>
-        {/* "Dinheiro" e "Item" são ações irmãs: mesmo peso. O azul cheio fica
-            para quem fecha um fluxo, não para quem abre um painel. */}
+        {/* Ficha entra e sai só por aqui (D14): um único lugar de substituição.
+            Vira ícone porque é a ação menos usada da linha — o texto foi para
+            a segunda linha, essa fica só com o alvo de toque. */}
+        <button
+          type="button"
+          className="icon-btn icon-btn--ghost"
+          aria-expanded={panel === 'sheet'}
+          aria-label={`Ficha de ${player.name}`}
+          title="Ficha"
+          onClick={() => openPanel('sheet')}
+        >
+          <SheetIcon />
+        </button>
+        <button
+          type="button"
+          className="icon-btn icon-btn--accent"
+          title={canDelete ? 'Excluir jogador' : 'Precisa haver ao menos um jogador'}
+          aria-label={`Excluir ${player.name}`}
+          disabled={!canDelete}
+          onClick={onDelete}
+        >
+          <TrashIcon />
+        </button>
+      </div>
+      {/* "Dinheiro", "Item" e "Condições" são as ações usadas toda sessão —
+          ganham a linha própria, cheia, para não disputar espaço com o nome. */}
+      <div className="gm__card-actions">
         <button
           type="button"
           className="btn btn--tint"
@@ -457,32 +482,8 @@ function PlayerCard({ player, canDelete, onDelete }) {
         >
           Item
         </button>
-        {/* Ficha entra e sai só por aqui (D14): um único lugar de substituição.
-            Vincular e Atualizar são azuis porque se desfazem — é só colar outro
-            JSON. Remover é o painel, e lá dentro o botão é vermelho. */}
-        <button
-          type="button"
-          className="btn btn--tint"
-          aria-expanded={panel === 'sheet'}
-          onClick={() => openPanel('sheet')}
-        >
-          Ficha
-        </button>
-        {/* Aplica direto, sem painel próprio: a folha de condições já é do
-            jogador (ConditionsSheet.jsx), só falta o mestre poder abri-la
-            daqui também. */}
         <button type="button" className="btn btn--tint" onClick={() => setCondicoes(true)}>
           Condições
-        </button>
-        <button
-          type="button"
-          className="icon-btn icon-btn--accent"
-          title={canDelete ? 'Excluir jogador' : 'Precisa haver ao menos um jogador'}
-          aria-label={`Excluir ${player.name}`}
-          disabled={!canDelete}
-          onClick={onDelete}
-        >
-          <TrashIcon />
         </button>
       </div>
 

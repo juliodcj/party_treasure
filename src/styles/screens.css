@@ -851,11 +851,24 @@
   text-align: left;
 }
 
-/* A linha do jogador carrega mais botão que a da loja (Dinheiro, Item, Ficha,
-   Condições) — mais alta para não apertar o alvo de toque de cada um. */
+/* A linha do jogador só carrega nome, carteira, ícone de ficha e excluir —
+   os comandos de texto (Dinheiro, Item, Condições) foram para .gm__card-actions,
+   a linha de baixo. */
 .gm__card-head--player {
   padding: 14px 16px;
   min-height: 64px;
+}
+
+/* Segunda linha do cartão de jogador: os três comandos usados toda sessão,
+   cheios e do mesmo peso — não disputam espaço com o nome. */
+.gm__card-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 14px;
+}
+
+.gm__card-actions .btn {
+  flex: 1;
 }
 
 .folder__name {
