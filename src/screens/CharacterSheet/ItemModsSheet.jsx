@@ -72,13 +72,6 @@ export default function ItemModsSheet({ player, item, onClose }) {
         Acrescentar modificador
       </button>
 
-      {/* O inventário guarda quantidade, não instâncias: não dá para ter uma
-          adaga com runa e outra sem. Dizer isso é melhor que deixar a pessoa
-          descobrir depois de equipar. */}
-      <p className="charsheet__note mods__caveat">
-        Vale para todas as {item.name} da mochila, não para uma só.
-      </p>
-
       <SheetActions onConfirm={salvar} onCancel={onClose} confirmLabel="Salvar" />
     </Sheet>
   )

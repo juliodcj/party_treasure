@@ -225,6 +225,8 @@ function Linha({ attack, grupo, player, aberto, setAberto, onBreakdown, onEditar
             {noInventario ? <Celula rotulo="Quantidade" valor={attack.qty} /> : null}
           </dl>
 
+          {/* Sem o item na mochila não há o que modificar (é o caso do Punho):
+              o botão simplesmente não existe. */}
           {noInventario ? (
             <button
               type="button"
@@ -235,11 +237,7 @@ function Linha({ attack, grupo, player, aberto, setAberto, onBreakdown, onEditar
                 ? `Modificadores (${player.itemMods[attack.id].length})`
                 : 'Acrescentar modificador'}
             </button>
-          ) : (
-            <p className="charsheet__note">
-              O Punho não está na mochila, então não tem modificador por item.
-            </p>
-          )}
+          ) : null}
         </div>
       ) : null}
     </div>

@@ -88,28 +88,16 @@ export default function ImportSheet({ player, onClose }) {
             <Linha rotulo="Feats e features" valor={String(previa.feats.length + previa.actions.length)} />
           </dl>
 
-          <p className="charsheet__note">
-            Nenhum item, moeda ou número pronto vem do Pathbuilder. A mochila e a
-            carteira continuam sendo as do app.
-          </p>
-
           {semServidor ? (
-            <div className="charsheet__warn">
-              Não consegui falar com o servidor para buscar as descrições. A ficha
-              entra assim mesmo, com os nomes e sem os textos de regra.
-            </div>
+            <div className="charsheet__warn">Servidor fora do ar: a ficha entra sem as descrições.</div>
           ) : null}
 
+          {/* Nome que não resolveu aparece com o nome que veio — some da tela é
+              o único desfecho proibido. */}
           {previa.unresolved.length > 0 && !semServidor ? (
             <div className="charsheet__warn">
               <div className="label">Sem verbete nos packs</div>
-              <p className="charsheet__warn-text">
-                {previa.unresolved.join(' · ')}
-              </p>
-              <p className="charsheet__warn-text">
-                Entram na ficha com o nome que veio, sem descrição. Costuma ser
-                conteúdo de livro que os packs ainda não cobrem.
-              </p>
+              <p className="charsheet__warn-text">{previa.unresolved.join(' · ')}</p>
             </div>
           ) : null}
 
@@ -143,10 +131,7 @@ export default function ImportSheet({ player, onClose }) {
           Copie o texto todo e cole aqui.
         </p>
         {jaTem ? (
-          <p className="charsheet__note">
-            A ficha atual será substituída inteira. Inventário, carteira, PV,
-            condições e o que estiver equipado ficam como estão.
-          </p>
+          <p className="charsheet__note">A ficha atual será substituída inteira.</p>
         ) : null}
 
         <textarea

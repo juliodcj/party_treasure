@@ -55,16 +55,6 @@ export default function CharacterSheetScreen({ player, sub, onGoToGm }) {
 
   return (
     <>
-      {semNadaEquipado(player) ? (
-        <div className="charsheet__warn">
-          Ficha importada. Agora monte a mochila no Inventário e vista a
-          armadura.
-          {'\n'}
-          Nenhum item vem do Pathbuilder, então a CA aqui é a de quem está
-          desarmado, e Ataques nasce vazia.
-        </div>
-      ) : null}
-
       {sub === 'resumo' ? <Resumo player={player} view={view} onGoToGm={onGoToGm} /> : null}
       {sub === 'ataques' ? <Ataques player={player} view={view} /> : null}
       {sub === 'magias' ? <Magias player={player} view={view} /> : null}
@@ -72,19 +62,6 @@ export default function CharacterSheetScreen({ player, sub, onGoToGm }) {
       {sub === 'acoes' ? <Acoes player={player} /> : null}
     </>
   )
-}
-
-/*
- * Nada vestido nem empunhado.
- *
- * É o estado logo depois de importar, porque item nenhum vem do Pathbuilder
- * (D2): a CA do Rurik mostra 15 e não 18, e a aba Ataques nasce vazia. Sem o
- * aviso, a pessoa acha que a importação falhou. Ele some sozinho quando ela
- * veste alguma coisa — não é um alerta para dispensar, é um estado da ficha.
- */
-function semNadaEquipado(player) {
-  const gear = player.gear ?? {}
-  return !gear.wornArmorId && !gear.heldShieldId && !(gear.equippedWeaponIds ?? []).length
 }
 
 /**

@@ -508,10 +508,7 @@ function PlayerCard({ player, canDelete, onDelete }) {
             </>
           ) : (
             <>
-              <div className="gm__hint">
-                Sem ficha. Cole o JSON do Pathbuilder para vincular uma — o
-                inventário e a carteira não mudam.
-              </div>
+              <div className="gm__hint">Sem ficha</div>
               <button
                 type="button"
                 className="btn btn--solid btn--block"

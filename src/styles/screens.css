@@ -2041,10 +2041,6 @@
   gap: 8px;
 }
 
-.mods__caveat {
-  margin-top: 10px;
-}
-
 /* ------------------------------------------- ficha: listas de verbete
 
    Vale para Feats e Ações — as duas são a mesma lista, com nome, custo em
@@ -2214,10 +2210,6 @@
 
 .magias__rank-label {
   padding: 7px 16px 4px;
-}
-
-.magias__note {
-  padding: 10px 16px 12px;
 }
 
 /* Linha "Slot vazio": mesma altura e recuo das linhas preparadas, alvo é o

@@ -222,11 +222,6 @@ export default function Magias({ player, view }) {
                   </div>
                 ))}
               </div>
-              <p className="charsheet__note magias__note">
-                Conjuração espontânea: esta ficha ainda não controla quantas magias
-                você já lançou hoje. Marque na mesa mesmo — nenhum fixture real de
-                conjurador espontâneo foi testado até agora.
-              </p>
             </>
           ) : null}
         </section>
