@@ -66,7 +66,7 @@ export function StatCell({ label, stat, sub = null, onOpen, className = '' }) {
 }
 
 /** Número que não se explica porque não é cálculo: deslocamento, tamanho. */
-export function FactCell({ label, value, unit = null }) {
+export function FactCell({ label, value, unit = null, sub = null }) {
   return (
     <div className="statcell statcell--fact">
       <span className="statcell__label">{label}</span>
@@ -74,6 +74,7 @@ export function FactCell({ label, value, unit = null }) {
         {value}
         {unit ? <span className="statcell__unit"> {unit}</span> : null}
       </span>
+      {sub ? <span className="statcell__sub">{sub}</span> : null}
     </div>
   )
 }

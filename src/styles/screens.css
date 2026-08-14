@@ -1761,6 +1761,17 @@
   color: var(--text-3);
 }
 
+/* Sem escudo empunhado o painel continua na linha, com os campos vazios: a
+   forma das Defesas não muda quando a pessoa pega ou larga o escudo. */
+.shield__name--none {
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+.shield--empty .statcell__value {
+  color: var(--text-3);
+}
+
 .shield__warn {
   padding: 8px;
   font-size: var(--t-meta);

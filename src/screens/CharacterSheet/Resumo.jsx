@@ -21,6 +21,15 @@ import HpSheet from './HpSheet.jsx'
 /* Letra do grau, como o rodapé da lista explica: U T E M L. */
 const LETRA = { 0: 'U', 2: 'T', 4: 'E', 6: 'M', 8: 'L' }
 
+/* O grau como legenda de célula: `Untrained`, `Trained`, `Expert`… Continua em
+   inglês (D12) — o que muda é a maiúscula, que é o que separa a legenda de uma
+   palavra solta no meio do painel. `RANK_NAMES` fica minúsculo porque lá ele é
+   texto corrido, dentro de "Proficiência (expert)" no breakdown. */
+const GRAU = (rank) => {
+  const nome = RANK_NAMES[rank ?? 0] ?? RANK_NAMES[0]
+  return nome.charAt(0).toUpperCase() + nome.slice(1)
+}
+
 const ATRIBUTOS = [
   ['str', 'Str'],
   ['dex', 'Dex'],
@@ -110,27 +119,25 @@ export default function Resumo({ player, view, onGoToGm }) {
       <Bloco titulo="Defesas">
         <div className="defenses__top">
           <StatCell className="statcell--ac" label="CA" stat={view.ac} onOpen={abrir} />
-          {/* Só com escudo empunhado: sem isso a linha prometeria um Erguer
-              que não existe (§10.6). */}
-          {view.shield ? <Escudo player={player} shield={view.shield} /> : null}
+          <Escudo player={player} shield={view.shield} />
         </div>
         <div className="grid grid--3">
           <StatCell
             label="Fortitude"
             stat={view.saves.fortitude}
-            sub={RANK_NAMES[sheet.proficiencies?.fortitude ?? 0]}
+            sub={GRAU(sheet.proficiencies?.fortitude)}
             onOpen={abrir}
           />
           <StatCell
             label="Reflex"
             stat={view.saves.reflex}
-            sub={RANK_NAMES[sheet.proficiencies?.reflex ?? 0]}
+            sub={GRAU(sheet.proficiencies?.reflex)}
             onOpen={abrir}
           />
           <StatCell
             label="Will"
             stat={view.saves.will}
-            sub={RANK_NAMES[sheet.proficiencies?.will ?? 0]}
+            sub={GRAU(sheet.proficiencies?.will)}
             onOpen={abrir}
           />
         </div>
@@ -142,28 +149,39 @@ export default function Resumo({ player, view, onGoToGm }) {
           <StatCell
             label="Percepção"
             stat={view.perception}
-            sub={RANK_NAMES[sheet.proficiencies?.perception ?? 0]}
+            sub={GRAU(sheet.proficiencies?.perception)}
             onOpen={abrir}
           />
-          <FactCell label="Deslocamento" value={view.speed} unit="ft" />
+          <FactCell label="Velocidade" value={view.speed} unit="ft" />
           <FactCell label="Tamanho" value={sheet.sizeName ?? '—'} />
           <StatCell
-            label="DC de classe"
+            label="DC Classe"
             stat={view.classDc}
-            sub={RANK_NAMES[sheet.proficiencies?.classDC ?? 0]}
+            sub={GRAU(sheet.proficiencies?.classDC)}
             onOpen={abrir}
           />
-          {/* Sem conjuração, o campo mostra o travessão em vez de um zero que
-              pareceria um número de verdade. */}
+          {/* Sem conjuração o número não existe, e o traço diz isso; o grau
+              embaixo continua aparecendo, porque "Untrained" é a resposta à
+              pergunta que a célula faz — não uma célula pela metade. */}
           {view.spellDc ? (
-            <StatCell label="DC de magia" stat={view.spellDc} onOpen={abrir} />
+            <StatCell
+              label="DC Magia"
+              stat={view.spellDc}
+              sub={GRAU(view.spellRank)}
+              onOpen={abrir}
+            />
           ) : (
-            <FactCell label="DC de magia" value="—" />
+            <FactCell label="DC Magia" value="—" sub={GRAU(view.spellRank)} />
           )}
           {view.spellAttack ? (
-            <StatCell label="Atq. de magia" stat={view.spellAttack} onOpen={abrir} />
+            <StatCell
+              label="Atq Magia"
+              stat={view.spellAttack}
+              sub={GRAU(view.spellRank)}
+              onOpen={abrir}
+            />
           ) : (
-            <FactCell label="Atq. de magia" value="—" />
+            <FactCell label="Atq Magia" value="—" sub={GRAU(view.spellRank)} />
           )}
         </div>
       </Bloco>
@@ -281,40 +299,55 @@ function ListaDeGraus({ titulo, chaves, sheet }) {
   )
 }
 
+/*
+ * O painel do escudo, que aparece com ou sem escudo empunhado.
+ *
+ * Sem escudo, a moldura fica no lugar com os campos vazios: a linha das defesas
+ * não muda de forma quando a pessoa empunha ou larga o escudo, e o traço diz
+ * "não tem" sem fingir um zero, que na CA pareceria bônus de verdade.
+ */
 function Escudo({ player, shield }) {
   const { dispatch } = useStore()
+  const vazio = !shield
+
   return (
-    <div className={`shield${shield.broken ? ' shield--broken' : ''}`}>
+    <div className={`shield${shield?.broken ? ' shield--broken' : ''}${vazio ? ' shield--empty' : ''}`}>
       <div className="shield__head">
         <span className="field-label">Escudo</span>
-        <span className="shield__name">{shield.name}</span>
+        <span className={vazio ? 'shield__name shield__name--none' : 'shield__name'}>
+          {vazio ? 'Nenhum' : shield.name}
+        </span>
         <button
           type="button"
-          className={`chip chip--sm${shield.raised ? ' chip--on' : ''}`}
-          aria-pressed={shield.raised}
-          disabled={shield.broken}
+          className={`chip chip--sm${shield?.raised ? ' chip--on' : ''}`}
+          aria-pressed={Boolean(shield?.raised)}
+          disabled={vazio || shield.broken}
           onClick={() => dispatch({ type: 'TOGGLE_SHIELD_RAISED', playerId: player.id })}
         >
-          {shield.raised ? 'Erguido' : 'Erguer'}
+          {shield?.raised ? 'Erguido' : 'Erguer'}
         </button>
       </div>
       <div className="grid grid--4">
-        <FactCell label="+CA" value={sgn(shield.acBonus)} />
-        <FactCell label="Dureza" value={shield.hardness} />
-        <div className="statcell statcell--fact">
-          <span className="statcell__label">PV</span>
-          <Stepper
-            value={shield.hp}
-            label="PV do escudo"
-            canDec={shield.hp > 0}
-            canInc={shield.hp < shield.hpMax}
-            onDec={() => dispatch({ type: 'SET_SHIELD_HP', playerId: player.id, value: shield.hp - 1 })}
-            onInc={() => dispatch({ type: 'SET_SHIELD_HP', playerId: player.id, value: shield.hp + 1 })}
-          />
-        </div>
-        <FactCell label="VT" value={shield.bt} />
+        <FactCell label="+CA" value={vazio ? '—' : sgn(shield.acBonus)} />
+        <FactCell label="Dureza" value={vazio ? '—' : shield.hardness} />
+        {vazio ? (
+          <FactCell label="PV" value="—" />
+        ) : (
+          <div className="statcell statcell--fact">
+            <span className="statcell__label">PV</span>
+            <Stepper
+              value={shield.hp}
+              label="PV do escudo"
+              canDec={shield.hp > 0}
+              canInc={shield.hp < shield.hpMax}
+              onDec={() => dispatch({ type: 'SET_SHIELD_HP', playerId: player.id, value: shield.hp - 1 })}
+              onInc={() => dispatch({ type: 'SET_SHIELD_HP', playerId: player.id, value: shield.hp + 1 })}
+            />
+          </div>
+        )}
+        <FactCell label="VT" value={vazio ? '—' : shield.bt} />
       </div>
-      {shield.broken ? (
+      {shield?.broken ? (
         <div className="shield__warn">
           Quebrado: o PV chegou ao Limiar de Avaria, e o escudo parou de dar bônus.
         </div>

@@ -41,8 +41,10 @@ export const profBonus = (rank, level) => (rank === 0 ? 0 : level + rank)
 
 const rankLabel = (rank) => RANK_NAMES[rank] ?? 'untrained'
 
-/** Sinal na frente, com o menos tipográfico e o ±0 do protótipo. */
-export const sgn = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '±0')
+/* Sinal na frente, com o menos tipográfico. Zero é `+0`, e não o `±0` que o
+   protótipo usava: numa coluna de modificadores, `+0` alinha com os vizinhos e
+   se lê como o modificador que é. */
+export const sgn = (n) => (n < 0 ? `−${Math.abs(n)}` : `+${n}`)
 
 const num = (value, fallback = 0) => {
   const n = Number(value)
@@ -384,8 +386,14 @@ export function buildSheet({ sheet, items = [], gear = {}, vitals = {}, itemMods
   }
   let spellDc = null
   let spellAttack = null
+  /* O grau de conjuração não mora em `proficiencies` como os outros: vem da
+     tradição (`castingArcane`…) ou do próprio bloco de conjuração. Sai daqui
+     resolvido para a tela não ter de repetir essa escolha — quem não conjura
+     fica em 0, que é destreinado e é a resposta certa. */
+  let spellRank = 0
   if (conj) {
     const rankConj = conj.proficiency || prof(TRADICAO_PROF[conj.tradition] ?? '')
+    spellRank = rankConj
     const atributo = conj.ability ?? 'int'
     const partes = [
       { label: atributo.toUpperCase(), value: abil(atributo) },
@@ -414,6 +422,7 @@ export function buildSheet({ sheet, items = [], gear = {}, vitals = {}, itemMods
     classDc,
     spellDc,
     spellAttack,
+    spellRank,
     skills,
     attacks,
     shield: escudo,
