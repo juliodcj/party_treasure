@@ -24,8 +24,8 @@ import { plural } from './lib/text.js'
 /* Abas da barra de baixo. O primeiro botão da barra é o seletor de
    personagem, que não é aba nenhuma — abre a folha de troca. */
 const TABS = [
-  { id: 'inventory', label: 'Inventário', Icon: BagIcon },
   { id: 'sheet', label: 'Ficha', Icon: SheetIcon },
+  { id: 'inventory', label: 'Inventário', Icon: BagIcon },
   { id: 'shop', label: 'Loja', Icon: ShopIcon },
   { id: 'gm', label: 'Mestre', Icon: CrownIcon },
 ]
