@@ -326,20 +326,22 @@ test('erguer e baixar o escudo empunhado funciona, e o PV respeita o máximo', (
   assert.equal(valerosDe(state).vitals.shieldHp, 0)
 })
 
-test('foco sem reserva na ficha é ação vazia', () => {
-  const state = comFicha() // Rurik é bárbaro: focusPoints 0
+test('foco sem magia de foco é ação vazia', () => {
+  const state = comFicha() // Rurik é bárbaro: nem conjuração tem
   assert.equal(reducer(state, { type: 'SET_FOCUS', playerId: 'p-valeros', value: 2 }), state)
 })
 
-test('foco com reserva respeita o teto da ficha', () => {
+/* A reserva não vem mais de `sheet.focusPoints`: ela é um ponto por magia de
+   foco, até três. Uma ficha que diz ter foco mas não tem magia de foco nenhuma
+   não abre reserva — o teste antigo pedia o contrário. */
+test('reserva de foco ignora o focusPoints da ficha e conta as magias', () => {
   let state = comFicha()
   state = reducer(state, {
     type: 'UPDATE_SHEET',
     playerId: 'p-valeros',
     sheet: { ...RURIK, focusPoints: 2 },
   })
-  state = reducer(state, { type: 'SET_FOCUS', playerId: 'p-valeros', value: 9 })
-  assert.equal(valerosDe(state).vitals.focusPoints, 2)
+  assert.equal(reducer(state, { type: 'SET_FOCUS', playerId: 'p-valeros', value: 9 }), state)
 })
 
 /* ---------------------------------------------------------------- histórico */

@@ -120,6 +120,207 @@ test('ADD_SPELL não mexe em preparedSpells', () => {
   assert.deepEqual(jogador(state).vitals.preparedSpells, antes)
 })
 
+/* ------------------------------------------------------------- ADD_BOOK_SPELL */
+
+test('copiar uma magia do Compêndio entra em vitals.bookSpells, não na ficha', () => {
+  let state = comMago()
+  const bookAntes = jogador(state).sheet.spellcasting.book
+
+  state = reducer(state, { type: 'ADD_BOOK_SPELL', playerId: 'p-1', name: 'Fireball', rank: 3 })
+
+  assert.deepEqual(jogador(state).vitals.bookSpells.map((sp) => sp.name), ['Fireball'])
+  assert.equal(jogador(state).vitals.bookSpells[0].rank, 3)
+  // a ficha importada não é tocada: ela é substituída inteira na reimportação
+  assert.deepEqual(jogador(state).sheet.spellcasting.book, bookAntes)
+})
+
+test('a magia copiada sobrevive à reimportação da ficha (D7)', () => {
+  let state = comMago()
+  state = reducer(state, { type: 'ADD_BOOK_SPELL', playerId: 'p-1', name: 'Fireball', rank: 3 })
+  state = reducer(state, { type: 'IMPORT_SHEET', playerId: 'p-1', sheet: WIZARD })
+
+  assert.deepEqual(jogador(state).vitals.bookSpells.map((sp) => sp.name), ['Fireball'])
+})
+
+test('não duplica: nem o que já veio do export, nem o que já foi copiado', () => {
+  let state = comMago()
+  const jaTem = jogador(state).sheet.spellcasting.book[0]
+
+  const semMudanca = reducer(state, {
+    type: 'ADD_BOOK_SPELL',
+    playerId: 'p-1',
+    name: jaTem.name,
+    rank: jaTem.rank,
+  })
+  assert.equal(semMudanca, state, 'o que o Pathbuilder já trouxe não entra de novo')
+
+  state = reducer(state, { type: 'ADD_BOOK_SPELL', playerId: 'p-1', name: 'Fireball', rank: 3 })
+  const denovo = reducer(state, { type: 'ADD_BOOK_SPELL', playerId: 'p-1', name: 'Fireball', rank: 3 })
+  assert.equal(denovo, state)
+
+  // o mesmo nome noutro círculo é outra entrada — heightened tem linha própria
+  const outroCirculo = reducer(state, {
+    type: 'ADD_BOOK_SPELL',
+    playerId: 'p-1',
+    name: 'Fireball',
+    rank: 4,
+  })
+  assert.equal(jogador(outroCirculo).vitals.bookSpells.length, 2)
+})
+
+test('personagem sem conjuração não ganha grimório', () => {
+  const semMagia = reducer(mesaVazia(), {
+    type: 'IMPORT_SHEET',
+    playerId: 'p-1',
+    sheet: { ...WIZARD, spellcasting: null },
+  })
+  assert.equal(
+    reducer(semMagia, { type: 'ADD_BOOK_SPELL', playerId: 'p-1', name: 'Fireball', rank: 3 }),
+    semMagia,
+  )
+})
+
+test('esquecer o que foi copiado na mesa apaga a entrada', () => {
+  let state = comMago()
+  state = reducer(state, { type: 'ADD_BOOK_SPELL', playerId: 'p-1', name: 'Fireball', rank: 3 })
+  const uid = jogador(state).vitals.bookSpells[0].uid
+
+  state = reducer(state, { type: 'REMOVE_BOOK_SPELL', playerId: 'p-1', uid })
+  assert.deepEqual(jogador(state).vitals.bookSpells, [])
+  assert.deepEqual(jogador(state).vitals.forgottenSpells, [], 'não vira esquecida: ela sumiu mesmo')
+})
+
+test('esquecer o que veio do export entra na lista de esquecidas e sobrevive à reimportação', () => {
+  let state = comMago()
+  const doExport = jogador(state).sheet.spellcasting.book[0]
+
+  state = reducer(state, {
+    type: 'REMOVE_BOOK_SPELL',
+    playerId: 'p-1',
+    uid: null,
+    name: doExport.name,
+    rank: doExport.rank,
+  })
+  assert.deepEqual(jogador(state).vitals.forgottenSpells, [`${doExport.rank}\t${doExport.name}`])
+  // a ficha continua intacta — quem subtrai é a tela
+  assert.ok(jogador(state).sheet.spellcasting.book.some((sp) => sp.name === doExport.name))
+
+  state = reducer(state, { type: 'IMPORT_SHEET', playerId: 'p-1', sheet: WIZARD })
+  assert.equal(jogador(state).vitals.forgottenSpells.length, 1, 'reimportar não traz de volta')
+})
+
+test('reaprender no Compêndio desfaz o esquecimento, sem virar cópia', () => {
+  let state = comMago()
+  const doExport = jogador(state).sheet.spellcasting.book[0]
+  const esquecer = {
+    type: 'REMOVE_BOOK_SPELL',
+    playerId: 'p-1',
+    uid: null,
+    name: doExport.name,
+    rank: doExport.rank,
+  }
+
+  state = reducer(state, esquecer)
+  state = reducer(state, {
+    type: 'ADD_BOOK_SPELL',
+    playerId: 'p-1',
+    name: doExport.name,
+    rank: doExport.rank,
+  })
+
+  assert.deepEqual(jogador(state).vitals.forgottenSpells, [])
+  assert.deepEqual(jogador(state).vitals.bookSpells, [], 'volta pela ficha, não como cópia')
+})
+
+test('uid desconhecido e nome em branco não mexem no grimório', () => {
+  const state = comMago()
+  assert.equal(reducer(state, { type: 'REMOVE_BOOK_SPELL', playerId: 'p-1', uid: 'nada' }), state)
+  assert.equal(
+    reducer(state, { type: 'REMOVE_BOOK_SPELL', playerId: 'p-1', uid: null, name: '  ' }),
+    state,
+  )
+})
+
+/* ------------------------------------------------------------ ADD_FOCUS_SPELL */
+
+test('ganhar magia de foco na mesa não toca na ficha e sobrevive à reimportação', () => {
+  let state = comMago()
+  state = reducer(state, { type: 'ADD_FOCUS_SPELL', playerId: 'p-1', name: 'Force Bolt' })
+
+  assert.deepEqual(jogador(state).vitals.extraFocusSpells.map((sp) => sp.name), ['Force Bolt'])
+
+  state = reducer(state, { type: 'IMPORT_SHEET', playerId: 'p-1', sheet: WIZARD })
+  assert.deepEqual(jogador(state).vitals.extraFocusSpells.map((sp) => sp.name), ['Force Bolt'])
+})
+
+test('magia de foco não duplica, nem a do export nem a de mesa', () => {
+  let state = comMago()
+  const doExport = [
+    ...jogador(state).sheet.spellcasting.focusCantrips,
+    ...jogador(state).sheet.spellcasting.focusSpells,
+  ][0]
+
+  if (doExport) {
+    assert.equal(
+      reducer(state, { type: 'ADD_FOCUS_SPELL', playerId: 'p-1', name: doExport }),
+      state,
+    )
+  }
+
+  state = reducer(state, { type: 'ADD_FOCUS_SPELL', playerId: 'p-1', name: 'Force Bolt' })
+  const denovo = reducer(state, { type: 'ADD_FOCUS_SPELL', playerId: 'p-1', name: 'Force Bolt' })
+  assert.equal(denovo, state)
+})
+
+test('esquecer magia de foco de mesa apaga; a da ficha vira esquecida', () => {
+  let state = comMago()
+  state = reducer(state, { type: 'ADD_FOCUS_SPELL', playerId: 'p-1', name: 'Force Bolt' })
+  const uid = jogador(state).vitals.extraFocusSpells[0].uid
+
+  state = reducer(state, { type: 'REMOVE_FOCUS_SPELL', playerId: 'p-1', uid, name: 'Force Bolt' })
+  assert.deepEqual(jogador(state).vitals.extraFocusSpells, [])
+  assert.deepEqual(jogador(state).vitals.forgottenFocusSpells, [], 'sumiu mesmo, não virou esquecida')
+
+  const daFicha = jogador(state).sheet.spellcasting.focusSpells[0]
+  state = reducer(state, { type: 'REMOVE_FOCUS_SPELL', playerId: 'p-1', uid: null, name: daFicha })
+  assert.deepEqual(jogador(state).vitals.forgottenFocusSpells, [daFicha])
+
+  state = reducer(state, { type: 'IMPORT_SHEET', playerId: 'p-1', sheet: WIZARD })
+  assert.deepEqual(jogador(state).vitals.forgottenFocusSpells, [daFicha], 'reimportar não traz de volta')
+})
+
+test('readicionar a magia de foco esquecida desfaz o esquecimento, sem virar cópia', () => {
+  let state = comMago()
+  const daFicha = jogador(state).sheet.spellcasting.focusSpells[0]
+
+  state = reducer(state, { type: 'REMOVE_FOCUS_SPELL', playerId: 'p-1', uid: null, name: daFicha })
+  state = reducer(state, { type: 'ADD_FOCUS_SPELL', playerId: 'p-1', name: daFicha })
+
+  assert.deepEqual(jogador(state).vitals.forgottenFocusSpells, [])
+  assert.deepEqual(jogador(state).vitals.extraFocusSpells, [])
+})
+
+test('a reserva de foco acompanha a lista de magias de foco', async () => {
+  const { focusPool } = await import('../src/lib/sheet.js')
+  let state = comMago()
+  const p = () => jogador(state)
+
+  const inicial = focusPool(p().sheet, p().vitals)
+  assert.equal(inicial, p().sheet.spellcasting.focusSpells.length)
+
+  state = reducer(state, { type: 'ADD_FOCUS_SPELL', playerId: 'p-1', name: 'Force Bolt' })
+  assert.equal(focusPool(p().sheet, p().vitals), inicial + 1, 'ganhou magia, ganhou ponto')
+
+  for (const name of ['Diviner Sense', 'Charming Push II', 'Warped Terrain']) {
+    state = reducer(state, { type: 'ADD_FOCUS_SPELL', playerId: 'p-1', name })
+  }
+  assert.equal(focusPool(p().sheet, p().vitals), 3, 'nunca passa de três')
+
+  // SET_FOCUS não deixa passar do teto calculado
+  state = reducer(state, { type: 'SET_FOCUS', playerId: 'p-1', value: 9 })
+  assert.equal(p().vitals.focusPoints, 3)
+})
+
 /* --------------------------------------------------------------- USE_SPELL_SLOT */
 
 test('marcar e desmarcar uma magia preparada como usada', () => {

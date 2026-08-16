@@ -2,7 +2,7 @@ import { addCoins, simplifyWallet, spendCopper, toCopper, withWalletCopper } fro
 import { makeId, normalizeItem, resolveItem } from '../lib/items.js'
 import { SELL_RATE } from '../config.js'
 import { emptySheetFields } from './migrations.js'
-import { nightRest } from '../lib/sheet.js'
+import { focusPool, nightRest } from '../lib/sheet.js'
 
 /*
  * As regras da mesa. Desde a Fase 3 quem roda este arquivo é o SERVIDOR, não o
@@ -145,6 +145,11 @@ const toTrimmed = (value) => {
   const s = String(value ?? '').trim()
   return s || null
 }
+
+/* A identidade de uma entrada do grimório. O export do Pathbuilder traz nome e
+   círculo, e nada mais — não há id do corpus aqui, então é o par que responde
+   "é a mesma magia?". O `\t` não aparece em nome de magia; um `-` apareceria. */
+export const spellKey = (rank, name) => `${rank}\t${name}`
 
 const hpMaxOf = (player) => Math.max(1, Math.round(Number(player.sheet?.hpMax) || 1))
 
@@ -832,11 +837,11 @@ export function reducer(state, action) {
 
     // ------------------------------------------------------- foco e escudo
 
-    /* O tamanho da reserva de foco vem da ficha; sem ficha, ou com reserva
-       zerada, não há o que gastar nem o que repor. */
+    /* A reserva é um ponto por magia de foco, até três (`focusPool`). Sem magia
+       de foco não há o que gastar nem o que repor. */
     case 'SET_FOCUS':
       return withVitals(state, action.playerId, (vitals, player) => {
-        const pool = Math.max(0, Math.round(Number(player.sheet?.focusPoints) || 0))
+        const pool = focusPool(player.sheet, vitals)
         if (!pool) return null
         return { focusPoints: Math.min(pool, Math.max(0, Math.round(Number(action.value) || 0))) }
       })
@@ -903,6 +908,106 @@ export function reducer(state, action) {
         return {
           extraSpells: [...(vitals.extraSpells ?? []), { uid: makeId('spell'), rank, name, used: false }],
         }
+      })
+
+    /*
+     * Magia copiada para o grimório na mesa (o mago achou um pergaminho, o
+     * mestre concedeu). Mora em `vitals`, e não em `sheet.spellcasting.book`,
+     * pela mesma razão das preparadas: é fato de mesa, e a `sheet` inteira é
+     * substituída na próxima importação do Pathbuilder. Guardar ali apagaria
+     * a magia no dia em que a pessoa reimportasse a ficha.
+     *
+     * Não repete o que o export já trouxe nem o que já foi acrescentado — o
+     * mesmo nome no mesmo círculo é a mesma entrada do grimório.
+     */
+    case 'ADD_BOOK_SPELL':
+      return withVitals(state, action.playerId, (vitals, player) => {
+        const spellcasting = player.sheet?.spellcasting
+        const name = toTrimmed(action.name)
+        if (!spellcasting || !name) return null
+
+        const rank = Math.max(0, Math.round(Number(action.rank) || 0))
+        const chave = spellKey(rank, name)
+
+        /* Aprender de novo o que tinha sido esquecido desfaz o esquecimento;
+           não vira uma segunda cópia da mesma magia no mesmo círculo. */
+        const esquecidas = vitals.forgottenSpells ?? []
+        if (esquecidas.includes(chave)) {
+          return { forgottenSpells: esquecidas.filter((k) => k !== chave) }
+        }
+
+        const jaTem = (lista) => lista.some((sp) => spellKey(sp.rank, sp.name) === chave)
+        if (jaTem(spellcasting.book ?? [])) return null
+        const acrescentadas = vitals.bookSpells ?? []
+        if (jaTem(acrescentadas)) return null
+
+        return { bookSpells: [...acrescentadas, { uid: makeId('spell'), rank, name }] }
+      })
+
+    /*
+     * Esquecer uma magia do grimório. As duas origens saem pelo mesmo botão,
+     * por caminhos diferentes: a copiada na mesa tem `uid` e é apagada; a que
+     * veio do export do Pathbuilder não pode ser apagada (a `sheet` é
+     * substituída inteira na reimportação), então entra numa lista de
+     * esquecidas que a tela subtrai. É o que faz o esquecimento sobreviver a
+     * reimportar a ficha, em vez de a magia reaparecer sozinha.
+     */
+    case 'REMOVE_BOOK_SPELL':
+      return withVitals(state, action.playerId, (vitals, player) => {
+        const acrescentadas = vitals.bookSpells ?? []
+        if (action.uid && acrescentadas.some((sp) => sp.uid === action.uid)) {
+          return { bookSpells: acrescentadas.filter((sp) => sp.uid !== action.uid) }
+        }
+
+        const name = toTrimmed(action.name)
+        if (!name) return null
+        const chave = spellKey(Math.max(0, Math.round(Number(action.rank) || 0)), name)
+        const esquecidas = vitals.forgottenSpells ?? []
+        if (esquecidas.includes(chave)) return null
+        return { forgottenSpells: [...esquecidas, chave] }
+      })
+
+    /*
+     * Magia de foco ganha na mesa (feat de classe, dádiva do mestre). Mesma
+     * razão do grimório para morar em `vitals`: a `sheet` é substituída na
+     * próxima importação.
+     */
+    case 'ADD_FOCUS_SPELL':
+      return withVitals(state, action.playerId, (vitals, player) => {
+        const spellcasting = player.sheet?.spellcasting
+        const name = toTrimmed(action.name)
+        if (!spellcasting || !name) return null
+
+        /* Retomar o que tinha sido esquecido desfaz o esquecimento, em vez de
+           criar uma segunda cópia — mesmo caminho do grimório. */
+        const esquecidas = vitals.forgottenFocusSpells ?? []
+        if (esquecidas.includes(name)) {
+          return { forgottenFocusSpells: esquecidas.filter((n) => n !== name) }
+        }
+
+        const doExport = [...(spellcasting.focusCantrips ?? []), ...(spellcasting.focusSpells ?? [])]
+        if (doExport.includes(name)) return null
+        const acrescentadas = vitals.extraFocusSpells ?? []
+        if (acrescentadas.some((sp) => sp.name === name)) return null
+
+        return { extraFocusSpells: [...acrescentadas, { uid: makeId('spell'), name }] }
+      })
+
+    /* Simétrico ao grimório: a de mesa tem `uid` e some; a que veio da ficha
+       entra na lista de esquecidas, porque a `sheet` é substituída inteira na
+       próxima importação e apagar lá não duraria. */
+    case 'REMOVE_FOCUS_SPELL':
+      return withVitals(state, action.playerId, (vitals) => {
+        const acrescentadas = vitals.extraFocusSpells ?? []
+        if (action.uid && acrescentadas.some((sp) => sp.uid === action.uid)) {
+          return { extraFocusSpells: acrescentadas.filter((sp) => sp.uid !== action.uid) }
+        }
+
+        const name = toTrimmed(action.name)
+        if (!name) return null
+        const esquecidas = vitals.forgottenFocusSpells ?? []
+        if (esquecidas.includes(name)) return null
+        return { forgottenFocusSpells: [...esquecidas, name] }
       })
 
     /* Uma instância só, identificada por uid — pode estar preparada ou na

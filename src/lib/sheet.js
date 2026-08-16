@@ -445,16 +445,38 @@ export function buildSheet({ sheet, items = [], gear = {}, vitals = {}, itemMods
   }
 }
 
-/* ------------------------------------------------------------- descanso */
+/* ----------------------------------------------------------------- foco */
+
+/** Teto da reserva de foco em PF2e: três pontos, por mais magias que se tenha. */
+export const MAX_FOCO = 3
 
 /**
- * Refocus: um ponto de foco de volta, sem passar da reserva (§10.7).
- * Função pura — devolve os campos de `vitals` que mudam.
+ * As magias de foco que o personagem tem AGORA: as que a ficha trouxe, menos as
+ * esquecidas na mesa, mais as ganhas na mesa. É a lista que a aba Magias mostra,
+ * e é dela que sai o tamanho da reserva.
  */
-export function refocus(sheet, vitals = {}) {
-  const pool = Math.max(0, num(sheet?.focusPoints, 0))
-  if (!pool) return null
-  return { focusPoints: Math.min(pool, num(vitals.focusPoints, 0) + 1) }
+export function focusSpells(sheet, vitals = {}) {
+  const conj = sheet?.spellcasting
+  if (!conj) return []
+  const esquecidas = new Set(vitals.forgottenFocusSpells ?? [])
+  return [
+    ...[...(conj.focusCantrips ?? []), ...(conj.focusSpells ?? [])]
+      .filter((name) => !esquecidas.has(name))
+      .map((name) => ({ name })),
+    ...(vitals.extraFocusSpells ?? []),
+  ]
+}
+
+/**
+ * A reserva de foco: um ponto por magia de foco, até três.
+ *
+ * É cálculo, não fato guardado — sai do que o personagem sabe agora. Ganhou uma
+ * magia de foco, ganhou o ponto; esqueceu a magia, perdeu o ponto. O
+ * `sheet.focusPoints` que o Pathbuilder exporta não entra: ele é a foto do
+ * momento da exportação, e desanda assim que a lista muda aqui dentro.
+ */
+export function focusPool(sheet, vitals = {}) {
+  return Math.min(MAX_FOCO, focusSpells(sheet, vitals).length)
 }
 
 /**
@@ -486,7 +508,7 @@ export function nightRest(sheet, vitals = {}) {
   return {
     hp: hpDepois,
     tempHp: 0,
-    focusPoints: Math.max(0, num(sheet.focusPoints, 0)),
+    focusPoints: focusPool(sheet, vitals),
     slotsUsed: {},
     conditions,
     curado: hpDepois - hpAntes,

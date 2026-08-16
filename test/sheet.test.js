@@ -427,14 +427,41 @@ test('Wounded some quando o HP volta ao máximo, não pelo descanso em si', asyn
   assert.equal(nightRest(SHEET, { hp: 23, conditions: { wounded: 1 } }).conditions.wounded, undefined)
 })
 
-test('Refocus devolve um ponto e para na reserva; sem reserva, não faz nada', async () => {
-  const { refocus } = await import('../src/lib/sheet.js')
+/* O botão "Refocus (+1)" saiu da aba Magias, e com ele a função que o
+   calculava: recuperar foco hoje é tocar nas bolinhas do cabeçalho (SET_FOCUS)
+   ou descansar. A regra que sobra é o tamanho da reserva, testada abaixo. */
 
-  assert.equal(refocus(SHEET, { focusPoints: 0 }), null, 'bárbaro não tem foco')
+test('a reserva de foco é um ponto por magia de foco, até três', async () => {
+  const { focusPool, MAX_FOCO } = await import('../src/lib/sheet.js')
 
-  const conjurador = { ...SHEET, focusPoints: 2 }
-  assert.equal(refocus(conjurador, { focusPoints: 0 }).focusPoints, 1)
-  assert.equal(refocus(conjurador, { focusPoints: 2 }).focusPoints, 2)
+  assert.equal(MAX_FOCO, 3)
+  assert.equal(focusPool(SHEET, {}), 0, 'bárbaro não tem magia de foco')
+
+  const comConj = (focusSpells) => ({
+    ...SHEET,
+    spellcasting: { focusCantrips: [], focusSpells },
+  })
+
+  assert.equal(focusPool(comConj([]), {}), 0)
+  assert.equal(focusPool(comConj(['Force Bolt']), {}), 1)
+  assert.equal(focusPool(comConj(['a', 'b', 'c']), {}), 3)
+  assert.equal(focusPool(comConj(['a', 'b', 'c', 'd', 'e']), {}), 3, 'para em três')
+
+  // as ganhas na mesa contam; as esquecidas na mesa não
+  assert.equal(focusPool(comConj(['a']), { extraFocusSpells: [{ uid: 'u', name: 'b' }] }), 2)
+  assert.equal(focusPool(comConj(['a', 'b']), { forgottenFocusSpells: ['a'] }), 1)
+})
+
+test('o descanso repõe a reserva calculada, não o focusPoints da ficha', async () => {
+  const { nightRest } = await import('../src/lib/sheet.js')
+
+  const conjurador = {
+    ...SHEET,
+    focusPoints: 99, // a ficha mente; quem manda é a lista de magias
+    spellcasting: { focusCantrips: [], focusSpells: ['a', 'b'] },
+  }
+  assert.equal(nightRest(conjurador, { focusPoints: 0 }).focusPoints, 2)
+  assert.equal(nightRest(SHEET, { focusPoints: 0 }).focusPoints, 0)
 })
 
 /* --------------------------------------------------------- §9 a forma */
