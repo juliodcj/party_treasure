@@ -127,6 +127,45 @@ function readActionCost(system, kind) {
   return { type, value: null }
 }
 
+/*
+ * Alcance, alvo e defesa de uma magia.
+ *
+ * No Foundry esses três não estão na descrição — são campos do sistema que a
+ * ficha dele desenha por cima. Ficaram de fora do extrator e, por isso, a magia
+ * aberta aqui mostrava só o texto: "Fireball" sem os 500 pés, "Charm" sem o
+ * "1 creature" nem o Will.
+ *
+ * Sai estruturado; quem escreve "basic Reflex" é a tela, pela mesma razão do
+ * `actionCost` — o formato de exibição nunca vira o dado guardado.
+ *
+ * `defense` tem duas metades e as duas existem: `save` (772 magias) e, em 14
+ * delas, `passive` junto — Reflex DC contra AC, por exemplo.
+ */
+function readSpellStats(system) {
+  const texto = (valor) => {
+    const s = String(valor ?? '').trim()
+    return s || null
+  }
+
+  const save = system?.defense?.save
+  const passive = system?.defense?.passive
+  const defense =
+    save || passive
+      ? {
+          save: save?.statistic
+            ? { statistic: save.statistic, basic: Boolean(save.basic) }
+            : null,
+          passive: passive?.statistic ? { statistic: passive.statistic } : null,
+        }
+      : null
+
+  return {
+    range: texto(system?.range?.value),
+    targets: texto(system?.target?.value),
+    defense,
+  }
+}
+
 /* --------------------------------------------------------- leitura dos packs */
 
 /*
@@ -198,6 +237,9 @@ for (const { pack, kind } of PACKS) {
       traits: Array.isArray(traitBlock.value) ? traitBlock.value : [],
       traditions: Array.isArray(traitBlock.traditions) ? traitBlock.traditions : [],
       actionCost: readActionCost(system, kind),
+      /* Só magia tem alcance/alvo/defesa; num feat os três seriam três nulos
+         em cada verbete, e o `entries.bin` já tem 2.000 magias dentro. */
+      ...(kind === 'spell' ? readSpellStats(system) : {}),
       descriptionHtml: html,
       descriptionText: toPlainText(html),
       // Requisito de licença, não zelo: ORC e OGL exigem a atribuição.
@@ -229,6 +271,11 @@ for (const { pack, kind } of PACKS) {
         traits: entry.traits,
         rarity: entry.rarity,
         actionCost: entry.actionCost,
+        /* Contra o quê a magia joga. Vem no bundle (+54 KB em 606) porque a aba
+           Ataques precisa dele para escolher entre mostrar a DC ou o bônus de
+           ataque, e essa escolha é síncrona — buscar no servidor faria a linha
+           piscar com os dois números antes de acertar. */
+        defense: entry.defense,
         // Precisa vir junto para o compêndio aplicar o mesmo filtro de
         // conteúdo do catálogo (resposta 1 da §17): ownedCategories olha
         // source.title, remasterFilter olha source.remaster. Sem isso o
