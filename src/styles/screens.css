@@ -476,7 +476,7 @@
   align-items: center;
   gap: 8px;
   padding: 9px 12px;
-  min-height: 50px;
+  min-height: var(--row-h);
 }
 
 .item__name-btn {
@@ -757,7 +757,6 @@
 
 .entry__cost .action-glyph {
   font-size: var(--t-sm);
-  color: var(--ornament);
 }
 
 .item__desc table {
@@ -846,7 +845,7 @@
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  min-height: 56px;
+  min-height: var(--row-h-2);
   width: 100%;
   text-align: left;
 }
@@ -1706,12 +1705,18 @@
   padding: 2px 8px;
 }
 
-/* Curar e Dano agem as duas, então a positiva fica à esquerda — mesma razão do
-   "± Ajustar moedas". */
+/* Campo de quantia, logo abaixo do "Quanto?". */
+.hp-sheet__amount {
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Acrescentar e Reduzir agem as duas, então a positiva fica à esquerda — mesma
+   razão do "± Ajustar moedas". */
 .hp-sheet__pair {
   display: flex;
   gap: 10px;
-  margin-top: 14px;
+  margin-top: 12px;
 }
 
 .hp-sheet__temp-box {
@@ -1963,40 +1968,23 @@
 .atk__head {
   display: flex;
   align-items: center;
-  /* Vão maior que o resto do app de propósito: o stepper de arremesso fica na
-     ponta da coluna da esquerda e encostava nos números do MAP. */
-  gap: 12px;
-  min-height: var(--tap-md);
+  gap: 8px;
+  min-height: var(--row-h);
   padding: 4px 8px 4px 16px;
 }
 
-.atk__left {
+/* Nome e dano na mesma linha de base, como no protótipo. */
+.atk__main {
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 3px 0;
-}
-
-.atk__name-btn {
-  display: block;
-  min-width: 0;
+  align-items: baseline;
+  gap: 7px;
   overflow: hidden;
   text-align: left;
 }
 
-/* Dano e quantidade embaixo do nome: numa linha só, o stepper de arremesso
-   espremia justamente o nome, que é como se acha a arma na lista. */
-.atk__under {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
 .atk__name {
-  display: block;
   font-size: var(--t-body);
   font-weight: 600;
   overflow: hidden;
@@ -2009,6 +1997,20 @@
   font-size: var(--t-meta);
   color: var(--text-2);
   white-space: nowrap;
+}
+
+/* Linha com stepper de arremesso: sobra menos largura, e quem corta passa a
+   ser o dano. O nome fica inteiro — é por ele que se acha a arma na lista. */
+.atk__main--aperta-dano .atk__name {
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+.atk__main--aperta-dano .atk__dmg {
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Os três números do MAP juntos: é o que se lê no meio do turno. */
@@ -2036,7 +2038,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--t-body);
   color: var(--text-3);
 }
 
@@ -2133,12 +2134,14 @@
   white-space: nowrap;
 }
 
-/* Losangos de ação e a seta de reação. Cor do traço decorativo, não do texto. */
+/* Losangos de ação e a seta de reação. Tinta de texto, e não a do traço
+   decorativo: o custo em ações é dado de jogo que se lê no meio do turno — em
+   cinza claro ele lia como enfeite ao lado do nome. */
 .entry__cost {
   flex-shrink: 0;
   font-size: var(--t-meta);
   letter-spacing: var(--track-label);
-  color: var(--ornament);
+  color: var(--text);
   white-space: nowrap;
 }
 
@@ -2173,6 +2176,13 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/* A Conjuração é um painel só, não uma lista de linhas: o filete que
+   `.list-rows` põe entre irmãos cortava o bloco ao meio. Quem separa aqui é o
+   respiro, como no protótipo — a moldura de cima e de baixo continua. */
+.magias__conjuracao > * + * {
+  border-top: none;
 }
 
 .magias__conj-linha {
@@ -2314,7 +2324,7 @@
   align-items: center;
   gap: 8px;
   width: 100%;
-  min-height: var(--tap-md);
+  min-height: var(--row-h);
   padding: 0 16px;
   text-align: left;
 }
@@ -2330,7 +2340,7 @@
 .magias__slot-label {
   flex: 1;
   min-width: 0;
-  font-size: var(--t-sm);
+  font-size: var(--t-body);
   font-weight: 600;
   color: var(--text-3);
 }
@@ -2339,15 +2349,6 @@
   font-size: var(--t-label);
   font-weight: 700;
   color: var(--accent-ink);
-}
-
-/* Linha de magia preparada ou da lista especial: caixa de uso + nome + remover. */
-.magias__prep-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-left: 16px;
-  padding-right: 8px;
 }
 
 .magias__check {
@@ -2364,47 +2365,44 @@
   border-color: var(--accent);
 }
 
+/* A espada que manda a magia para a aba Ataques. Ligada é azul de ação;
+   desligada é o cinza de traço decorativo — mesma leitura da estrela de
+   favorito, que também é um interruptor que mora na linha. */
+.magias__espada {
+  color: var(--ornament);
+}
+
+.magias__espada--on {
+  color: var(--accent);
+}
+
 .magias__name--used {
   text-decoration: line-through;
   color: var(--text-3);
 }
 
-.magias__add-row {
-  display: flex;
-  gap: 8px;
-  padding: 10px 16px 12px;
-}
-
-.magias__add-row .input {
-  flex: 1;
-  min-width: 0;
-}
-
 /* Linha de magia dentro do grimório/foco/especial — reaproveita `.entry__main`
-   para o nome, só sem o custo em ações (magia usa rank, não losango aqui). */
-.magias__spellrow,
-.magias__spellrow-bare {
+   para o nome, só sem o custo em ações (magia usa rank, não losango aqui).
+
+   A linha é uma coluna: só o cabeçalho fica em `row`. A descrição aberta é
+   irmã DELE, não do nome — irmã do nome, ela virava uma segunda coluna e
+   espremia o título até sumir. */
+.magias__spellrow {
+  display: flex;
+  flex-direction: column;
+}
+
+.magias__spellrow-head {
   display: flex;
   align-items: center;
   gap: 4px;
-}
-
-.magias__spellrow {
+  min-height: var(--row-h);
   padding-left: 16px;
   padding-right: 8px;
 }
 
-.magias__spellrow-bare {
-  flex: 1;
-  min-width: 0;
-}
-
 .magias__spellrow-body {
   padding-left: 16px;
-}
-
-.magias__spellrow-bare .entry__body {
-  padding-left: 0;
 }
 
 /* --------------------------------------------------------------- compêndio */
@@ -2426,37 +2424,96 @@
   border-top: 1px solid var(--line);
 }
 
-.comp__row {
+/* ---------------------------------------------------- lista de escolher magia
+
+   Uma só, para o Compêndio, o "Preparar" do slot vazio, a lista especial e as
+   magias de foco. Mesma coluna da linha de magia: cabeçalho em cima, descrição
+   embaixo, aberta no lugar da rolagem em que a pessoa está. */
+
+.picker__hint {
+  font-size: var(--t-meta);
+  line-height: var(--lh-text);
+  color: var(--text-2);
+  margin-bottom: 10px;
+}
+
+/* Ficha técnica da magia (Range, Targets, Defense), acima da descrição. Rótulo
+   e valor na mesma linha: são três linhas curtas, e uma tabela de duas colunas
+   deixaria metade da largura vazia. */
+.spell-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.spell-stats__row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.spell-stats__label {
+  flex-shrink: 0;
+}
+
+.spell-stats__value {
+  font-size: var(--t-sm);
+  color: var(--text-body);
+  min-width: 0;
+}
+
+/* Quem rola é esta lista, não a folha (ver `fill` em Sheet.jsx): título,
+   filtros e "Fechar" ficam parados nas pontas. */
+.picker__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--line);
+  margin-bottom: 12px;
+}
+
+.picker__entry {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--line);
+}
+
+.picker__head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: var(--tap-md);
-  border-bottom: 1px solid var(--line);
+  gap: 8px;
+  min-height: var(--row-h);
+}
+
+.picker__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
   text-align: left;
 }
 
-.comp__rank {
+.picker__rank {
   flex-shrink: 0;
-  min-width: 26px;
+  min-width: 42px;
   font-size: var(--t-label);
   font-weight: 700;
   color: var(--text-3);
 }
 
-.comp__name {
-  font-size: var(--t-sm);
+.picker__name {
+  font-size: var(--t-body);
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.comp__detail-tag {
-  font-size: var(--t-meta);
-  font-weight: 700;
-  color: var(--text-2);
-  margin-bottom: 8px;
-}
-
-.comp__actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 14px;
+/* A descrição usa a largura inteira da folha — a folha já tem o recuo. */
+.picker__body {
+  padding-left: 0;
+  padding-right: 0;
 }

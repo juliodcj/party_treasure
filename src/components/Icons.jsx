@@ -132,6 +132,53 @@ export function PlusIcon({ size = 20 }) {
   )
 }
 
+/*
+ * Estrela de favorito, na aba Ataques. Cheia quando ligada, contorno quando
+ * não — o mesmo desenho nos dois estados, só o miolo muda. Herda a cor de quem
+ * a contém, como todo ícone daqui.
+ */
+export function StarIcon({ filled = false, size = 15 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M8 1.6l1.9 4 4.4.6-3.2 3.1.8 4.4L8 11.6l-3.9 2.1.8-4.4L1.7 6.2l4.4-.6z"
+        fill={filled ? 'currentColor' : 'none'}
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/*
+ * Espada — "esta magia também é um ataque, mostre na aba Ataques".
+ * Lâmina, guarda e punho em traço, para ler a 15px sem virar borrão.
+ */
+export function SwordIcon({ size = 15 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        d="M17 3 8.5 11.5M17 3v3.5M17 3h-3.5M5 15l3-3M5 15l-2 2M5 15H2.8M5 15v2.2M8 12l1.6 1.6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/** Par do `PlusIcon`: "tirar daqui" onde o mais é "trazer para cá". */
+export function MinusIcon({ size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
+      <rect y="9" width="20" height="2" rx="1" fill="currentColor" />
+    </svg>
+  )
+}
+
 /* Os dois glifos do stepper não recebem tamanho: quem dimensiona é o CSS
    (.step svg { width: 42% }), para o desenho acompanhar o botão em proporção
    em vez de depender de uma conta no JavaScript. */

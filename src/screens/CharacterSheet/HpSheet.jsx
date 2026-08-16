@@ -1,25 +1,24 @@
 import { useState } from 'react'
 import Sheet from '../../components/Sheet.jsx'
-import Stepper from '../../components/Stepper.jsx'
 import { useStore } from '../../state/store.jsx'
 
 /*
  * Dano e cura.
  *
- * O stepper cobre o caso comum da mesa — "tomei 3" — em um toque por ponto, e o
- * campo cobre o dano grande sem obrigar a apertar dezenove vezes. Os dois
- * escrevem no mesmo número.
+ * Um campo só, como no protótipo: o dano da mesa tanto é 3 quanto é 19, e
+ * digitar custa o mesmo nos dois casos. O stepper cobrava um toque por ponto.
  *
  * "Acrescentar" vem antes de "Reduzir" pela regra da casa: a ação positiva à
  * esquerda. As duas agem, então nenhuma é o "cancelar" do par.
  */
 export default function HpSheet({ player, view, onClose }) {
   const { dispatch } = useStore()
-  const [valor, setValor] = useState(1)
+  const [valor, setValor] = useState('')
   const [temp, setTemp] = useState('')
 
   const aplicar = (tipo) => {
-    if (valor > 0) dispatch({ type: tipo, playerId: player.id, amount: valor })
+    const quantia = Math.max(0, Math.trunc(Number(valor) || 0))
+    if (quantia > 0) dispatch({ type: tipo, playerId: player.id, amount: quantia })
     onClose()
   }
 
@@ -32,22 +31,23 @@ export default function HpSheet({ player, view, onClose }) {
       </div>
 
       <div className="field-label">Quanto?</div>
-      <div className="sheet__center-row">
-        <Stepper
-          size="lg"
-          value={valor}
-          canDec={valor > 1}
-          onDec={() => setValor((n) => Math.max(1, n - 1))}
-          onInc={() => setValor((n) => n + 1)}
-        />
-      </div>
+      <input
+        className="input hp-sheet__amount"
+        type="number"
+        inputMode="numeric"
+        min="0"
+        placeholder="0"
+        value={valor}
+        onChange={(event) => setValor(event.target.value)}
+        aria-label="Quanto?"
+      />
 
       <div className="hp-sheet__pair">
         <button type="button" className="btn btn--solid btn--wide" onClick={() => aplicar('APPLY_HEAL')}>
-          Curar {valor}
+          Acrescentar
         </button>
         <button type="button" className="btn btn--danger btn--wide" onClick={() => aplicar('APPLY_DAMAGE')}>
-          Dano {valor}
+          Reduzir
         </button>
       </div>
 

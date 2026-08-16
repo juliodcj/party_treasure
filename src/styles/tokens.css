@@ -103,6 +103,13 @@
   --tap-sm: 28px;
   --tap-md: 36px;
 
+  /* Altura de linha de lista, o degrau único do aplicativo inteiro: item do
+     Inventário, magia do grimório, magia do Compêndio. Uma lista com altura
+     própria lê como outro aplicativo dentro deste. A linha de duas informações
+     (jogador, loja, pasta) usa `--row-h-2`. */
+  --row-h: 50px;
+  --row-h-2: 56px;
+
   /* Largura de referência do layout: a tela de um Galaxy S23 (360 CSS px).
      É o aparelho em que a mesa joga — num monitor a coluna para de crescer
      aqui, para o que se vê no navegador ser o que se vê no celular. */

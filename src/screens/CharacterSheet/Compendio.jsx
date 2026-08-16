@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
-import Sheet from '../../components/Sheet.jsx'
-import TraitList from '../../components/TraitList.jsx'
+import { useMemo, useState } from 'react'
 import SPELL_INDEX from '../../data/index.spells.json' with { type: 'json' }
 import { useStore } from '../../state/store.jsx'
 import { matchesContent } from '../../lib/items.js'
+import { spellKey } from '../../state/reducer.js'
+import SpellPicker from './SpellPicker.jsx'
 
 /*
  * O compêndio de magias. Navega `src/data/index.spells.json` — ~1.993
@@ -14,8 +14,9 @@ import { matchesContent } from '../../lib/items.js'
  * `settings.ownedCategories` e `remasterFilter`, com "mostrar tudo" para
  * ignorar pontualmente sem mexer na configuração da mesa.
  *
- * A descrição é sob demanda — offline funciona porque quem responde é o PC
- * do mestre, não a internet.
+ * O que ele faz é uma coisa só: pôr magia no grimório e tirar de lá. Preparar
+ * é do slot vazio, e a lista especial tem a própria lista — as três eram três
+ * telas diferentes para o mesmo gesto.
  *
  * `rank` no corpus do Foundry é o nível do verbete (truque sai como 1, com o
  * traço "cantrip"), não o círculo de slot do Pathbuilder (truque é 0 lá, e é
@@ -24,24 +25,37 @@ import { matchesContent } from '../../lib/items.js'
  * de círculo 1 ao preparar.
  */
 
-const rankEfetivo = (sp) => (sp.traits?.includes('cantrip') ? 0 : sp.rank)
+export const rankEfetivo = (sp) => (sp.traits?.includes('cantrip') ? 0 : sp.rank)
 
-export default function Compendio({ player, conj, onClose }) {
-  const { state } = useStore()
+/** Uma entrada do índice no formato que o `SpellPicker` lê. */
+export const paraPicker = (sp) => ({
+  id: sp.id,
+  name: sp.name,
+  rank: rankEfetivo(sp),
+  actionCost: sp.actionCost,
+})
+
+export default function Compendio({ player, conj, grimorio, onClose }) {
+  const { state, dispatch } = useStore()
   const [rank, setRank] = useState(null)
   const [mostrarTudo, setMostrarTudo] = useState(false)
-  const [detalheId, setDetalheId] = useState(null)
 
   const daTradicao = useMemo(
     () => SPELL_INDEX.filter((sp) => (sp.traditions ?? []).includes(conj.tradition)),
     [conj.tradition],
   )
 
+  /* Truque primeiro, depois círculo 1, 2, 3…; dentro do círculo, ordem
+     alfabética. `localeCompare` e não `<`: o corpus tem nome acentuado, e a
+     ordem do código-fonte jogaria todos eles para depois do Z. */
   const filtradas = useMemo(() => {
     const porConteudo = mostrarTudo
       ? daTradicao
       : daTradicao.filter((sp) => matchesContent(sp, state.settings))
-    return rank == null ? porConteudo : porConteudo.filter((sp) => rankEfetivo(sp) === rank)
+    const porRank = rank == null ? porConteudo : porConteudo.filter((sp) => rankEfetivo(sp) === rank)
+    return porRank
+      .map(paraPicker)
+      .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name))
   }, [daTradicao, mostrarTudo, state.settings, rank])
 
   const ranksPresentes = useMemo(
@@ -49,8 +63,34 @@ export default function Compendio({ player, conj, onClose }) {
     [daTradicao],
   )
 
+  /* Por nome e círculo, que é o que o grimório guarda — o índice do Foundry
+     tem id, o export do Pathbuilder não. */
+  const noLivro = useMemo(
+    () => new Map(grimorio.map((sp) => [spellKey(sp.rank, sp.name), sp])),
+    [grimorio],
+  )
+
   return (
-    <Sheet title={`Compêndio ${TRADICOES[conj.tradition] ?? conj.tradition}`} onClose={onClose}>
+    <SpellPicker
+      title={`Compêndio ${TRADICOES[conj.tradition] ?? conj.tradition}`}
+      spells={filtradas}
+      jaTem={(sp) => noLivro.has(spellKey(sp.rank, sp.name))}
+      onAdd={(sp) =>
+        dispatch({ type: 'ADD_BOOK_SPELL', playerId: player.id, name: sp.name, rank: sp.rank })
+      }
+      onRemove={(sp) => {
+        const doLivro = noLivro.get(spellKey(sp.rank, sp.name))
+        dispatch({
+          type: 'REMOVE_BOOK_SPELL',
+          playerId: player.id,
+          uid: doLivro?.uid ?? null,
+          name: sp.name,
+          rank: sp.rank,
+        })
+      }}
+      vazio="Nenhuma magia com esses filtros."
+      onClose={onClose}
+    >
       <div className="comp__chips">
         <button
           type="button"
@@ -79,115 +119,8 @@ export default function Compendio({ player, conj, onClose }) {
       >
         {mostrarTudo ? 'Mostrando tudo' : 'Mostrar tudo'}
       </button>
-
-      <div className="comp__list">
-        {filtradas.length === 0 ? (
-          <div className="empty empty--inline">Nenhuma magia com esses filtros.</div>
-        ) : (
-          filtradas.map((sp) => (
-            <button
-              key={sp.id}
-              type="button"
-              className="comp__row"
-              onClick={() => setDetalheId(sp.id)}
-            >
-              <span className="comp__rank">{rankEfetivo(sp) === 0 ? 'T' : `R${rankEfetivo(sp)}`}</span>
-              <span className="comp__name">{sp.name}</span>
-            </button>
-          ))
-        )}
-      </div>
-
-      {detalheId ? (
-        <SpellDetailSheet
-          id={detalheId}
-          player={player}
-          conj={conj}
-          entryIndex={daTradicao}
-          onClose={() => setDetalheId(null)}
-        />
-      ) : null}
-    </Sheet>
+    </SpellPicker>
   )
 }
 
 const TRADICOES = { arcane: 'Arcana', divine: 'Divina', occult: 'Oculta', primal: 'Primal' }
-
-/**
- * Detalhe de uma magia do compêndio. Diferente das do grimório: aqui já se
- * tem o `id` real do índice, então a descrição vem por ele — sem adivinhar
- * slug.
- */
-function SpellDetailSheet({ id, player, conj, entryIndex, onClose }) {
-  const { dispatch } = useStore()
-  const resumo = entryIndex.find((sp) => sp.id === id)
-  const [entry, setEntry] = useState(null)
-  const [erro, setErro] = useState(false)
-
-  useEffect(() => {
-    let vivo = true
-    fetch(`/api/entry/${encodeURIComponent(id)}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((data) => vivo && setEntry(data))
-      .catch(() => vivo && setErro(true))
-    return () => {
-      vivo = false
-    }
-  }, [id])
-
-  if (!resumo) return null
-
-  const rank = rankEfetivo(resumo)
-  const vagaLivre =
-    conj.preparation === 'prepared' &&
-    (player.vitals?.preparedSpells ?? []).filter((p) => p.rank === rank).length <
-      (conj.perDay?.[rank] ?? 0)
-
-  return (
-    <Sheet title={resumo.name} onClose={onClose}>
-      <div className="sheet__body">
-        <div className="comp__detail-tag">{rank === 0 ? 'Truque' : `Círculo ${rank}`}</div>
-        {entry ? (
-          <>
-            <TraitList traits={entry.traits} />
-            <div
-              className="item__desc"
-              dangerouslySetInnerHTML={{ __html: entry.descriptionHtml }}
-            />
-          </>
-        ) : erro ? (
-          <p className="item__desc item__desc--plain">
-            Não consegui buscar a descrição no servidor.
-          </p>
-        ) : (
-          <p className="item__desc item__desc--plain">Carregando a descrição…</p>
-        )}
-      </div>
-
-      <div className="comp__actions">
-        {vagaLivre ? (
-          <button
-            type="button"
-            className="btn btn--solid"
-            onClick={() => {
-              dispatch({ type: 'PREPARE_SPELL', playerId: player.id, rank, name: resumo.name })
-              onClose()
-            }}
-          >
-            Preparar
-          </button>
-        ) : null}
-        <button
-          type="button"
-          className="btn btn--tint"
-          onClick={() => {
-            dispatch({ type: 'ADD_SPELL', playerId: player.id, name: resumo.name, rank })
-            onClose()
-          }}
-        >
-          Lista especial
-        </button>
-      </div>
-    </Sheet>
-  )
-}

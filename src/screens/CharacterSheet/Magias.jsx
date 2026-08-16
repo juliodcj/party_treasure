@@ -1,15 +1,14 @@
-import { useEffect, useState } from 'react'
-import Sheet from '../../components/Sheet.jsx'
-import Stepper from '../../components/Stepper.jsx'
-import TraitList from '../../components/TraitList.jsx'
-import { ChevronRight } from '../../components/Icons.jsx'
+import { useMemo, useState } from 'react'
+import SPELL_INDEX from '../../data/index.spells.json' with { type: 'json' }
+import { ChevronRight, SwordIcon } from '../../components/Icons.jsx'
 import SectionHead, { ExpandCollapseAll } from '../../components/SectionHead.jsx'
 import { useStore } from '../../state/store.jsx'
-import { refocus, sgn } from '../../lib/sheet.js'
-import { spellRef } from '../../lib/loreResolve.js'
+import { focusPool, focusSpells, sgn } from '../../lib/sheet.js'
+import { spellKey } from '../../state/reducer.js'
 import BreakdownSheet from './BreakdownSheet.jsx'
-import Compendio from './Compendio.jsx'
+import Compendio, { paraPicker } from './Compendio.jsx'
 import { ActionCost } from './Feats.jsx'
+import SpellPicker, { SpellBody } from './SpellPicker.jsx'
 import { DescansoSheet } from './Resumo.jsx'
 
 /* Quais seções ficam abertas — sobrevive à troca de sub-aba. Chave dinâmica
@@ -34,10 +33,14 @@ export default function Magias({ player, view }) {
   const [aberto, setAberto] = useState(null)
   const [escolhendo, setEscolhendo] = useState(null) // rank do slot vazio tocado
   const [compendioAberto, setCompendioAberto] = useState(false)
+  const [especialAberta, setEspecialAberta] = useState(false)
+  const [focoAberto, setFocoAberto] = useState(false)
   const [descansando, setDescansando] = useState(false)
   const [secoes, setSecoes] = useState(secoesAbertas)
 
-  const aberta = (id) => secoes[id] ?? true
+  /* Seção sem estado guardado nasce aberta, menos onde `padrao` diz outra
+     coisa. Tocar no cabeçalho grava a escolha e ela passa a valer. */
+  const aberta = (id, padrao = true) => secoes[id] ?? padrao
   const setSecao = (id, value) => {
     setSecoes((atual) => {
       secoesAbertas = { ...atual, [id]: value }
@@ -55,10 +58,23 @@ export default function Magias({ player, view }) {
 
   const custos = conj.spellCosts ?? {}
 
+  /* O grimório (ou a lista de conhecidas) é o que o Pathbuilder exportou, menos
+     o que foi esquecido na mesa, mais o que foi copiado do Compêndio. Ordenado
+     por círculo e, dentro dele, por nome — a lista é consultada procurando um
+     nome. */
+  const esquecidas = new Set(vitals.forgottenSpells ?? [])
+  const grimorio = [
+    ...conj.book.filter((sp) => !esquecidas.has(spellKey(sp.rank, sp.name))),
+    ...(vitals.bookSpells ?? []),
+  ].sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name))
+
+  /* Magias de foco e a reserva que sai delas: um ponto por magia, até três. As
+     que vieram da ficha são só nome; as de mesa têm uid. */
+  const foco = focusSpells(sheet, vitals)
+
   const espontanea = conj.preparation !== 'prepared'
-  const maxFoco = Math.max(0, Number(sheet.focusPoints) || 0)
-  const focoAtual = Math.max(0, Number(vitals.focusPoints) || 0)
-  const podeRefocus = Boolean(refocus(sheet, vitals))
+  const maxFoco = focusPool(sheet, vitals)
+  const focoAtual = Math.min(maxFoco, Math.max(0, Number(vitals.focusPoints) || 0))
 
   const capCantrips = conj.perDay?.[0] ?? 0
   const cantripsPreparados = preparadas.filter((p) => p.rank === 0).length
@@ -90,7 +106,7 @@ export default function Magias({ player, view }) {
   /* Toda seção que existe nesta ficha, para o par Expandir/Recolher mexer só
      no que está de fato na tela. */
   const idsDeSecoes = [
-    maxFoco > 0 ? 'foco' : null,
+    'foco',
     espontanea ? 'conhecidas' : null,
     !espontanea ? 'truques' : null,
     ...(!espontanea ? circulos.map(({ rank }) => `circulo-${rank}`) : []),
@@ -169,8 +185,10 @@ export default function Magias({ player, view }) {
         }
       />
 
-      {maxFoco > 0 ? (
-        <section className="list-group">
+      {/* A seção aparece para todo conjurador, mesmo sem nenhuma magia de foco:
+          era ela que gastava a reserva, e escondê-la quando a reserva é zero
+          tirava justamente o botão de ganhar a primeira. */}
+      <section className="list-group">
           {/* As bolinhas ficam na faixa do título, como no protótipo: o quanto
               sobrou de foco se lê sem abrir a seção. */}
           <SectionHead
@@ -187,24 +205,29 @@ export default function Magias({ player, view }) {
           />
           {aberta('foco') ? (
             <>
-              {(conj.focusCantrips.length || conj.focusSpells.length) > 0 ? (
+              {foco.length > 0 ? (
                 <div className="list-rows">
-                  {conj.focusCantrips.map((nome) => (
+                  {foco.map((sp) => (
                     <SpellRow
-                      key={`fc-${nome}`}
-                      nome={nome}
-                      custo={custos[nome]}
+                      key={sp.uid ?? `foco-${sp.name}`}
+                      chave={sp.uid ?? `foco-${sp.name}`}
+                      nome={sp.name}
+                      custo={custos[sp.name]}
                       aberto={aberto}
                       setAberto={setAberto}
-                    />
-                  ))}
-                  {conj.focusSpells.map((nome) => (
-                    <SpellRow
-                      key={`fs-${nome}`}
-                      nome={nome}
-                      custo={custos[nome]}
-                      aberto={aberto}
-                      setAberto={setAberto}
+                      depois={
+                        <RemoverBtn
+                          rotulo={`Esquecer ${sp.name}`}
+                          onClick={() =>
+                            dispatch({
+                              type: 'REMOVE_FOCUS_SPELL',
+                              playerId: player.id,
+                              uid: sp.uid ?? null,
+                              name: sp.name,
+                            })
+                          }
+                        />
+                      }
                     />
                   ))}
                 </div>
@@ -213,32 +236,52 @@ export default function Magias({ player, view }) {
                 <button
                   type="button"
                   className="magias__link-row"
-                  disabled={!podeRefocus}
-                  onClick={() => {
-                    const patch = refocus(sheet, vitals)
-                    if (patch) dispatch({ type: 'SET_FOCUS', playerId: player.id, value: patch.focusPoints })
-                  }}
+                  onClick={() => setFocoAberto(true)}
                 >
-                  Refocus (+1)
+                  Adicionar magia de foco
                 </button>
               </div>
             </>
           ) : null}
-        </section>
-      ) : null}
+      </section>
+
+      {/* ------------------------------------------------------ lista especial
+
+          Fica logo abaixo do foco: as duas são listas curtas que não gastam
+          slot de círculo, e antes ela estava no fim, depois do grimório
+          inteiro. Nasce recolhida quando está vazia — é o caso comum, e uma
+          seção vazia aberta só empurra o resto da aba para baixo. */}
+      <section className="list-group">
+        <SectionHead
+          title="Preparadas · Especial"
+          count={extras.length ? `${extras.filter((e) => !e.used).length} / ${extras.length}` : 'vazio'}
+          open={aberta('especial', extras.length > 0)}
+          onToggle={() => setSecao('especial', !aberta('especial', extras.length > 0))}
+        />
+        {aberta('especial', extras.length > 0) ? (
+          <div className="list-rows">
+            {extras.map((sp) => (
+              <ExtraRow key={sp.uid} sp={sp} player={player} aberto={aberto} setAberto={setAberto} />
+            ))}
+            <button type="button" className="magias__link-row" onClick={() => setEspecialAberta(true)}>
+              Adicionar magia
+            </button>
+          </div>
+        ) : null}
+      </section>
 
       {espontanea ? (
         <section className="list-group">
           <SectionHead
             title="Magias conhecidas"
-            count={conj.book.length}
+            count={grimorio.length}
             open={aberta('conhecidas')}
             onToggle={() => setSecao('conhecidas', !aberta('conhecidas'))}
           />
           {aberta('conhecidas') ? (
             <>
               <div className="list-rows">
-                {agruparPorRank(conj.book).map(([rank, itens]) => (
+                {agruparPorRank(grimorio).map(([rank, itens]) => (
                   <div className="magias__rank-bucket" key={rank}>
                     <div className="field-label magias__rank-label">{rotuloRank(rank)}</div>
                     {itens.map((sp, i) => (
@@ -248,6 +291,7 @@ export default function Magias({ player, view }) {
                         custo={custos[sp.name]}
                         aberto={aberto}
                         setAberto={setAberto}
+                        depois={<RemoverDoLivro sp={sp} player={player} />}
                       />
                     ))}
                   </div>
@@ -296,13 +340,13 @@ export default function Magias({ player, view }) {
           <section className="list-group">
             <SectionHead
               title="Grimório"
-              count={conj.book.length}
+              count={grimorio.length}
               open={aberta('grimorio')}
               onToggle={() => setSecao('grimorio', !aberta('grimorio'))}
             />
             {aberta('grimorio') ? (
               <div className="list-rows">
-                {conj.book.map((sp, i) => (
+                {grimorio.map((sp, i) => (
                   <SpellRow
                     key={`book-${sp.rank}-${sp.name}-${i}`}
                     nome={sp.name}
@@ -310,6 +354,7 @@ export default function Magias({ player, view }) {
                     custo={custos[sp.name]}
                     aberto={aberto}
                     setAberto={setAberto}
+                    depois={<RemoverDoLivro sp={sp} player={player} />}
                   />
                 ))}
               </div>
@@ -317,24 +362,6 @@ export default function Magias({ player, view }) {
           </section>
         </>
       )}
-
-      {/* ------------------------------------------------------ lista especial */}
-      <section className="list-group">
-        <SectionHead
-          title="Preparadas · Especial"
-          count={extras.length ? `${extras.filter((e) => !e.used).length} / ${extras.length}` : 'vazio'}
-          open={aberta('especial')}
-          onToggle={() => setSecao('especial', !aberta('especial'))}
-        />
-        {aberta('especial') ? (
-          <div className="list-rows">
-            {extras.map((sp) => (
-              <ExtraRow key={sp.uid} sp={sp} player={player} aberto={aberto} setAberto={setAberto} />
-            ))}
-            <AddExtraRow player={player} />
-          </div>
-        ) : null}
-      </section>
 
       <button
         type="button"
@@ -348,13 +375,36 @@ export default function Magias({ player, view }) {
       {escolhendo != null ? (
         <PrepararSheet
           player={player}
-          conj={conj}
+          grimorio={grimorio}
+          custos={custos}
+          preparadas={preparadas.filter((p) => p.rank === escolhendo).length}
           rank={escolhendo}
           onClose={() => setEscolhendo(null)}
         />
       ) : null}
       {compendioAberto ? (
-        <Compendio player={player} conj={conj} onClose={() => setCompendioAberto(false)} />
+        <Compendio
+          player={player}
+          conj={conj}
+          grimorio={grimorio}
+          onClose={() => setCompendioAberto(false)}
+        />
+      ) : null}
+      {especialAberta ? (
+        <EspecialSheet
+          player={player}
+          conj={conj}
+          extras={extras}
+          onClose={() => setEspecialAberta(false)}
+        />
+      ) : null}
+      {focoAberto ? (
+        <FocoSheet
+          player={player}
+          sheet={sheet}
+          foco={foco}
+          onClose={() => setFocoAberto(false)}
+        />
       ) : null}
       {descansando ? (
         <DescansoSheet
@@ -409,7 +459,9 @@ const TRADICOES = { arcane: 'Arcana', divine: 'Divina', occult: 'Oculta', primal
 const rotuloPreparo = (preparation) => PREPAROS[preparation] ?? preparation ?? '—'
 const PREPAROS = { prepared: 'preparada', spontaneous: 'espontânea', innate: 'inata' }
 
-const rotuloRank = (rank) => (rank === 0 ? 'Truque' : `Círculo ${rank}`)
+/* "Rank", e não "Círculo": é o termo do PF2e remaster, o mesmo que o
+   Pathbuilder e os packs usam. Vale em toda a interface de magia. */
+const rotuloRank = (rank) => (rank === 0 ? 'Truque' : `Rank ${rank}`)
 
 function agruparPorRank(lista) {
   const porRank = new Map()
@@ -473,135 +525,191 @@ function RankBucket({
   )
 }
 
+/*
+ * A espada: manda a magia para a aba Ataques, e tira de lá no segundo toque.
+ *
+ * A marca é por NOME, não pela instância: preparar Fireball em dois slots não
+ * põe dois Fireball na aba Ataques, e trocar o slot de lugar não perde a marca.
+ *
+ * Mora em `vitals.favorites`, que já é um mapa de chave livre — o mesmo que a
+ * estrela de Ataques e a favorita de Ações usam. O prefixo `spell:` separa o
+ * espaço de nomes do id de item.
+ */
+export const spellAttackKey = (name) => `spell:${name}`
+
+function EspadaBtn({ sp, player }) {
+  const { dispatch } = useStore()
+  const key = spellAttackKey(sp.name)
+  const ligada = Boolean(player.vitals?.favorites?.[key])
+
+  return (
+    <button
+      type="button"
+      className={`icon-btn magias__espada${ligada ? ' magias__espada--on' : ''}`}
+      aria-pressed={ligada}
+      aria-label={`${ligada ? 'Tirar' : 'Mandar'} ${sp.name} ${ligada ? 'da' : 'para a'} aba Ataques`}
+      onClick={() => dispatch({ type: 'TOGGLE_FAVORITE', playerId: player.id, key })}
+    >
+      <SwordIcon />
+    </button>
+  )
+}
+
+/** Caixa "já usei hoje" de uma magia com uid — preparada ou da lista especial. */
+function UsadaCheck({ sp, player }) {
+  const { dispatch } = useStore()
+  return (
+    <button
+      type="button"
+      className={`magias__check${sp.used ? ' magias__check--on' : ''}`}
+      aria-pressed={sp.used}
+      aria-label={`${sp.used ? 'Marcar como disponível' : 'Marcar como usada'}: ${sp.name}`}
+      onClick={() => dispatch({ type: 'USE_SPELL_SLOT', playerId: player.id, uid: sp.uid })}
+    />
+  )
+}
+
+/*
+ * Esquecer uma magia do grimório. Vale para as duas origens: a copiada na mesa
+ * tem `uid` e some de vez; a que veio do export entra na lista de esquecidas
+ * (o reducer decide qual caminho) — reimportar a ficha não a traz de volta.
+ * Ela continua no Compêndio, com o + para reaprender.
+ */
+function RemoverDoLivro({ sp, player }) {
+  const { dispatch } = useStore()
+  return (
+    <RemoverBtn
+      rotulo={`Esquecer ${sp.name}`}
+      onClick={() =>
+        dispatch({
+          type: 'REMOVE_BOOK_SPELL',
+          playerId: player.id,
+          uid: sp.uid ?? null,
+          name: sp.name,
+          rank: sp.rank,
+        })
+      }
+    />
+  )
+}
+
+/** O × que tira uma magia da lista em que ela está. */
+function RemoverBtn({ rotulo, onClick }) {
+  return (
+    <button type="button" className="icon-btn icon-btn--ghost" aria-label={rotulo} onClick={onClick}>
+      ×
+    </button>
+  )
+}
+
 function PreparadaRow({ sp, cantrip, custo, player, aberto, setAberto }) {
   const { dispatch } = useStore()
   return (
-    <div className="magias__prep-row">
-      {!cantrip ? (
-        <button
-          type="button"
-          className={`magias__check${sp.used ? ' magias__check--on' : ''}`}
-          aria-pressed={sp.used}
-          aria-label={`${sp.used ? 'Marcar como disponível' : 'Marcar como usada'}: ${sp.name}`}
-          onClick={() => dispatch({ type: 'USE_SPELL_SLOT', playerId: player.id, uid: sp.uid })}
-        />
-      ) : null}
-      <SpellRow
-        nome={sp.name}
-        custo={custo}
-        aberto={aberto}
-        setAberto={setAberto}
-        riscado={!cantrip && sp.used}
-        semBorda
-      />
-      <button
-        type="button"
-        className="icon-btn icon-btn--ghost"
-        aria-label={`Remover ${sp.name} do preparo`}
-        onClick={() => dispatch({ type: 'REMOVE_SPELL', playerId: player.id, uid: sp.uid })}
-      >
-        ×
-      </button>
-    </div>
+    <SpellRow
+      chave={sp.uid}
+      nome={sp.name}
+      custo={custo}
+      aberto={aberto}
+      setAberto={setAberto}
+      riscado={!cantrip && sp.used}
+      antes={cantrip ? null : <UsadaCheck sp={sp} player={player} />}
+      depois={
+        <>
+          <EspadaBtn sp={sp} player={player} />
+          <RemoverBtn
+            rotulo={`Remover ${sp.name} do preparo`}
+            onClick={() => dispatch({ type: 'REMOVE_SPELL', playerId: player.id, uid: sp.uid })}
+          />
+        </>
+      }
+    />
   )
 }
 
 function ExtraRow({ sp, player, aberto, setAberto }) {
   const { dispatch } = useStore()
   return (
-    <div className="magias__prep-row">
-      <button
-        type="button"
-        className={`magias__check${sp.used ? ' magias__check--on' : ''}`}
-        aria-pressed={sp.used}
-        aria-label={`${sp.used ? 'Marcar como disponível' : 'Marcar como usada'}: ${sp.name}`}
-        onClick={() => dispatch({ type: 'USE_SPELL_SLOT', playerId: player.id, uid: sp.uid })}
-      />
-      <SpellRow
-        nome={sp.name}
-        rankTag={sp.rank != null ? rotuloRank(sp.rank) : null}
-        aberto={aberto}
-        setAberto={setAberto}
-        riscado={sp.used}
-        semBorda
-      />
-      <button
-        type="button"
-        className="icon-btn icon-btn--ghost"
-        aria-label={`Remover ${sp.name} da lista especial`}
-        onClick={() => dispatch({ type: 'REMOVE_SPELL', playerId: player.id, uid: sp.uid })}
-      >
-        ×
-      </button>
-    </div>
+    <SpellRow
+      chave={sp.uid}
+      nome={sp.name}
+      rankTag={sp.rank != null ? rotuloRank(sp.rank) : null}
+      aberto={aberto}
+      setAberto={setAberto}
+      riscado={sp.used}
+      antes={<UsadaCheck sp={sp} player={player} />}
+      depois={
+        <>
+          <EspadaBtn sp={sp} player={player} />
+          <RemoverBtn
+            rotulo={`Remover ${sp.name} da lista especial`}
+            onClick={() => dispatch({ type: 'REMOVE_SPELL', playerId: player.id, uid: sp.uid })}
+          />
+        </>
+      }
+    />
   )
 }
 
-function AddExtraRow({ player }) {
-  const { dispatch } = useStore()
-  const [nome, setNome] = useState('')
-
-  const adicionar = () => {
-    const limpo = nome.trim()
-    if (!limpo) return
-    dispatch({ type: 'ADD_SPELL', playerId: player.id, name: limpo, rank: null })
-    setNome('')
-  }
-
-  return (
-    <div className="magias__add-row">
-      <input
-        className="input"
-        placeholder="Magia de item, ritual, concessão do mestre…"
-        value={nome}
-        onChange={(event) => setNome(event.target.value)}
-        onKeyDown={(event) => event.key === 'Enter' && adicionar()}
-        aria-label="Nome da magia especial"
-      />
-      <button type="button" className="btn btn--tint" onClick={adicionar} disabled={!nome.trim()}>
-        Adicionar
-      </button>
-    </div>
-  )
-}
-
-/** Linha simples de magia: nome, custo/rank, abre para a descrição sob demanda. */
-function SpellRow({ nome, rankTag = null, custo = null, aberto, setAberto, riscado = false, semBorda = false }) {
-  const id = `spell-${nome}`
+/*
+ * Linha de magia: nome, custo/rank, abre para a descrição sob demanda.
+ *
+ * A linha é uma coluna — cabeçalho em cima, descrição embaixo — e o cabeçalho é
+ * a única faixa em `row`. Enquanto o corpo era irmão do nome no mesmo
+ * `flex-direction: row`, a descrição aberta entrava como terceira coluna e
+ * espremia o nome até zero: a magia aberta ficava sem título.
+ *
+ * `antes`/`depois` são as bordas do cabeçalho (a caixa de "já usei", o × de
+ * remover). Elas ficam aqui, e não numa linha por fora, porque uma linha por
+ * fora voltaria a centralizar os dois controles no meio da descrição aberta.
+ *
+ * `chave` identifica a INSTÂNCIA aberta, não a magia. Enquanto era o nome, dois
+ * Bullhorn preparados abriam e fechavam juntos — e a mesma magia no grimório e
+ * no preparo abria nos dois lugares ao mesmo tempo.
+ */
+function SpellRow({
+  chave = null,
+  nome,
+  rankTag = null,
+  custo = null,
+  aberto,
+  setAberto,
+  riscado = false,
+  antes = null,
+  depois = null,
+}) {
+  const id = chave ?? `spell-${nome}`
   const open = aberto === id
-  const descricao = useSpellDescription(nome, open)
 
   return (
-    <div className={semBorda ? 'magias__spellrow-bare' : 'magias__spellrow'}>
-      <button
-        type="button"
-        className="entry__main"
-        onClick={() => setAberto(open ? null : id)}
-        aria-expanded={open}
-      >
-        <span className="entry__title">
-          <span className={`entry__name${riscado ? ' magias__name--used' : ''}`}>{nome}</span>
-          <ActionCost cost={custo} />
-          {rankTag ? <span className="entry__sub">{rankTag}</span> : null}
-        </span>
-      </button>
-      <button
-        type="button"
-        className="icon-btn icon-btn--ghost"
-        onClick={() => setAberto(open ? null : id)}
-        aria-label={open ? 'Fechar' : 'Abrir'}
-      >
-        <ChevronRight open={open} />
-      </button>
+    <div className="magias__spellrow">
+      <div className="magias__spellrow-head">
+        {antes}
+        <button
+          type="button"
+          className="entry__main"
+          onClick={() => setAberto(open ? null : id)}
+          aria-expanded={open}
+        >
+          <span className="entry__title">
+            <span className={`entry__name${riscado ? ' magias__name--used' : ''}`}>{nome}</span>
+            <ActionCost cost={custo} />
+            {rankTag ? <span className="entry__sub">{rankTag}</span> : null}
+          </span>
+        </button>
+        {depois}
+        <button
+          type="button"
+          className="icon-btn icon-btn--ghost"
+          onClick={() => setAberto(open ? null : id)}
+          aria-label={open ? 'Fechar' : 'Abrir'}
+        >
+          <ChevronRight open={open} />
+        </button>
+      </div>
 
       {open ? (
         <div className="entry__body magias__spellrow-body">
-          {descricao.traits.length ? <TraitList traits={descricao.traits} /> : null}
-          {descricao.html ? (
-            <div className="item__desc" dangerouslySetInnerHTML={{ __html: descricao.html }} />
-          ) : (
-            <p className="item__desc item__desc--plain">{descricao.aviso}</p>
-          )}
+          <SpellBody nome={nome} />
         </div>
       ) : null}
     </div>
@@ -609,75 +717,112 @@ function SpellRow({ nome, rankTag = null, custo = null, aberto, setAberto, risca
 }
 
 /*
- * A descrição de uma magia do Pathbuilder, buscada pelo NOME — não há id do
- * corpus aqui, só o que o export trouxe. O slug é adivinhado (`spellRef`); no
- * raro caso de não bater com o do Foundry, a magia entra sem descrição, como
- * qualquer nome que os packs não conhecem — nunca inventada.
+ * Escolher o que preparar num slot vazio: as entradas do grimório daquele
+ * círculo, na mesma lista do Compêndio — dá para ler a magia antes de gastar o
+ * slot com ela. Antes era só uma pilha de nomes, sem descrição nenhuma.
+ *
+ * A folha não fecha ao preparar: o círculo costuma ter mais de um slot vazio, e
+ * fechar obrigaria a reabrir a lista para cada um.
  */
-const cache = new Map()
+function PrepararSheet({ player, grimorio, custos, preparadas, rank, onClose }) {
+  const { dispatch } = useStore()
+  const opcoes = grimorio
+    .filter((sp) => sp.rank === rank)
+    .map((sp) => ({ name: sp.name, rank: sp.rank, actionCost: custos[sp.name] }))
 
-function useSpellDescription(nome, open) {
-  const [estado, setEstado] = useState(() => {
-    const guardado = cache.get(nome)
-    return { html: guardado?.html ?? null, traits: guardado?.traits ?? [], aviso: 'Carregando a descrição…' }
-  })
-
-  useEffect(() => {
-    if (!open || estado.html) return
-    let vivo = true
-    fetch(`/api/entry/${encodeURIComponent(spellRef(nome))}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((entry) => {
-        const dado = { html: entry.descriptionHtml, traits: entry.traits ?? [] }
-        cache.set(nome, dado)
-        if (vivo) setEstado({ ...dado, aviso: '' })
-      })
-      .catch(() => {
-        if (vivo) {
-          setEstado({
-            html: null,
-            traits: [],
-            aviso: 'Sem verbete nos packs com este nome — a descrição não veio.',
-          })
-        }
-      })
-    return () => {
-      vivo = false
-    }
-  }, [open, nome, estado.html])
-
-  return estado
+  /* Preparar a mesma magia em dois slots é legítimo (é o que o mago faz com
+     Magic Missile), então o + nunca desliga — `jaTem` fica falso de propósito,
+     e o que informa é a contagem no cabeçalho da seção. */
+  return (
+    <SpellPicker
+      title={`Preparar em ${rotuloRank(rank)}`}
+      hint={`${preparadas} preparada(s) neste círculo. A mesma magia pode ocupar mais de um slot.`}
+      spells={opcoes}
+      onAdd={(sp) => dispatch({ type: 'PREPARE_SPELL', playerId: player.id, rank, name: sp.name })}
+      vazio="Nenhuma magia deste círculo no grimório."
+      onClose={onClose}
+    />
+  )
 }
 
-/** Escolher o que preparar num slot vazio: as entradas do grimório daquele rank. */
-function PrepararSheet({ player, conj, rank, onClose }) {
+/*
+ * A lista especial: magia que não gasta slot — de item, ritual, concessão do
+ * mestre.
+ *
+ * Oferece a tradição inteira, sem filtro de círculo e sem o filtro de conteúdo
+ * da mesa (por isso ela é mais longa que o Compêndio). É de propósito: o
+ * pergaminho que caiu na mochila e a dádiva do mestre não pedem permissão nem
+ * ao que o personagem sabe nem ao que a mesa comprou.
+ */
+function EspecialSheet({ player, conj, extras, onClose }) {
   const { dispatch } = useStore()
-  const opcoes = conj.book.filter((sp) => sp.rank === rank)
+  const opcoes = useMemo(
+    () =>
+      SPELL_INDEX.filter((sp) => (sp.traditions ?? []).includes(conj.tradition))
+        .map(paraPicker)
+        .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name)),
+    [conj.tradition],
+  )
+
+  const jaNaLista = new Set(extras.map((sp) => spellKey(sp.rank, sp.name)))
 
   return (
-    <Sheet title={`Preparar em ${rotuloRank(rank)}`} onClose={onClose}>
-      <div className="mods__list">
-        {opcoes.length === 0 ? (
-          <div className="empty empty--inline">Nenhuma magia deste círculo no grimório.</div>
-        ) : (
-          opcoes.map((sp, i) => (
-            <button
-              key={`${sp.name}-${i}`}
-              type="button"
-              className="target-row"
-              onClick={() => {
-                dispatch({ type: 'PREPARE_SPELL', playerId: player.id, rank, name: sp.name })
-                onClose()
-              }}
-            >
-              {sp.name}
-            </button>
-          ))
-        )}
-      </div>
-      <button type="button" className="btn btn--neutral btn--block" onClick={onClose}>
-        Cancelar
-      </button>
-    </Sheet>
+    <SpellPicker
+      title="Adicionar à lista especial"
+      hint="Lista livre, sem limite de slots. Use para magias de item, ritual ou concessão do mestre."
+      spells={opcoes}
+      jaTem={(sp) => jaNaLista.has(spellKey(sp.rank, sp.name))}
+      onAdd={(sp) =>
+        dispatch({ type: 'ADD_SPELL', playerId: player.id, name: sp.name, rank: sp.rank })
+      }
+      onClose={onClose}
+    />
+  )
+}
+
+/*
+ * Magias de foco da classe do personagem.
+ *
+ * No corpus, magia de foco não tem tradição — ela é marcada pelo traço da
+ * classe que a concede (`cleric`, `wizard`, `druid`). É por isso que ela nunca
+ * apareceu no Compêndio, que filtra por tradição: as duas listas são disjuntas
+ * de propósito, e esta precisa do próprio filtro.
+ *
+ * Sem `sheet.class` no export, a lista sai vazia e diz por quê — não se mostra
+ * as 493 magias de foco do jogo na esperança de acertar.
+ */
+function FocoSheet({ player, sheet, foco, onClose }) {
+  const { dispatch } = useStore()
+  const classe = String(sheet.class ?? '').toLowerCase()
+
+  const opcoes = useMemo(() => {
+    if (!classe) return []
+    return SPELL_INDEX.filter(
+      (sp) => (sp.traits ?? []).includes('focus') && (sp.traits ?? []).includes(classe),
+    )
+      .map(paraPicker)
+      .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name))
+  }, [classe])
+
+  const jaTem = new Set(foco.map((sp) => sp.name))
+
+  return (
+    <SpellPicker
+      title="Adicionar magia de foco"
+      hint={
+        classe
+          ? `Magias de foco de ${sheet.class}. Gastar e recuperar foco continua nas bolinhas do cabeçalho.`
+          : null
+      }
+      spells={opcoes}
+      jaTem={(sp) => jaTem.has(sp.name)}
+      onAdd={(sp) => dispatch({ type: 'ADD_FOCUS_SPELL', playerId: player.id, name: sp.name })}
+      vazio={
+        classe
+          ? `Nenhuma magia de foco de ${sheet.class} nos packs.`
+          : 'A ficha importada não trouxe a classe — sem ela não dá para saber quais magias de foco oferecer.'
+      }
+      onClose={onClose}
+    />
   )
 }
