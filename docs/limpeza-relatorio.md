@@ -621,6 +621,108 @@ identidade.
 
 ---
 
+## Verificação final
+
+### Os comandos, a partir de um clone limpo da `main`
+
+| Verificação | Antes da limpeza | Depois |
+|---|---|---|
+| `npm ci` | ok | ok |
+| `npm run build` (com `lint:visual`) | ok, sem violação nova | ok, sem violação nova |
+| `npm run smoke` | 11 de 11 | 11 de 11 |
+| `npm test` | 164 passam, 0 falham, 13 pulados | 164 passam, 0 falham, 13 pulados |
+
+### Os valores da ficha, um por um
+
+O gabarito da Etapa 0 foi regerado depois da limpeza e comparado com o de antes:
+**28.882 linhas idênticas, zero diferença de valor.** As únicas divergências eram
+o `importedAt` e os ids gerados a partir de `Date.now()`, que não são
+determinísticos por natureza — normalizados os dois lados, o arquivo bate
+byte a byte.
+
+### A `mesa.json` de referência
+
+Carregada no servidor a partir da cópia gravada na Etapa 0. Tudo intacto: os 4
+jogadores (inclusive o Amiri criado lá), a renomeação "Ezren, o Velho", a
+carteira 70/9/3 do Valeros, a Greataxe comprada, o que estava equipado, o HP 19
+com 4 temporários, as condições Frightened 2 e Off-Guard, as 5 lojas, o item de
+campanha "Selo do Conde" e as 12 entradas de histórico. Nenhuma migração
+silenciosa, nenhuma perda.
+
+### A lista percorrida no navegador
+
+Percorrida clicando, em Chromium a 390×844, com **dois contextos abertos** — dois
+celulares de verdade — contra o servidor rodando a mesa de referência. **82 de 82
+verificações passaram, sem um único erro de JavaScript em nenhum dos dois.**
+
+Alguns resultados que provam o que importa:
+
+```
+CA 14, e o detalhamento mostrando de onde vem cada ponto:
+  Base +10 · DEX +2 · Proficiência (trained) +3 · Leather Armor +1
+  Steel Shield (circumstance) +2 · Frightened (status) −2 · Off-Guard −2
+
+Fortitude +5 · Reflex +3 · Will +4 · Percepção +4 · Athletics T +5
+Sub-abas do bárbaro: Resumo · Ataques · Feats · Ações   (sem Magias, correto)
+
+Condições, nos dois sentidos:
+  remover Off-Guard ....... CA 14 → 16
+  reaplicar Off-Guard ..... CA 16 → 14
+  Frightened 2 → 3 ........ CA 14 → 13
+  Blinded (sem efeito) .... marca e a CA segue 14
+  e cada uma dessas apareceu no segundo celular
+
+HP:
+  dano 3 com 4 temporários .... HP segue 19/24 (come o temporário primeiro)
+  cura 999 .................... 24/24 (não passa do máximo)
+  dano 999 .................... 0/24 (não passa de zero)
+  e o segundo celular acompanhou
+
+Venda pela metade, medida na carteira:
+  "Deseja vender 1x Longsword por 5 pp?"  →  70/9/3 → 71/4/3  = +50 pc
+  (Longsword custa 1 po = 100 pc; recebeu 50)
+
+Loja:
+  "Comprar" vira stepper quando entra no carrinho
+  carrinho: CARTEIRA 70 9 3 → DEPOIS DA COMPRA 70 5 3
+  compra de 2 Daggers debitou 40 pc e entregou no inventário, nos dois celulares
+  carrinho impossível de pagar: botão desabilitado
+
+Biblioteca: 10 pastas colapsáveis (Weapon 721, Armor 161, Shield 89, Rune 135…)
+
+Queda de conexão (servidor derrubado de verdade):
+  "Sem conexão com a mesa" apareceu nos DOIS celulares
+  alteração recusada enquanto offline
+  reconectou sozinho quando o servidor voltou, com a mesa íntegra
+```
+
+Três coisas que pareciam falha e eram comportamento certo, registradas para não
+assustarem depois:
+
+1. **"Simplificar moedas" não aparece** com 9 pp e 3 pc. É a regra do
+   `canSimplify`: o atalho só surge com 10 ou mais de prata ou de cobre.
+2. **A aba Magias não existe** para o Rurik. Ele é bárbaro; `subAbasDe` esconde a
+   aba de quem não conjura, em vez de mostrar uma aba vazia.
+3. **O aviso de conexão cobre o conteúdo** da tela. É proposital — está escrito no
+   `ConnectionBanner`: "quem está sem conexão precisa ler isto, não espiar por
+   baixo".
+
+### Nenhum pixel mudou
+
+`git diff` da limpeza inteira, conferido linha por linha:
+
+- **Zero alterações** em `src/styles/` — nem `tokens.css`, nem `base.css`, nem
+  `components.css`, nem `screens.css`.
+- **Zero alterações** em `src/data/` — catálogo, traços, condições, magias, ações
+  e as fichas semente intactos, com os campos de licença e atribuição.
+- Em `.jsx`, duas mudanças e nada mais: a remoção do `COIN_ORDER` (uma constante
+  no fim do arquivo, fora do JSX) e a reescrita de um comentário.
+- Em `index.html`, uma linha: o texto do `<meta name="description">`. Nenhuma
+  tag, nenhuma classe, nenhum estilo.
+- Todo o resto do diff de código é **remoção pura**.
+
+---
+
 ## Duas coisas que a Etapa 4 fez e você precisa saber
 
 ### As seções do README foram renumeradas
