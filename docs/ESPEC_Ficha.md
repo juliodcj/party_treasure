@@ -1,8 +1,11 @@
 # ESPEC — Ficha PF2e
 
 Referência da ficha de personagem do party_treasure. **Consulta sob demanda, por
-seção.** As regras que valem em toda sessão estão no `CLAUDE.md`. A tarefa de cada
-sessão está em `docs/ficha/fase-NN.md`.
+seção.** As regras que valem em toda sessão estão no `CLAUDE.md`.
+
+A ficha está implementada. Este documento descreve como ela funciona; os
+roteiros de implementação, uma fase por arquivo, foram removidos depois de
+cumpridos — o que continua valendo está aqui.
 
 Índice: §1 princípios · §2 decisões · §3 conteúdo · §4 JSON do Pathbuilder ·
 §5 packs do Foundry · §6 personagens · §7 dados · §8 equipar · §9 motor ·
@@ -461,13 +464,13 @@ design system.
 - **CSS:** `components.css` para o que se repete, `screens.css` para o que é só da
   ficha.
 
-### 12.2 Do protótipo, o que descartar
-`support.js` é o runtime do Claude Design, gerado, "do not edit" — **nada a
-implementar**. A moldura fixa de 360×812 sai: layout responsivo mobile-first. Os
-literais `oklch` saem: viram token. As constantes do protótipo (`ACCENT`,
-`DANGER`, `TEXT_2`, `TEXT_3`, `RAISED`) e a escala 26/14.5/13/11 batem uma a uma
-com os tokens — tokenização é substituição mecânica, então literal sobrando é
-descuido.
+### 12.2 O que ficou do protótipo, e o que não ficou
+O protótipo do Claude Design deu o layout e foi removido do repositório depois
+de cumprido esse papel. Do que ele trazia, nada de aparência sobreviveu como
+literal: a moldura fixa de 360×812 virou layout responsivo mobile-first, os
+`oklch` viraram token, e as constantes dele (`ACCENT`, `DANGER`, `TEXT_2`,
+`TEXT_3`, `RAISED`) mais a escala 26/14.5/13/11 batem uma a uma com
+`tokens.css`. Quem prova isso a cada build é o `npm run lint:visual`.
 
 **Colisão de nome:** `src/components/Sheet.jsx` já existe (folha deslizante). A
 ficha vai em `src/screens/CharacterSheet/`, prefixo CSS `.charsheet__`.
@@ -552,12 +555,14 @@ aparelho altera qualquer um; o histórico registra quem foi.
 
 ---
 
-## 15. Fases e modelos
+## 15. Fases e modelos — concluídas
 
-Detalhe de cada fase em `docs/ficha/fase-NN.md`.
+Registro de como a ficha foi construída, da fase 0 à 12. Todas entregues; os
+roteiros por fase saíram do repositório depois de cumpridos. Fica a tabela
+porque ela diz onde cada peça nasceu.
 
-Critério do modelo: **se isto sair errado, quando eu descubro?** Na tela, agora →
-Sonnet. Três semanas depois, na mesa → Opus.
+Critério do modelo, na época: **se isto sair errado, quando eu descubro?** Na
+tela, agora → Sonnet. Três semanas depois, na mesa → Opus.
 
 | Fase | Entrega | Modelo |
 |---|---|---|

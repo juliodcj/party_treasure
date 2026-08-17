@@ -115,7 +115,6 @@ Mestre. Personagem sem ficha continua funcionando como sempre: carteira e
 inventário, sem cálculo.
 
 Espec da ficha: [docs/ESPEC_Ficha.md](docs/ESPEC_Ficha.md).
-Fases de implementação: [docs/ficha/README.md](docs/ficha/README.md).
 
 ### Fora do escopo — não implementar
 
@@ -445,9 +444,8 @@ Ataques, Magias, Feats e Ações. A aba **Magias** cobre conjuração preparada
 (truques, círculos, grimório, foco, lista especial e compêndio filtrável por
 tradição/círculo/conteúdo); conjuração espontânea ou inata mostra a lista de
 magias conhecidas em modo leitura, porque nenhum export real desse tipo foi
-testado ainda. Roadmap em treze fases:
-[docs/ficha/README.md](docs/ficha/README.md); espec em
-[docs/ESPEC_Ficha.md](docs/ESPEC_Ficha.md), com o que divergiu na §17b.
+testado ainda. Espec em [docs/ESPEC_Ficha.md](docs/ESPEC_Ficha.md), com o que
+divergiu na §17b.
 
 ---
 

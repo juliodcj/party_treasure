@@ -105,33 +105,31 @@ Desabilitado: sempre `var(--disabled)`.
 
 ## Ficha de personagem
 
-A ficha PF2e está sendo implementada na branch de trabalho da sessão
-(`claude/execute-prompt-with-files-04lj69`), que sai da `main` e volta para ela.
-Espec: `docs/ESPEC_Ficha.md`. Tarefa da sessão: `docs/ficha/fase-NN.md`.
+A ficha PF2e está implementada: importação do JSON do Pathbuilder, motor de
+cálculo e as cinco sub-abas (Resumo, Ataques, Magias, Feats, Ações), mais o
+gestor de condições e o controle de HP. Referência: `docs/ESPEC_Ficha.md`.
 
-**Não abra uma sessão de trabalho sem ler o arquivo da fase.** Ele diz quais
-arquivos tocar, o que não fazer e quando a fase está pronta.
+**Antes de mexer na ficha, leia a seção da espec que trata da peça em questão.**
+Ela é consulta por seção, não leitura de cabo a rabo.
 
 ### Regras que valem em toda sessão
 
 **Escopo.** Este programa não é um character builder. É uma ficha melhorada do
-Pathbuilder, com gestão de inventário, loja e ações do mestre. Não implemente
-level-up, escolha de feat, distribuição de atributo, rolagem de dado, iniciativa
-ou controle de combate. Ideia fora disso: anote como sugestão e siga em frente.
+Pathbuilder, com gestão de inventário, loja e ações do mestre. Fora do escopo,
+e a lista é essa: **iniciativa, combate e bestiário.** Ideia fora disso: anote
+como sugestão e siga em frente.
 
 **Zero placeholder.** Nenhum texto de regra, nome, descrição ou número de jogo é
 escrito à mão no código. Tudo vem dos packs do Foundry ou do JSON do Pathbuilder.
 Dado que não existe na fonte não aparece na tela — não se preenche com
-aproximação. O protótipo `Ficha PF2e.dc.html` é referência de layout, nunca de
-conteúdo.
+aproximação.
 
 **Idioma.** Dado de pack fica em inglês (`Frightened` continua `Frightened`).
 Moldura nossa é traduzida: rótulo, título, botão, mensagem.
 
 **Identidade visual.** A ficha não traz sistema visual próprio. Vale
 `docs/design-system.md` inteiro. Nenhum valor visual literal fora de
-`src/styles/tokens.css` — o protótipo escreve `oklch()` e `px`, e todos viram
-token. `npm run lint:visual` prova isso.
+`src/styles/tokens.css`. `npm run lint:visual` prova isso.
 
 **`player.sheet` pode ser nulo.** Personagem sem ficha importada é caso de
 primeira classe: tem inventário e carteira, funciona como antes, e não mostra
@@ -162,8 +160,9 @@ remove código.
 
 ### Git
 
-Branch de trabalho saindo de `main`. Commit ao fim de cada fase concluída,
-não a cada arquivo. Push logo após o commit. PR para `main` na fase 12.
+Branch de trabalho saindo de `main`. Commit ao fim de cada tarefa concluída,
+não a cada arquivo. Push logo após o commit. Merge de volta na `main` quando
+estiver funcionando.
 Conflito: resolva você; se for decisão de produto, pergunte em português simples.
 Nunca `push --force`, `reset --hard` em coisa não commitada, nem reescrita de
 histórico já enviado.
