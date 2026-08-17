@@ -1,8 +1,8 @@
 // Importador de JSON dos packs do foundryvtt/pf2e.
 // O schema é polimórfico: `type` na raiz e um `system` cujos campos mudam por
 // tipo. Aqui normalizamos o que a interface consome e guardamos o `system`
-// inteiro em `raw`, para nada se perder — é a mesma estratégia que a ingestão
-// da Fase 2 vai usar no SQLite.
+// inteiro em `raw`, para nada se perder — é a mesma estratégia dos scripts de
+// ingestão que geram `src/data/`.
 
 import { CP_PER_GP, CP_PER_SP } from './money.js'
 import { makeId, normalizeItem } from './items.js'

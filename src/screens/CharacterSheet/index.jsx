@@ -17,8 +17,8 @@ import Magias from './Magias.jsx'
  * tem carteira e mochila, compra e vende como sempre, e a aba diz isso em vez
  * de mostrar zeros.
  *
- * As cinco sub-abas chegam nas fases 8 a 11. Até lá elas aparecem desabilitadas,
- * para a moldura já ser a definitiva e o conteúdo entrar por dentro.
+ * As cinco sub-abas — Resumo, Ataques, Magias, Feats e Ações — estão todas no
+ * ar. Quem não conjura não vê a aba Magias (ver `subAbasDe`).
  */
 
 export const SUBABAS = [
