@@ -19,11 +19,6 @@ export function fromCopper(totalCp) {
   }
 }
 
-/** Saldo total da carteira de um jogador, em cobre. */
-export function walletCopper(wallet) {
-  return toCopper(wallet)
-}
-
 /** "12 po 3 pp" — omite denominacoes zeradas, mas nunca devolve string vazia. */
 export function formatCopper(totalCp) {
   const { gold, silver, copper } = fromCopper(totalCp)
