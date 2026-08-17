@@ -1,8 +1,13 @@
 # PF2e — Party Treasure
 
-App web para gerenciar **ficha, inventário, dinheiro e lojas** de uma mesa de
-Pathfinder 2e. O mestre roda o servidor no PC; os jogadores acessam pelo
-navegador do celular — no Wi-Fi de casa, ou de longe por um Cloudflare Tunnel.
+**Ficha de personagem de Pathfinder 2e importada do Pathbuilder 2e, com gestor
+de condições e gestor de inventário, para uma mesa presencial.** O mestre roda o
+servidor no PC; cada jogador abre no navegador do celular, na mesma rede — ou de
+longe, por um Cloudflare Tunnel.
+
+A ficha calcula o que se lê na mesa (CA, ataques, dano, salvamentos, perícias) a
+partir do que o personagem está vestindo agora. As condições valem para todos os
+aparelhos. O inventário, o dinheiro e as lojas continuam onde sempre estiveram.
 
 Repositório: `https://github.com/juliodcj/party_treasure`
 
@@ -39,61 +44,24 @@ resolver conflito. Faça você, e me diga em português simples o que aconteceu.
 Se o repo remoto estiver vazio: inicializar, subir a estrutura inicial e o
 protótipo. Se já tiver conteúdo: clonar e trabalhar em cima.
 
-Criar `.gitignore` cobrindo: `node_modules/`, `vendor/`, `*.sqlite`,
-`*.sqlite-journal`, `.env`, `dist/`, `.DS_Store`.
+Criar `.gitignore` cobrindo: `node_modules/`, `vendor/`, `dist/`, `.env`,
+`.DS_Store`, `data/` (a sua mesa) e `server/data/` (o corpus gerado).
 
 ---
 
-## 1. Ponto de partida: o protótipo do Claude Design
+## 1. De onde o projeto saiu
 
-*(Registro de onde o projeto saiu. As Fases 1 a 3 já resolveram o que está
-descrito aqui — ver o roadmap na seção 7.)*
+*(Um parágrafo de contexto. Nada aqui descreve o programa de hoje.)*
 
-O protótipo existe e a **UI está do jeito que eu quero** — preservar a
-aparência e os fluxos. O problema é tudo que está por baixo.
+Isto começou como um protótipo do Claude Design: um componente React único de
+~2000 linhas, com estado no próprio componente, estilos inline, sem servidor,
+sem persistência, travado numa moldura fixa de iPhone. Dele ficaram a aparência
+e os fluxos, que eram o que estava certo. Todo o resto foi refeito: arquivos
+separados, tokens de estilo, servidor dono do estado, catálogo real dos packs do
+Foundry e, por último, a ficha de personagem. O protótipo saiu do repositório
+depois de cumprir o papel de referência de layout.
 
-Hoje é **um componente React único de ~2000 linhas**, com `this.state`, estilos
-inline, sem backend, sem persistência, sem multiusuário. Interface em português.
-Está travado numa **moldura de iPhone** — precisa virar layout responsivo
-mobile-first para **Android**.
-
-### Modelo de dados atual (em memória)
-
-- **Jogador**: `{ id, name, gold, silver, copper, items: { [itemId]: qty }, customItems: [] }`
-  — 3 mocks: Valeros, Seelah, Ezren.
-- **Item de catálogo** (`CATALOG`, ~15 itens hardcoded):
-  `{ id, name, level, category, priceCp, weight, traits[], description }`
-- **Item de campanha** (`campaignItems`): criado pelo mestre ou importado de JSON.
-- **Item custom**: avulso no inventário de um jogador, não entra no catálogo.
-- **Loja**: `{ id, name, itemIds[], search, filterCategory, filterLevel }` — 4 mocks.
-- Dinheiro sempre normalizado em **cobre** (`1 po = 10 pp = 100 pc`).
-  UI mostra 3 badges (ouro/prata/cobre).
-
-### O que já funciona (preservar)
-
-**Inventário** — seletor de jogador em chips; lista agrupada em Equipamentos /
-Consumíveis / Outros; busca + filtro por tipo e nível; item expansível com
-traits clicáveis (popup com descrição); +/- quantidade (edição livre, não mexe
-na carteira — comprar é na Loja, vender é o botão dedicado), excluir, vender,
-enviar item a outro personagem, editar itens custom; adicionar item manual ou
-do catálogo. Carteira no header com ajuste de moedas, envio de dinheiro e
-"Simplificar moedas".
-
-**Loja** — dropdown de loja; lista de itens registrados com stepper de carrinho;
-compra valida saldo, debita e adiciona ao inventário.
-
-**Biblioteca** — itens de campanha + catálogo em pastas colapsáveis com busca;
-criar item manual ou via **importador de JSON do Foundry** (cola texto, converte
-nome, nível, preço, bulk, traits, descrição); editar/excluir.
-
-**Mestre** — lista de jogadores com carteira; dar moedas a um jogador ou ao
-grupo; dar item; adicionar/renomear jogadores; cadastrar/remover itens nas lojas.
-
-### Navegação hoje
-
-A barra de abas tem **quatro**: **Inventário · Ficha · Loja · Mestre**. A
-Biblioteca não é aba: é tela filha do Mestre, aberta de lá. (Antes da ficha eram
-três — este parágrafo é a descrição correta, não o histórico.)
+O que o programa faz hoje está nas seções 2 a 8. A árvore de arquivos, no fim.
 
 ---
 
@@ -105,46 +73,96 @@ o personagem é o Pathbuilder; subir de nível é reimportar.
 
 ### Dentro do escopo
 
-Inventário, dinheiro, lojas, biblioteca de itens, papéis mestre/jogador, e a
-**ficha de personagem** importada do Pathbuilder: HP e condições, defesas,
-perícias, ataques montados a partir do inventário, feats, ações e magias — tudo
-com o texto vindo dos packs do Foundry.
+**A ficha de personagem** importada do Pathbuilder 2e — atributos, CA, HP,
+salvamentos, percepção, perícias, DC de classe, conjuração, ataques e dano
+montados a partir do que o personagem está vestindo e empunhando —, o **gestor
+de condições**, e o **inventário, dinheiro, lojas e biblioteca de itens** que já
+existiam. Texto de regra vindo dos packs do Foundry, nunca escrito à mão.
+
+Tudo que a ficha do Pathbuilder traz é dado de ficha, e portanto escopo. Vale
+distinguir o que a interface **usa em cálculo ou exibe** do que ela apenas
+**guarda no import** — a seção 6.2 detalha campo por campo.
 
 A ficha entra colando o JSON do Pathbuilder (*Export to Foundry VTT*) na tela do
 Mestre. Personagem sem ficha continua funcionando como sempre: carteira e
-inventário, sem cálculo.
+inventário, sem cálculo e sem controle de equipar.
 
-Espec da ficha: [docs/ESPEC_Ficha.md](docs/ESPEC_Ficha.md).
+Como a ficha funciona: seção 6. Espec completa:
+[docs/ESPEC_Ficha.md](docs/ESPEC_Ficha.md).
+
+### As quatro abas, e o que cada uma faz
+
+*(Descrição do programa de hoje, não do protótipo.)*
+
+**Inventário** — seletor de personagem em chips; lista agrupada por categoria
+real do PF2e (arma, armadura, escudo, consumível, equipamento…); busca e filtro
+por tipo e nível; item expansível com traços clicáveis que abrem a descrição
+oficial; `+`/`−` na quantidade (edição livre, não mexe na carteira — comprar é na
+Loja, vender é o botão dedicado); excluir; vender; enviar item a outro
+personagem; editar item avulso; adicionar item manual ou do catálogo. Quem tem
+ficha ainda equipa armadura, escudo e armas daqui, e define modificador manual
+por item.
+
+**Carteira**, no cabeçalho — ajuste de moedas, envio de dinheiro a outro
+personagem e "Simplificar moedas". Toda quantia circula em cobre
+(`1 po = 10 pp = 100 pc`) e aparece como o número mais o pontinho da denominação.
+
+**Ficha** — cinco sub-abas. Seção 6.
+
+**Loja** — dropdown de loja; itens registrados com stepper de carrinho; a compra
+valida o saldo **no servidor**, debita e entrega no inventário. O carrinho é de
+cada aparelho, então dois jogadores compram ao mesmo tempo sem se atrapalhar.
+
+**Biblioteca** (tela filha do Mestre, não é aba) — itens de campanha e catálogo
+em pastas colapsáveis com busca; criar item manual; **importador de JSON dos
+packs do Foundry** (cola o texto e ele converte nome, nível, preço, bulk, traços
+e descrição); editar e excluir.
+
+**Mestre** — jogadores com carteira; dar moedas a um ou distribuir ao grupo; dar
+item; adicionar e renomear jogadores; cadastrar e remover itens nas lojas;
+vincular, atualizar ou remover ficha; aplicar condição; e o "Reverter" do
+histórico.
+
+A barra de abas tem **quatro**: Inventário · Ficha · Loja · Mestre.
 
 ### Fora do escopo — não implementar
 
-**Level-up, escolha de feat, distribuição de atributo, rolagem de dado,
-iniciativa, controle de combate e bestiário.**
+**Iniciativa, combate e bestiário.** A lista é essa, e é completa.
 
 Se surgir uma ideia fora disso, anote como sugestão e siga em frente — não
 implemente por conta própria.
+
+Quem constrói o personagem continua sendo o Pathbuilder: este app não escolhe
+feat, não distribui atributo e não sobe de nível — subir de nível é reimportar.
+Isso não é uma proibição de escopo, é uma consequência de a ficha ser importada.
 
 ---
 
 ## 3. Arquitetura
 
 ```
-┌───────────────────────────────────────┐
-│  PC do Mestre — e SÓ o PC do Mestre   │
-│  Node.js + Express + Socket.IO        │
-│  ├── serve o frontend                 │
-│  ├── WebSocket: estado da mesa        │
-│  ├── data/mesa.json: a mesa           │
-│  └── server/data/: o corpus do Foundry│
-└───────────┬───────────────┬───────────┘
-            │               │
-   Wi-Fi local        Cloudflare Tunnel
-   192.168.x.x:3000   (mesa a distância)
-            │               │
-     ┌──────┴──────┐   ┌────┴────┐
-     ▼             ▼   ▼         ▼
-  Android      Android   Android (fora de casa)
-  (jogador)    (mestre)  (jogador)
+┌─────────────────────────────────────────────────┐
+│  PC do Mestre — e SÓ o PC do Mestre             │
+│  Node.js + Express + Socket.IO                  │
+│  ├── serve o frontend                           │
+│  ├── WebSocket: estado da mesa                  │
+│  ├── data/mesa.json: a mesa                     │
+│  │     jogadores (carteira, mochila, FICHA,     │
+│  │     HP, CONDIÇÕES, equipado, favoritas),     │
+│  │     itens de campanha, lojas, histórico      │
+│  └── server/data/: o corpus do Foundry          │
+│        descrição de feat, magia, ação, condição │
+└───────────┬───────────────────────┬─────────────┘
+            │                       │
+   Wi-Fi local                Cloudflare Tunnel
+   192.168.x.x:3000           (mesa a distância)
+            │                       │
+     ┌──────┴──────┐           ┌────┴────┐
+     ▼             ▼           ▼         ▼
+  Android      Android     Android (fora de casa)
+  (jogador)    (mestre)    (jogador)
+     └── localStorage do aparelho: personagem em
+         foco, loja atual, carrinho — e nada mais
 ```
 
 O servidor roda **no PC**, nunca num celular. Isso foi decidido em 13/08 e
@@ -154,6 +172,19 @@ Foundry fica no servidor sem economia nenhuma.
 Os celulares são só tela. Na mesa presencial eles entram pelo Wi-Fi; quando
 alguém joga de fora, entram por um **Cloudflare Tunnel** apontando para o mesmo
 processo.
+
+**Onde a ficha mora.** A ficha importada é campo do jogador dentro da mesa
+(`player.sheet`), no servidor, e por isso é igual em todos os aparelhos. O mesmo
+vale para o que acontece com o personagem — HP, HP temporário, condições, escudo
+erguido, pontos de foco, magias preparadas, favoritas (`player.vitals`) — e para
+o que ele está vestindo (`player.gear`) e os modificadores manuais
+(`player.itemMods`).
+
+**O que o servidor NÃO guarda:** os números calculados. CA, ataque, dano,
+salvamentos e perícias não existem em `mesa.json` — saem de `buildSheet()` a cada
+render, do que está vestido e das condições ativas agora. HP é fato de mesa e
+persiste; CA é cálculo e se refaz. Na dúvida, o critério é: foi **decidido** ou
+foi **derivado**?
 
 ### Requisitos não-negociáveis
 
@@ -174,7 +205,7 @@ processo.
 | Frontend | React (do protótipo), refatorado em arquivos |
 | Servidor | Node.js + Express |
 | Tempo real | Socket.IO |
-| Persistência | arquivo JSON atômico (`data/mesa.json`) — ver seção 6 |
+| Persistência | arquivo JSON atômico (`data/mesa.json`) — ver seção 7 |
 | Ingestão | scripts Node standalone que geram `src/data/` |
 
 Nenhuma dependência nativa em lugar nenhum: `npm install` não tem como pedir
@@ -187,8 +218,7 @@ compilador no PC do mestre.
 `https://github.com/foundryvtt/pf2e` — dataset mais completo disponível,
 mantido pela comunidade com acordo entre Foundry Gaming e Paizo.
 
-A meta antiga era "~100 itens oficiais". **Descartar essa meta: quero o
-catálogo completo de equipamentos.**
+O catálogo é o **completo de equipamentos**: 5.739 itens, não uma seleção.
 
 ### Números reais (medidos, branch `master`)
 
@@ -234,8 +264,9 @@ O servidor expõe `GET /api/entry/:ref` e `GET /api/entries?slugs=…` ou `?name
 Sem a ingestão, essas rotas respondem 503 dizendo o que rodar — **o resto do app
 funciona igual**, porque inventário, loja e carteira não dependem do corpus.
 
-`vendor/` vai no `.gitignore`. Versionado é o **script de ingestão** (e
-opcionalmente o `.sqlite` gerado, se couber).
+`vendor/` vai no `.gitignore`, e `server/data/` também — o corpus tem 15 MB e é
+derivado. Versionado é o **script de ingestão** mais o que ele gera em
+`src/data/`, que precisa ir no bundle.
 
 ### Packs relevantes para este app
 
@@ -367,29 +398,279 @@ Guardar **duas versões**: `description_html` (original intacto) e
 
 ### 5.6 Ignorar `system.rules`
 
-É o motor de automação do Foundry. Complexo e desnecessário aqui. Fica dentro
-do `raw_json`, sem interpretação.
+É o motor de automação do Foundry — seletores, predicados e sintaxe própria.
+Interpretar aquilo aqui seria escrever meio Foundry. Fica guardado no campo `raw`
+do item, sem interpretação.
+
+É essa decisão que explica por que só **oito** condições têm efeito automático
+(seção 6.6): o efeito das outras está em `system.rules`, e o app prefere mostrar
+a descrição oficial e deixar o jogador aplicar a regra a fingir que calcula.
 
 ### 5.7 Casos de borda do importador
 
-O importador atual é frágil. Tratar: traits ausentes, `bulk` como `"L"` ou
-`"—"` (negligible), preços variantes, itens com runas e variantes, containers
-(`backpack`), `subitems`.
+Tratados: traços ausentes, `bulk` como `"L"` ou `"—"` (negligible), preço em
+formatos variantes, runas (categoria própria, derivada do `usage`
+`etched-onto-*`), containers (`backpack`) e `subitems`. `lib/bulk.js` e
+`lib/foundryImport.js` são onde isso vive.
+
+### 5.8 As estruturas que a ficha trouxe
+
+A ficha acrescentou quatro campos a cada jogador na mesa. Todos nascem vazios,
+para personagem sem ficha ser caso de primeira classe e não estado de transição.
+
+| Campo | O que guarda |
+|---|---|
+| `sheet` | a ficha importada, ou **`null`**. Todo código que a lê trata o nulo. |
+| `vitals` | o que está acontecendo com o personagem: `hp`, `tempHp`, `conditions`, `focusPoints`, `shieldHp`, `shieldRaised`, `slotsUsed`, `preparedSpells`, `extraSpells`, `bookSpells`, `forgottenSpells`, `extraFocusSpells`, `forgottenFocusSpells`, `favorites` |
+| `gear` | os slots do que está vestido: `wornArmorId`, `heldShieldId`, `equippedWeaponIds[]` |
+| `itemMods` | por item, a lista de modificadores manuais `{ label, atk, dmg, extraDice }` |
+
+Três detalhes que são decisão, não descuido:
+
+- **`hp: null` de propósito.** Sem ficha não existe HP máximo, e zero seria
+  mentira — um personagem sem ficha não está morrendo. Quem importa ficha recebe
+  `hp = sheet.hpMax` na hora.
+- **`vitals`, `gear` e `itemMods` sobrevivem** à reimportação e até à remoção da
+  ficha. São fato de mesa: o que a pessoa está vestindo e o que o mestre concedeu
+  não se perdem porque a ficha foi trocada.
+- **Slots nomeados, não uma marca `equipped` em cada item.** Com slot, "duas
+  armaduras vestidas ao mesmo tempo" não é um estado representável.
+
+`itemMods` tem uma limitação aceita: `player.items` é `{ id: quantidade }`, não
+instâncias, então o modificador vale para a pilha inteira — não dá para ter uma
+adaga com runa e outra sem. Mudar isso reescreveria compra, venda, transferência
+e a Loja.
+
+**Versão do schema: 6.** `state/migrations.js` migra em cadeia da versão de
+origem até a atual, e **nunca descarta a mesa** porque um campo mudou de forma.
 
 ---
 
-## 6. Sincronização em tempo real — **feito**
+## 6. A ficha de personagem
+
+A ficha é importada, não construída. Quem monta o personagem é o Pathbuilder 2e;
+este app lê o export, calcula o que se lê na mesa e deixa o mestre e os jogadores
+mexerem no que muda durante a sessão.
+
+### 6.1 Como a ficha entra
+
+Na aba **Mestre**, escolha o personagem → **Vincular ficha**, e cole o JSON que o
+Pathbuilder gera em *Export to Foundry VTT*. O texto pode vir com ou sem o
+invólucro `{ success, build }`.
+
+O leitor (`src/lib/pathbuilder.js`) **nunca lança exceção**. Ele devolve sempre
+uma ficha, com dois campos que dizem como foi: `ok` (havia um `build`
+reconhecível?) e `warnings` (tudo que ele não entendeu, em português, para
+aparecer na tela da importação). Um export de verdade já produz um aviso — o
+Pathbuilder exporta proficiências de Starfinder (`piloting`, `computers`) mesmo
+em personagem de Pathfinder, e elas viram:
+
+> Proficiências ignoradas por não serem do PF2e: piloting, computers.
+
+Campo em branco no Pathbuilder chega como o texto `"Not set"`. Isso vira
+**ausência**, não a palavra "Not set" na tela.
+
+Reimportar substitui a ficha inteira, mas **não** mexe no que é da mesa: HP,
+condições, escudo, o que está vestido e os modificadores manuais sobrevivem à
+reimportação e até à remoção da ficha. São fato de mesa, não cálculo.
+
+### 6.2 O que é lido do export, e o que é ignorado
+
+Levantado do código, campo por campo.
+
+**Lido e usado em cálculo:**
+
+| Campo do export | Para quê |
+|---|---|
+| `level` | entra em toda proficiência |
+| `abilities` | os seis modificadores, base de tudo |
+| `proficiencies` | perícias, salvamentos, percepção, armas, armaduras, DC de classe, conjuração |
+| `specificProficiencies` | "você é expert em Longsword" — sobrepõe a categoria quando é maior |
+| `lores` | perícias de Lore, com o grau |
+| `keyability` | o atributo do DC de classe |
+| `attributes` | `ancestryhp`, `classhp`, `bonushp`, `bonushpPerLevel` → HP máximo; `speed` + `speedBonus` → deslocamento |
+| `spellCasters` + `focus` | tradição, atributo, grau, slots por dia, grimório, preparadas iniciais, magias de foco |
+
+**Lido e exibido, sem entrar em cálculo:** `name`, `class`, `dualClass`,
+`ancestry`, `heritage`, `background`, `deity`, `size`/`sizeName`, `languages`,
+`resistances`, `feats`, `specials`.
+
+**Ignorado de propósito:**
+
+| Campo | Por que não entra |
+|---|---|
+| `equipment`, `weapons`, `armor`, `money` | o inventário e a carteira são da mesa, não do Pathbuilder — quem decide o que o personagem tem é a mesa, e é dela que sai o ataque |
+| `acTotal` | a CA é **calculada** do que está vestido agora; um número pronto ficaria errado no instante em que alguém trocasse de armadura |
+| `focusPoints` | é a foto do momento da exportação; a reserva de foco é calculada da lista de magias de foco atual |
+| `xp`, `alignment`, `gender`, `age` | nada na tela usa |
+| `rituals`, `formula`, `pets`, `familiars`, `inventorMods`, `mods`, `equipmentContainers` | sem tela que os mostre; se um dia houver, o campo está no export |
+
+`feats` e `specials` chegam só com o nome — o Pathbuilder não exporta descrição.
+O texto de regra vem depois, dos packs do Foundry, pelo servidor. Nome que não
+resolve **aparece na tela do jeito que veio** e entra em `unresolved`; sumir em
+silêncio é o erro que este projeto não aceita.
+
+### 6.3 Os valores calculados, e de onde saem
+
+Tudo isto vive em `src/lib/sheet.js`, numa função pura: entram a ficha, o
+inventário, o que está vestido e o que está acontecendo; saem os números. Sem
+React, sem rede, sem disco — o que faz o motor testável e igual no celular e no
+servidor.
+
+**A regra que manda em tudo: nenhuma função devolve número solto.** Cada
+estatística devolve as parcelas rotuladas que somam, mais a marca `altered`
+quando alguma parcela veio de condição. Disso saem de graça o popup de
+detalhamento, o modificador manual como parcela nomeada, e o número em vermelho
+quando uma condição mexeu nele.
+
+| Valor | Fórmula |
+|---|---|
+| Modificador de atributo | `(valor − 10) / 2`, arredondado para baixo |
+| **Proficiência** | `rank === 0 ? 0 : nível + rank` |
+| HP máximo | `ancestryhp + (classhp + conMod) × nível + bonushp + bonushpPerLevel × nível` |
+| **CA** | `10 + DEX (limitado pelo dexCap da armadura) + proficiência da categoria + bônus da armadura + escudo, se erguido e não quebrado` |
+| Salvamentos, Percepção | `modificador do atributo + proficiência` |
+| DC de classe | `10 + atributo-chave + proficiência` |
+| DC de magia / Ataque de magia | `10 + atributo + proficiência` / `atributo + proficiência` |
+| Perícias | `atributo + proficiência + penalidade da armadura (se aplicável)` |
+| Ataque | `atributo + proficiência da arma + modificadores manuais` |
+| Dano | `dados da arma + atributo + modificadores manuais` |
+| MAP | `−5 / −10`, ou `−4 / −8` com o traço `agile` |
+| Deslocamento | `speed da ficha + penalidade da armadura (se aplicável)` |
+| Reserva de foco | um ponto por magia de foco, no máximo 3 |
+
+**Destreinado não soma o nível.** É o erro mais comum do PF2e: a Arcana de um
+personagem de nível 1 e destreinado é +0, não +1. A regra mora num lugar só
+(`profBonus`) e vale para perícia, salvamento, arma e armadura.
+
+### 6.4 Como o equipamento entra nos números
+
+O que o personagem está vestindo são **slots nomeados** em `player.gear`:
+`wornArmorId`, `heldShieldId` e `equippedWeaponIds`. Com slot, o estado inválido
+— duas armaduras vestidas ao mesmo tempo — não é representável.
+
+- **Armadura**: soma o bônus de CA e limita a Destreza pelo `dexCap`. Se o
+  personagem não alcança a Força que a armadura pede, a penalidade de teste pesa
+  nas perícias de Força e Destreza, e a de deslocamento no movimento. Alcançando,
+  nenhuma das duas se aplica.
+- **Escudo**: só entra na CA **erguido**, e só se não estiver quebrado. Abaixo do
+  Ponto de Ruptura ele quebra e para de dar bônus — erguer escudo quebrado não
+  devolve CA. Guardar o escudo na mochila baixa a guarda junto.
+- **Armas**: cada arma da mochila vira uma linha de ataque, equipada ou não (as
+  equipadas primeiro). De qual atributo sai o ataque e o dano vem dos **traços do
+  próprio item**, vindos dos packs: corpo a corpo usa Força, `finesse` usa o
+  melhor entre Força e Destreza, à distância usa Destreza no ataque e atributo
+  nenhum no dano, `thrown` usa Destreza no ataque e Força no dano, `propulsive`
+  soma metade da Força.
+- **O Punho** existe sempre, não é item e não está na mochila.
+
+**Item que sai do inventário sai do slot.** Vender, transferir, excluir ou zerar
+a quantidade desequipa o item e limpa os modificadores manuais e as favoritas
+dele. Slot apontando para item inexistente seria bônus fantasma na CA.
+
+**Onde o app não sabe, ele admite.** O motor não acerta Rage, Giant Instinct,
+weapon specialization nem runa. A saída é o **modificador manual**: o jogador
+declara rótulo, ataque, dano e dados extra, e aquilo aparece no detalhamento como
+qualquer outra parcela. O app não chuta.
+
+### 6.5 HP
+
+HP é **fato de mesa**: persiste em `player.vitals.hp` e todos veem o mesmo
+número. Quem não tem ficha não tem HP — `null`, porque zero seria mentira.
+
+- **Dano** come o HP temporário antes do real, e o HP **não passa de zero para
+  baixo**: morrendo é a condição Dying, não HP negativo.
+- **Cura** não passa do máximo.
+- **HP temporário não empilha**: vale o maior entre o que já havia e o novo.
+  Definir zero zera.
+- **Descanso noturno** repõe foco e slots preparados, cura `conMod × nível` com
+  mínimo de 1 por nível, e **reduz Doomed em 1 — Doomed não zera**. Wounded
+  desaparece quando o HP volta ao máximo.
+
+### 6.6 O gestor de condições
+
+As **43 condições** do PF2e vêm do pack do Foundry, em inglês, com a descrição
+que a Paizo publicou (`src/data/conditions.json`). Nenhum texto de regra é
+escrito à mão.
+
+**Oito têm efeito automático.** As outras 35 são marcação e referência: aparecem
+no chip, abrem a descrição, e o jogador aplica a regra na mesa. Essa é a fronteira
+honesta — o que o app sabe fazer, ele faz; o resto ele mostra e não finge.
+
+| Condição | O que faz nos números |
+|---|---|
+| **Frightened** *(valor)* | penalidade de status a **todo** teste e **toda** CD, inclusive a CA |
+| **Sickened** *(valor)* | idem |
+| **Clumsy** *(valor)* | penalidade ao que depende de Destreza: CA, Reflexos, perícias de Destreza |
+| **Enfeebled** *(valor)* | penalidade ao que depende de Força, **inclusive o dano** |
+| **Drained** *(valor)* | penalidade ao que depende de Constituição: Fortitude |
+| **Slowed** *(valor)* | **não muda número nenhum** — tira ações, e ação é coisa de mesa. Fica exposto para a tela avisar |
+| **Prone** | −2 de circunstância nas **jogadas de ataque** |
+| **Off-Guard** | −2 de circunstância na **CA** |
+
+**Penalidade de status não empilha**: entre Frightened 2 e Sickened 1 vale 2,
+nunca 3. É a regra do PF2e e a segunda fonte de erro mais comum, depois da
+proficiência.
+
+Penalidade por atributo só atinge o que depende daquele atributo — Clumsy pesa na
+CA e nos Reflexos, e não encosta em Atletismo.
+
+Condição em zero **desaparece** do objeto em vez de virar `0`: "Frightened 0" não
+é uma condição ativa, é a ausência dela. Condições com valor têm stepper; as
+outras são um liga-desliga.
+
+Aplicar condição é ação de mesa, então **vale para todos os aparelhos** — o
+mestre marca Frightened 2 no celular dele e o jogador vê o ataque cair para +5 na
+hora, em vermelho, com a parcela nomeada no detalhamento.
+
+Encumbered aparece na lista sem efeito de propósito: o cálculo de Bulk foi adiado
+(Roadmap, Fase 5), então marcá-la não muda número nenhum — e prometer que muda
+seria pior.
+
+### 6.7 As cinco sub-abas
+
+**Resumo** (atributos, defesas com detalhamento por toque, outras estatísticas,
+perícias, proficiências, resistências/sentidos/idiomas, HP, condições, escudo e
+descanso) · **Ataques** (uma linha por arma, com MAP e modificadores manuais) ·
+**Magias** (conjuração preparada com truques, círculos, grimório, foco e lista
+especial, mais o compêndio filtrável) · **Feats** · **Ações**.
+
+Quem não conjura **não vê a aba Magias** — não é uma aba vazia, é uma aba que não
+existe para aquele personagem.
+
+---
+
+## 7. Sincronização em tempo real
 
 O servidor no PC do mestre é o **dono único** da mesa. Cada celular é uma tela:
 despacha a ação, o servidor aplica e devolve o resultado para todos. Ninguém
 aplica nada sozinho, então não existe aparelho com a contagem errada.
 
-Compartilhado (mora no servidor): jogadores com carteira e mochila, itens de
-campanha, lojas, filtro de conteúdo e o histórico.
+Compartilhado (mora no servidor): jogadores com carteira e mochila, **a ficha
+importada, o HP, o HP temporário, as condições, o escudo erguido, os pontos de
+foco, as magias preparadas e as favoritas**, o que cada um está vestindo e os
+modificadores manuais, mais os itens de campanha, as lojas, o filtro de conteúdo
+e o histórico.
+
 Do aparelho (mora no `localStorage` de cada um): em qual personagem se está
 olhando, em qual loja, e o carrinho. Se fossem compartilhados, trocar de
 personagem num celular trocaria a tela de todos e dois jogadores dividiriam o
 mesmo carrinho.
+
+**Na prática, com a ficha:** o mestre aplica 7 de dano no celular dele e o HP cai
+nos outros aparelhos no mesmo instante. Marca Frightened 2, e a CA, os
+salvamentos e os ataques daquele personagem caem em todas as telas, em vermelho,
+com a parcela nomeada no detalhamento. Equipar armadura, erguer escudo, preparar
+magia, gastar foco, descansar — tudo é ação de mesa e vale para todos.
+
+**Ninguém aplica condição "só no meu celular".** Isso é de propósito: numa mesa
+presencial, uma condição que só um aparelho vê é pior que condição nenhuma. O que
+é ponto de vista fica no aparelho; o que é fato do personagem, na mesa.
+
+**Os números calculados não viajam.** O servidor manda o que mudou — HP,
+condições, o que está vestido — e cada aparelho recalcula CA, ataque e dano com o
+mesmo `buildSheet()`. É a mesma função nos dois lados, então não há como dois
+celulares discordarem sobre a CA.
 
 Protocolo: `action` do celular para o servidor (com confirmação), `table:full`
 na conexão e `table:patch` com só as fatias que mudaram, numerados em sequência
@@ -407,49 +688,50 @@ prática — saber quem mexeu, não impedir.
 
 ---
 
-## 7. Roadmap
+## 8. Roadmap
 
-**Fase 1 — Fundação** ✔
-Quebrar o componente de ~2000 linhas em arquivos. Sair da moldura de iPhone
-para layout responsivo Android. Persistência local mínima. Preservar a UI.
+Conferido fase por fase contra o código, não contra a memória.
 
-**Fase 2 — Ingestão** ✔
-`scripts/build-catalog.mjs` e `scripts/build-traits.mjs` leem os packs,
-sanitizam e geram o catálogo que vai junto com o app. Não virou banco: o
-catálogo é imutável, então ser um arquivo pronto é mais simples e mais rápido.
+### O que está feito
 
-**Fase 3 — Servidor** ✔
-Express + Socket.IO, mesa compartilhada em tempo real, persistência em arquivo.
-Sem papéis, por decisão (ver seção 6). Falta ainda a API de busca e filtro no
-servidor — hoje o catálogo inteiro vai no bundle e a busca é no próprio celular,
-o que funciona bem e evita uma ida à rede por tecla digitada.
+| | Entrega |
+|---|---|
+| **Fundação** ✔ | O componente de ~2000 linhas virou arquivos; a moldura de iPhone virou layout responsivo Android; a aparência e os fluxos do protótipo foram preservados. |
+| **Ingestão** ✔ | `build-catalog.mjs`, `build-traits.mjs` e `build-lore.mjs` leem os packs do Foundry, sanitizam e geram `src/data/`. Não virou banco: o catálogo é imutável, então arquivo pronto é mais simples e mais rápido. |
+| **Servidor** ✔ | Express + Socket.IO, mesa compartilhada em tempo real, persistência em arquivo JSON atômico com backup. Sem papéis, por decisão (seção 7). |
+| **Ficha de personagem** ✔ | Importação do JSON do Pathbuilder, motor de cálculo (`lib/sheet.js`) e as cinco sub-abas: Resumo, Ataques, Magias, Feats e Ações. Detalhe na seção 6. |
+| **Gestor de condições** ✔ | As 43 condições do pack, 8 com efeito automático nos números, compartilhadas por todos os aparelhos. Seção 6.6. |
+| **HP** ✔ | Dano, cura, HP temporário e descanso noturno, com as regras das pontas (seção 6.5). |
+| **Histórico com desfazer** ✔ | O mestre reverte uma alteração perigosa, ou até ela. `UNDO_TO`, na aba Mestre. |
+| **Divisão de tesouro** ✔ | "Distribuir" divide a quantia igualmente entre os jogadores. |
+| **Preço de venda** ✔ | Vender devolve **metade** do preço (`SELL_RATE`), que é a regra do PF2e — no reducer, na tela de confirmação e na Loja. *(O alerta antigo "a venda parece devolver o valor cheio" era infundado: foi conferido e está correto.)* |
+| **Filtro por livros** ✔ | Filtro de conteúdo por livro que o mestre possui e por remaster/legado, persistido na mesa. |
+| **Compêndio de magias** ✔ | 1.993 magias navegáveis offline, filtráveis por tradição, círculo e conteúdo. |
 
-**Fase 4 — PWA**
-Manifest, service worker, cache offline para "Adicionar à tela inicial".
-(O IP da LAN e o QR code já saem no `npm start`.)
+### O que falta
 
-**Fase 5 — Regras e economia**
-Cálculo de Bulk conforme as regras (com limite de carga), estoque finito nas
-lojas, preço de compra vs venda diferenciado (**conferir: hoje a venda parece
-devolver o valor cheio**), histórico de transações com desfazer, divisão de
-tesouro entre o grupo.
+**PWA** — manifest e service worker para "Adicionar à tela inicial" e cache
+offline. Não existe nada disso ainda; o que já funciona é o IP da LAN e o QR code
+saindo no `npm start`.
 
-**Fase 6 — Futuro**
-Ícones/imagens de item, filtro por livros que eu possuo (daí a importância do
-`publication`), exportação JSON/PDF, i18n.
+**Bulk conforme as regras** — o cálculo por item existe (`lib/bulk.js`, usado para
+exibir o Bulk de cada item), mas **não há soma carregada nem limite de carga na
+tela**. É por isso que a condição Encumbered está na lista sem efeito.
 
-**Ficha de personagem — fases 0 a 12 ✔**
-Importação do JSON do Pathbuilder, motor de cálculo, e as cinco abas: Resumo,
-Ataques, Magias, Feats e Ações. A aba **Magias** cobre conjuração preparada
-(truques, círculos, grimório, foco, lista especial e compêndio filtrável por
-tradição/círculo/conteúdo); conjuração espontânea ou inata mostra a lista de
-magias conhecidas em modo leitura, porque nenhum export real desse tipo foi
-testado ainda. Espec em [docs/ESPEC_Ficha.md](docs/ESPEC_Ficha.md), com o que
-divergiu na §17b.
+**Estoque finito nas lojas** — hoje uma loja é uma lista de itens
+(`shop.itemIds`), sem quantidade: comprar não esgota.
+
+**Conjuração espontânea e inata** — a aba Magias cobre conjuração **preparada**.
+Espontânea ou inata mostra a lista de magias conhecidas em modo leitura, porque
+nenhum export real desse tipo foi testado. Não é limitação de projeto, é a regra
+de zero placeholder: sem fixture de verdade, não se implementa por adivinhação.
+
+**Ideias sem data** — ícones e imagens de item, exportação JSON/PDF, i18n,
+descanso do grupo numa ação só.
 
 ---
 
-## 8. Convenções
+## 9. Convenções
 
 - Comentários e commits em português; nomes de código em inglês.
 - Dados do PF2e ficam em inglês no banco — não bloquear tradução futura no schema.
@@ -470,7 +752,7 @@ A regra que resume as outras: **nenhum valor visual literal fora de
 cravado, sem `style={{}}` de aparência. Foi assim que o projeto acumulou 12
 tamanhos de fonte e 8 cinzas de texto para os mesmos poucos papéis.
 
-## 9. Licenciamento
+## 10. Licenciamento
 
 Dados do PF2e usados sob a **Paizo Community Use Policy** e **ORC / OGL 1.0a**
 conforme cada item (`publication.license` indica qual). Uso pessoal e não
@@ -479,7 +761,7 @@ das licenças, não só zelo.
 
 ---
 
-## 10. Como rodar
+## 11. Como rodar
 
 Precisa do [Node.js](https://nodejs.org) instalado no PC. Uma vez só:
 
@@ -526,7 +808,7 @@ O WebSocket atravessa o túnel sem configuração extra — a Cloudflare faz o
 upgrade de protocolo sozinha.
 
 > **Leia antes de mandar o link.** O app **não tem login nem papéis**: foi feito
-> assim de propósito, para uma mesa de amigos numa rede fechada (§6). Com o
+> assim de propósito, para uma mesa de amigos numa rede fechada (seção 7). Com o
 > túnel no ar, **qualquer pessoa com o endereço mexe na mesa** — dá dinheiro,
 > apaga item, troca ficha. O histórico registra o que aconteceu, mas não impede.
 >
@@ -558,42 +840,113 @@ build.
 
 ### Estrutura
 
+Depois da limpeza, arquivo por arquivo.
+
 ```
-CLAUDE.md             regras obrigatórias de código e de estilo
+README.md               este arquivo
+CLAUDE.md               regras obrigatórias de código e de estilo
+index.html              a página única; o ícone vai embutido nela
+vite.config.js          porta 3000, host na LAN, proxy do WebSocket
+package.json            scripts e as 8 dependências
+tunel.bat               atalho do Cloudflare Tunnel, para jogo a distância
+
 docs/
-  design-system.md    cor, tipografia, componentes, ordem das ações
-  ESPEC_Ficha.md      a espec da ficha de personagem
-  ficha/              uma fase por arquivo, do 0 ao 12
-  design/             o protótipo do Claude Design, como veio
-  fixtures/           JSON do Pathbuilder usado nos testes
+  design-system.md      cor, tipografia, componentes, ordem das ações
+  ESPEC_Ficha.md        a espec da ficha, para consulta por seção
+  limpeza-relatorio.md  a auditoria desta limpeza, com o que ficou e por quê
+  fixtures/             rurik.json e wizard.json — export real do Pathbuilder,
+                        usados pelos testes
+
 server/
-  index.js            Express + Socket.IO, serve o app e imprime o QR
-  table.js            a mesa: estado autoritativo, ordem das ações, patches
-  storage.js          data/mesa.json — gravação atômica com backup
-  net.js              endereço da LAN e o QR code do terminal
+  index.js              Express + Socket.IO; serve o app, imprime o QR e
+                        atende /api/entry e /api/entries
+  table.js              a mesa: estado autoritativo, quais ações são aceitas,
+                        os patches do que mudou, e o saneamento de mesa vinda
+                        de fora
+  storage.js            data/mesa.json — gravação atômica com backup
+  entries.js            lê um verbete por offset, sem carregar os 15 MB
+  net.js                endereço da LAN e o QR code do terminal
+
 scripts/
-  dev.mjs             sobe Vite e servidor juntos
-  smoke-sync.mjs      dois clientes de mentira provando a sincronização
-  build-catalog.mjs   gera o catálogo a partir dos packs do Foundry
-  build-lore.mjs      feats, magias, ações, condições e o Punho
-  build-traits.mjs    nomes e descrições de traço, do en.json oficial
-  vendor-pf2e.mjs     onde estão os packs, e o recado quando não estão
-  lint-visual.mjs     guarda da identidade visual, roda dentro do build
-server/
-  entries.js          lê um verbete por offset, sem carregar os 15 MB
+  dev.mjs               sobe Vite e servidor juntos
+  smoke-sync.mjs        dois clientes de mentira provando a sincronização
+  build-catalog.mjs     gera o catálogo a partir dos packs do Foundry
+  build-lore.mjs        feats, magias, ações, condições e o Punho
+  build-traits.mjs      nomes e descrições de traço, do en.json oficial
+  vendor-pf2e.mjs       onde estão os packs, e o recado quando não estão
+  lint-visual.mjs       guarda da identidade visual, roda dentro do build
+  visual-baseline.json  as violações visuais antigas ainda toleradas
+
+public/
+  fonts/                a fonte oficial dos ícones de ação do PF2e
+
 src/
-  main.jsx            entrada
-  App.jsx             abas e navegação
-  config.js           taxa de venda e chave de armazenamento
-  data/               catálogo e verbetes de traços, já prontos
-  lib/                moeda, bulk, itens, importador do Foundry, texto
-  state/              regras da mesa (rodam no servidor), sessão e a
-                      ponte com o servidor (store.jsx)
-  components/         peças reutilizadas pelas telas
-  screens/            Inventário, Ficha, Loja, Mestre
-                      (a Biblioteca é tela filha do Mestre)
-    CharacterSheet/   a ficha: Resumo, Ataques, Feats, Ações,
-                      importação e as folhas de HP, condições e breakdown
-test/                 node --test nativo, sem dependência nova
-  styles/             tokens e folhas de estilo
+  main.jsx              entrada
+  App.jsx               abas e navegação
+  config.js             taxa de venda e chave de armazenamento
+
+  data/                 gerado pelos scripts — não editar à mão
+    catalog.equipment.json   5.739 itens de equipamento
+    catalog.js               categorias e a ordem de exibição
+    traits.json / traits.js  dicionário de traços
+    conditions.json          as 43 condições, com a descrição da Paizo
+    index.spells.json        1.993 magias, sem descrição (o compêndio)
+    index.actions.json       ações básicas e de perícia
+    unarmed.json             o Punho, que não é item
+    seed-sheets/             as duas fichas da mesa de exemplo
+
+  lib/                  cálculo puro, sem React
+    sheet.js            O MOTOR: CA, salvamentos, perícias, ataques, dano,
+                        conjuração, foco e descanso — em parcelas rotuladas
+    pathbuilder.js      lê o JSON do Pathbuilder e nunca lança
+    conditions.js       o efeito mecânico das oito condições que mexem em número
+    spells.js           casa nome de magia com o verbete do compêndio
+    loreResolve.js      resolve nome de feat/magia nos packs, pelo servidor
+    foundryImport.js    importador de JSON dos packs (a Biblioteca usa)
+    money.js            tudo em cobre: converter, somar, gastar, simplificar
+    bulk.js             o Bulk do PF2e, com "L" e "—"
+    items.js            resolver, agrupar, buscar e filtrar item
+    sourceCategory.js   de qual livro veio o item, para o filtro de conteúdo
+    html.js / text.js   sanitização de descrição e plural/título
+
+  state/
+    reducer.js          as regras da mesa — rodam no SERVIDOR
+    initialState.js     a mesa de exemplo da primeira execução
+    migrations.js       migra a mesa de uma versão do schema para a seguinte
+    history.js          o log de "Reverter" do mestre
+    session.js          o que é do aparelho: personagem, loja, carrinho
+    store.jsx           a ponte com o servidor por WebSocket
+
+  components/           peças reutilizadas: Coins, Stepper, Sheet, ItemRow,
+                        ItemForm, ItemFilters, TraitList, Icons, e as folhas
+                        de carteira, ajuste de moedas e configuração
+
+  screens/              Inventário, Loja, Mestre e a Biblioteca
+                        (tela filha do Mestre, não é aba)
+    CharacterSheet/     a ficha:
+      index.jsx           monta a view com buildSheet e escolhe a sub-aba
+      Resumo.jsx          atributos, defesas, perícias, HP, condições, escudo
+      Ataques.jsx         uma linha por arma, com MAP
+      Magias.jsx          conjuração preparada, foco e grimório
+      Feats.jsx           feats e features, com o texto dos packs
+      Acoes.jsx           ações básicas, de classe e de perícia
+      Compendio.jsx       as 1.993 magias, filtráveis
+      SpellPicker.jsx     escolher magia para preparar ou aprender
+      ImportSheet.jsx     colar o JSON do Pathbuilder
+      HpSheet.jsx         dano, cura e HP temporário
+      ConditionsSheet.jsx as 43 condições
+      ItemModsSheet.jsx   modificador manual por item
+      BreakdownSheet.jsx  o detalhamento: de onde veio cada parcela
+
+  styles/               tokens.css (a única fonte de valor visual),
+                        base.css, components.css, screens.css
+
+test/                   node --test nativo, sem dependência nova
+  sheet.test.js         o motor, contra o fixture do Rurik
+  pathbuilder.test.js   o leitor do export, com metade dos casos em entrada torta
+  gear.test.js          equipar, desequipar e os invariantes de slot
+  spells.test.js        conjuração, grimório e foco
+  spellDefense.test.js  defesa das magias
+  migrations.test.js    migração de schema e o histórico
+  loreResolve.test.js   resolução nos packs (pula sem o corpus gerado)
 ```
