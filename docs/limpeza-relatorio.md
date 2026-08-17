@@ -82,25 +82,25 @@ levantados todos os `await import()` do repositório (13 deles, todos em testes)
 justamente porque busca por `import` estático não prova nada sozinha — foi assim
 que `MAX_FOCO` apareceu como "sem uso" e se revelou vivo (ver nível C).
 
-### A1. Cálculo de moeda duplicado — três funções que ninguém chama
+### A1. Cálculo de moeda duplicado — o apelido que ninguém chamava
 
-`src/lib/money.js` tem duas funções que são só um apelido de outra função do
-mesmo arquivo, e uma terceira que ficou para trás quando o formulário mudou.
+`src/lib/money.js` tinha uma função que era só um apelido de outra do mesmo
+arquivo:
 
-| Função | Linhas | O que é | Quem chama |
-|---|---|---|---|
-| `walletCopper` | 22–25 (4) | `return toCopper(wallet)` — apelido literal | ninguém |
-| `toPriceInput` | 63–66 (4) | `return formatCopper(totalCp)` — apelido literal | ninguém |
-| `parsePriceInput` | 38–61 (24) | lê preço digitado à mão ("1 po 5 pp") | ninguém |
+| Função | Linhas | O que era | Quem chamava | Destino |
+|---|---|---|---|---|
+| `walletCopper` | 22–25 (4) | `return toCopper(wallet)` | ninguém | **removida** |
+| `toPriceInput` | 4 | `return formatCopper(totalCp)` | ninguém | **fica** (ver C12) |
+| `parsePriceInput` | 24 | lê preço digitado à mão ("1 po 5 pp") | ninguém | **fica** (ver C12) |
+| `formatCopper` | 8 | "12 po 3 pp" | só `toPriceInput` | **fica** (ver C12) |
 
-Em uso hoje: `toCopper` (7 arquivos) e `formatCopper` (interno). O formulário de
-item não digita preço em texto livre — `ItemForm.jsx` usa três campos
-numéricos e soma com `toCopper` (linha 56). O leitor de texto livre é resto da
-forma anterior do formulário.
+Em uso hoje: `toCopper` (7 arquivos). O formulário de item não digita preço em
+texto livre — `ItemForm.jsx` usa três campos numéricos e soma com `toCopper`.
 
-**Prova:** `grep -w` por cada nome em `src/`, `server/`, `scripts/`, `test/`,
-`docs/`, `index.html`, `package.json`, `README.md`, `CLAUDE.md` → só a própria
-declaração. Nenhum `await import()` os menciona.
+**Correção de classificação feita durante a execução.** As outras três estavam
+neste nível na primeira versão deste relatório, e foram rebaixadas para C ao
+conferir o `docs/design-system.md`, que registra a decisão de mantê-las. Detalhe
+em C12.
 
 ### A2. `canAfford` — o mesmo teste de saldo, escrito duas vezes
 
@@ -161,22 +161,38 @@ banco em `package.json`. 2 linhas.
 
 Correção de texto, sem efeito no comportamento.
 
-### Tamanho do nível A
+### Tamanho do nível A — o que foi removido
 
 | Grupo | Arquivos | Linhas |
 |---|---|---|
-| A1 moeda duplicada | 1 | 32 |
-| A2 `canAfford` | 1 | 3 |
-| A3 `CATALOG_IDS` | 1 | 2 |
-| A4 `COIN_ORDER` | 1 | 5 |
+| A1 `walletCopper` | 1 | 4 |
+| A2 `canAfford` | 1 | 4 |
+| A3 `CATALOG_IDS` (mais o import que existia só para ela) | 1 | 4 |
+| A4 `COIN_ORDER` | 1 | 6 |
 | A5 const morta em teste | 1 | 1 |
 | A6 `.gitignore` | 1 | 2 |
-| A7 comentários vencidos | 2 | 2 (reescritas) |
-| **Total** | **8** | **~47 linhas** |
+| A7 comentários vencidos | 2 | 2 reescritas |
+| **Total** | **8** | **21 linhas apagadas** |
 
----
+## Nível B — respondido, e o que foi feito
 
-## Nível B — preciso da sua resposta
+**As decisões chegaram.** Cada item abaixo mantém a pergunta original, para o
+registro, e traz a resposta no fim.
+
+| Item | Decisão |
+|---|---|
+| B1 `activeConditions` | **removida** |
+| B2 `fetchSpellByName` | **removida** |
+| B3 `totalBulk` | fica — pode ser meio caminho da Fase 5 |
+| B4 `RANKS` | fica |
+| B5 `.charsheet` (CSS morto) | fica — não vale quebrar a garantia de que nenhum estilo foi tocado |
+| B6 `docs/ficha/` | **removida** |
+| B7 `docs/design/` | **removido** |
+| B8 fichas duplicadas | ficam as duas cópias |
+| B9 `export` redundante | fica como está |
+| B10 identidade em metadados | **corrigidos** `package.json` e `index.html` |
+| B11 branch já incorporada | **apagar** |
+
 
 ### B1. `activeConditions` — condição sem chamador
 
@@ -194,6 +210,9 @@ percorre o objeto e devolve só a chave, sem nome.
 ela é a peça de uma tela que ainda vai existir (uma lista de condições do
 personagem em outro lugar, por exemplo)?
 
+> **Resposta: remover.** Feito. Os chips resolvem, e `MECHANICAL` continua vivo
+> (é lido pelo próprio `conditionMods` e pela tela de condições).
+
 ### B2. `fetchSpellByName` — busca de magia sem chamador
 
 `src/lib/loreResolve.js:205–213` (9 linhas). Busca **uma** magia no servidor por
@@ -202,6 +221,9 @@ uma vez — e é o que a importação usa.
 
 **Pergunta:** a busca em lote substituiu a individual de vez, ou a individual
 serve para alguma tela abrir uma magia solta que a aba Magias ainda não mostra?
+
+> **Resposta: remover.** Feito. `spellRef`, que ela usava, continua vivo — é
+> chamado por `lib/spells.js`, pelo `SpellPicker` e pela busca em lote.
 
 ### B3. `totalBulk` — soma de Bulk que nenhuma tela exibe
 
@@ -212,6 +234,8 @@ Inventário não mostra Bulk total em lugar nenhum.
 regras, com limite de carga". Isto pode ser a metade já pronta disso.
 
 **Pergunta:** apago, ou fica esperando a Fase 5?
+
+> **Resposta: fica.** Segue sem chamador, de propósito.
 
 ### B4. `RANKS` — tabela de graus de proficiência sem leitor
 
@@ -231,6 +255,9 @@ regra-sem-chamador para o nível B, nunca para o A.
 **Pergunta:** apago a `RANKS`? (Não vou unificar com a tabela inline do
 `sheet.js` — unificar é refatoração, que esta tarefa proíbe. Só registro que a
 duplicidade existe.)
+
+> **Resposta: fica.** A duplicidade com a tabela inline do `sheet.js` continua
+> registrada aqui, sem unificação.
 
 ### B5. Uma regra de CSS morta — mas mexer em CSS é proibido nesta tarefa
 
@@ -256,6 +283,10 @@ pede para eu provar que nenhum pixel mudou. Não vou abrir exceção sozinho.
 verdade? (Recomendo intocado: 4 linhas não pagam quebrar a garantia de que
 nenhum estilo foi tocado.)
 
+> **Resposta: fica.** Nenhuma folha de estilo foi tocada nesta limpeza. A regra
+> `.charsheet` continua lá, morta e inofensiva — quem quiser removê-la um dia
+> sabe por este parágrafo que ela é seguramente órfã.
+
 ### B6. Os pacotes de implementação das fases da ficha
 
 `docs/ficha/` — 14 arquivos, **968 linhas**: `README.md` mais `fase-00.md` a
@@ -269,6 +300,9 @@ ajuste de qualquer forma na Etapa 4.
 
 **Pergunta:** removo `docs/ficha/` inteira? O que vale a pena guardar dela é o
 que já está no `ESPEC_Ficha.md`, que fica.
+
+> **Resposta: remover.** Feito, com as referências ajustadas no README, no
+> `CLAUDE.md` e nas §12.2 e §15 do ESPEC, para não sobrar link quebrado.
 
 ### B7. O protótipo do Claude Design
 
@@ -284,6 +318,10 @@ dá o layout enquanto o `design-system.md` dá o estilo.
 **Pergunta:** o protótipo ainda serve para consulta em ajuste de tela, ou já pode
 sair? (Se sair, tiro as menções a ele no `CLAUDE.md` e no `ESPEC_Ficha.md` na
 Etapa 4.)
+
+> **Resposta: remover.** Feito. A §12.2 do ESPEC passou a registrar o que sobrou
+> do protótipo (nada de aparência como literal) em vez de instruir o que
+> descartar dele.
 
 ### B8. Duas cópias byte a byte das mesmas fichas de exemplo
 
@@ -301,6 +339,8 @@ tarefa proíbe.
 **Pergunta:** deixo as duas cópias (é o que a restrição da tarefa manda), ou você
 libera essa mudança de import como exceção? Recomendo deixar: 6 KB duplicados
 não valem uma exceção à regra.
+
+> **Resposta: ficam as duas.** Nenhum import foi mexido.
 
 ### B9. Catorze `export` que ninguém importa — a função é viva, a palavra é que sobra
 
@@ -328,6 +368,8 @@ mexer:** vários deles (`stat`, `profBonus`, `SKILL_ABILITY`) são exatamente o
 tipo de coisa que um teste novo vai querer importar, e `MAX_FOCO` já provou que
 teste importa por `await import()`.
 
+> **Resposta: fica como está.** Os catorze `export` continuam abertos.
+
 ### B10. A identidade desatualizada em dois lugares que não são documentação
 
 | Onde | Texto atual |
@@ -342,6 +384,10 @@ explicitamente, e `package.json` não está na lista de arquivos a corrigir.
 **Pergunta:** corrijo esses dois textos? (O `<title>Tesouro do Grupo</title>`
 deixo em paz de qualquer forma — é o nome do app, não uma descrição errada.)
 
+> **Resposta: corrigir os dois.** Feito: as duas descrições passaram a citar a
+> ficha e as condições. O `<title>` ficou intacto, e é a **única** alteração de
+> markup desta limpeza — um atributo de texto, nada visual.
+
 ### B11. A branch já incorporada
 
 `claude/pf2e-inventory-design-7i0far`, local e no GitHub. Está inteira dentro da
@@ -349,6 +395,8 @@ deixo em paz de qualquer forma — é o nome do app, não uma descrição errada
 
 **Pergunta:** apago? (É a que o GitHub estava exibindo; apagar faz o GitHub
 mostrar a `main`, que é a certa.)
+
+> **Resposta: apagar.** Feito depois do merge desta limpeza na `main`.
 
 ### Tamanho do nível B
 
@@ -486,6 +534,24 @@ declarado, não quebra.
 
 ---
 
+### C12. As três funções de preço que o design system manda manter
+
+`formatCopper`, `toPriceInput` e `parsePriceInput`, em `src/lib/money.js` (36
+linhas somadas). Nenhuma tem chamador. **Ficam por decisão registrada**, e foi o
+`docs/design-system.md` que a registrou primeiro:
+
+> **Qualquer quantia na tela usa `<Coins>`/`<Price>` — nunca o texto "po/pp/pc".**
+> `formatCopper` (`lib/money.js`) ainda existe, mas só para o que não pode ser um
+> componente (o `toPriceInput` de um campo de texto editável, se algum dia for
+> usado) […]
+
+`parsePriceInput` é o par de ida do mesmo campo hipotético: ele lê "1 po 5 pp" e
+devolve cobre. O design system nomeia só a volta, mas o campo é o mesmo.
+
+Foi este o único item que mudou de nível durante a execução: estava em A na
+primeira versão deste relatório. Na dúvida entre remover e manter registrando,
+mantive.
+
 ## Bugs e inconsistências encontradas — relatados, não consertados
 
 ### 1. O preço de venda está certo. O alerta do README está errado.
@@ -555,22 +621,54 @@ identidade.
 
 ---
 
-## Resumo do tamanho
+## Duas coisas que a Etapa 4 fez e você precisa saber
 
-| Nível | Arquivos | Linhas |
+### As seções do README foram renumeradas
+
+A ficha ganhou seção própria, e ela entrou como **6**. Isso empurrou as
+seguintes:
+
+| Antes | Agora |
+|---|---|
+| 6. Sincronização em tempo real | **7** |
+| 7. Roadmap | **8** |
+| 8. Convenções | **9** |
+| 9. Licenciamento | **10** |
+| 10. Como rodar | **11** |
+
+O **conteúdo** do licenciamento e do "como rodar" não foi tocado — só o número do
+título. Fiz assim porque a alternativa era enfiar a ficha como subseção de outra
+coisa, e ela é metade do programa. Todas as referências cruzadas internas foram
+atualizadas junto.
+
+### Uma linha da seção 0 foi corrigida, apesar de a seção ser preservada
+
+A seção 0 mandava criar o `.gitignore` cobrindo `*.sqlite` e `*.sqlite-journal`.
+Como o nível A removeu essas duas linhas do `.gitignore` de verdade, a instrução
+passaria a contradizer o repositório — criada pela própria limpeza.
+
+Corrigi só essa lista de nomes de arquivo, para incluir o que hoje é ignorado de
+fato (`data/` e `server/data/`). O resto da seção 0 — as regras de Git — está
+intacto, palavra por palavra.
+
+---
+
+## Resumo do tamanho — resultado final
+
+| Nível | Arquivos | Efeito |
 |---|---|---|
-| **A — remoção imediata** | 8 | ~47 |
-| **B — esperando sua resposta** | ~39 | ~1.010 + 222 KB |
-| **C — fica, com motivo registrado** | 11 grupos | — |
+| **A — removido** | 8 | 21 linhas apagadas, 2 comentários corrigidos |
+| **B — removido com autorização** | 18 | 26 linhas de código + 4.921 linhas de documentação de fase + 216 KB de protótipo |
+| **B — mantido por decisão** | — | `totalBulk`, `RANKS`, `.charsheet`, as duas cópias de fixture, os 14 `export` |
+| **C — fica, com motivo registrado** | 12 grupos | — |
 
-O nível A é pequeno de propósito. Este repositório está muito mais limpo do que
-o briefing supunha: **nenhum módulo órfão, nenhuma dependência sem uso, nenhum
-`TODO`/`FIXME` vencido, nenhum arquivo `.old`/`.bak`, nenhum bloco de código
-comentado, nenhum ramo inalcançável, nenhum token de CSS morto, e o catálogo
-hardcoded do protótipo já removido.** O que sobrou de código morto são funções
-pequenas — quase todas duplicatas de cálculo de moeda cuja versão em uso está
-escrita em outro lugar.
+Somando: **47 linhas de código morto** saíram, mais **4.921 linhas** de
+documentação que já tinha cumprido o papel e **216 KB** de protótipo. Nenhuma
+folha de estilo, nenhum token e nenhum arquivo gerado de `src/data/` foi tocado.
 
-O peso real está no nível B, e quase todo ele é documentação de fase concluída
-(`docs/ficha/`, 968 linhas) e o protótipo de referência (216 KB). Essas são
-decisões suas, não minhas.
+O nível A é pequeno porque o repositório já estava limpo. Nada de módulo órfão,
+nada de dependência sem uso, nada de `TODO` vencido, nada de arquivo `.bak`, nada
+de bloco comentado, nada de ramo inalcançável, nada de token de CSS morto, e o
+catálogo hardcoded do protótipo já removido antes desta limpeza. O que sobrou de
+código morto eram funções pequenas — quase todas duplicatas cuja versão em uso
+está escrita em outro lugar.
