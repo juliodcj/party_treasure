@@ -197,21 +197,6 @@ export const slugify = (name) =>
 
 export const spellRef = (name) => `spell:${slugify(name)}`
 
-/**
- * Busca o verbete de uma magia pelo nome, via slug adivinhado. Devolve `null`
- * sem lançar quando não encontra — servidor fora do ar, ingestão não rodada,
- * ou o slug adivinhado não bateu com o do Foundry.
- */
-export async function fetchSpellByName(name, fetcher = fetch) {
-  try {
-    const response = await fetcher(`/api/entry/${encodeURIComponent(spellRef(name))}`)
-    if (!response.ok) return null
-    return await response.json()
-  } catch {
-    return null
-  }
-}
-
 /** Todo nome de magia que o grimório/foco trazem na importação — para
     resolver o custo em ação de uma vez, sem esperar cada linha abrir. */
 export function spellNamesToResolve(sheet) {

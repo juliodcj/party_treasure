@@ -80,14 +80,3 @@ export function conditionMods(conditions = {}) {
 /* Rótulo da penalidade por atributo, para a parcela do breakdown dizer de onde
    veio o número. Nome da condição em inglês (D12); "(status)" é moldura nossa. */
 export const ABILITY_CONDITION = { dex: 'Clumsy', str: 'Enfeebled', con: 'Drained' }
-
-/** Toda condição ativa, no formato que o chip da tela consome. */
-export function activeConditions(conditions = {}) {
-  return Object.entries(conditions)
-    .filter(([, value]) => value === true || Number(value) > 0)
-    .map(([key, value]) => ({
-      key,
-      value: value === true ? null : Number(value),
-      mechanical: Boolean(MECHANICAL[key]),
-    }))
-}
