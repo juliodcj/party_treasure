@@ -36,9 +36,3 @@ export default function Coins({ gold = 0, silver = 0, copper = 0, size = 'md', s
 export function Price({ totalCp, size = 'md' }) {
   return <Coins {...fromCopper(totalCp)} size={size} />
 }
-
-export const COIN_ORDER = [
-  { key: 'gold', label: 'Ouro' },
-  { key: 'silver', label: 'Prata' },
-  { key: 'copper', label: 'Cobre' },
-]

@@ -17,7 +17,6 @@ const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const RURIK_TEXT = readFileSync(path.join(ROOT, 'docs/fixtures/rurik.json'), 'utf8')
 const RURIK = JSON.parse(RURIK_TEXT)
 const WIZARD_TEXT = readFileSync(path.join(ROOT, 'docs/fixtures/wizard.json'), 'utf8')
-const WIZARD = JSON.parse(WIZARD_TEXT)
 
 const rurik = () => parsePathbuilder(RURIK_TEXT)
 const wizard = () => parsePathbuilder(WIZARD_TEXT)

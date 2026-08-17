@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Gerenciador de inventario, dinheiro e lojas para mesas de Pathfinder 2e",
+  "description": "Ficha de personagem, condicoes e inventario para mesas de Pathfinder 2e",
   "scripts": {
     "start": "vite build && node server/index.js",
     "dev": "node scripts/dev.mjs",

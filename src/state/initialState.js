@@ -1,4 +1,3 @@
-import { CATALOG } from '../data/catalog.js'
 import { emptySheetFields } from './migrations.js'
 import { parsePathbuilder } from '../lib/pathbuilder.js'
 import { reducer } from './reducer.js'
@@ -132,6 +131,3 @@ export function createInitialState() {
     ],
   })
 }
-
-/** Ids do catalogo semente, para validar referencias vindas do armazenamento. */
-export const CATALOG_IDS = new Set(CATALOG.map((item) => item.id))

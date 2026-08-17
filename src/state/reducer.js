@@ -1048,7 +1048,3 @@ export function reducer(state, action) {
       return state
   }
 }
-
-export function canAfford(player, totalCp) {
-  return toCopper(player) >= totalCp
-}
