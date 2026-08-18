@@ -568,6 +568,37 @@
   border-left: 1px solid var(--line-field);
 }
 
+/* A caixa do controle tem largura fixa, e os dois controles que se revezam
+   dentro dela ocupam a caixa inteira: o "Comprar" e o stepper que toma o lugar
+   dele. Sem isto a pílula do "Comprar" media alguns pixels a menos que o
+   stepper, e comprar o primeiro item empurrava o filete, o preço e o ícone de
+   moeda para a esquerda — a linha inteira andava ao ser tocada.
+
+   O corpo do número é quem cede o espaço (`flex: 1` com `min-width: 0`), e não
+   quem o toma: passar de 9 para 10 no carrinho também mexia a linha. */
+.item__cart--fixo {
+  width: var(--w-cart);
+  padding-left: 10px;
+  box-sizing: content-box;
+}
+
+.item__cart--fixo .btn,
+.item__cart--fixo .stepper {
+  width: 100%;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.item__cart--fixo .stepper {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.item__cart--fixo .stepper__value {
+  flex: 1;
+  min-width: 0;
+}
+
 .item__body {
   padding: 2px 12px 12px;
   border-top: 1px solid var(--line);
@@ -1172,6 +1203,30 @@
   flex-direction: column;
   gap: 8px;
   margin-top: 8px;
+}
+
+/* Rótulo do nome da mesa: é o primeiro campo da folha, então não leva o
+   respiro de cima que os outros rótulos de seção levam. */
+.settings__name-label {
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* O seletor de arquivo do sistema é feio e não obedece ao sistema visual: fica
+   escondido, e quem o aciona é o botão largo acima. Escondido sem `display:
+   none` para o clique programado continuar valendo. */
+.settings__file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Arquivo que não serve diz por que não serve, no lugar da dica. */
+.settings__erro {
+  color: var(--danger-ink);
+  font-weight: 700;
 }
 
 /* =========================================================== ficha (charsheet)
@@ -2196,6 +2251,16 @@
   margin-bottom: 10px;
 }
 
+/* "(Trained)" ao lado do nome da ação: é requisito, não título — mesma tinta e
+   mesmo tamanho do "Nv 1" que acompanha o nome de um item. */
+.acoes__trained {
+  font-size: var(--t-label);
+  font-weight: 700;
+  color: var(--text-2);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .acoes__filtro {
   display: flex;
   flex-direction: column;
@@ -2348,6 +2413,17 @@
 
 .magias__rank-label {
   padding: 7px 16px 4px;
+}
+
+/* A faixa do rank na lista de conhecidas: rótulo à esquerda, bolinhas de slot
+   encostadas na direita. O recuo da direita é o mesmo `.magias__rank-label` dá
+   à esquerda, para as bolinhas alinharem com o chevron das linhas de baixo. */
+.magias__rank-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-right: 16px;
 }
 
 /* Linha "Slot vazio": mesma altura e recuo das linhas preparadas, alvo é o

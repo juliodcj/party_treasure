@@ -113,10 +113,21 @@ export default function App() {
 
   const toggleItem = (id) => setOpenId((current) => (current === id ? null : id))
 
+  /* O nome da mesa, quando o mestre deu um, abre a contagem da aba Mestre — é
+     o único lugar do app em que "de que mesa é isto?" é uma pergunta possível
+     (o mesmo aparelho pode acabar apontado para outra mesa). Sem nome, a linha
+     fica exatamente como era. */
+  const nomeDaMesa = state.settings?.tableName?.trim()
   const subhead = isLibrary
     ? `${campaignCount} da campanha · ${officialCount} oficiais`
     : isGm
-      ? `${plural(state.players.length, 'jogador', 'jogadores')} · ${plural(state.shops.length, 'loja cadastrada', 'lojas cadastradas')}`
+      ? [
+          nomeDaMesa,
+          plural(state.players.length, 'jogador', 'jogadores'),
+          plural(state.shops.length, 'loja cadastrada', 'lojas cadastradas'),
+        ]
+          .filter(Boolean)
+          .join(' · ')
       : ''
 
   // Antes da primeira resposta do servidor não há mesa nenhuma para desenhar —

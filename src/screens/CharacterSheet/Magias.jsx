@@ -3,11 +3,11 @@ import SPELL_INDEX from '../../data/index.spells.json' with { type: 'json' }
 import { ChevronRight, SwordIcon } from '../../components/Icons.jsx'
 import SectionHead, { ExpandCollapseAll } from '../../components/SectionHead.jsx'
 import { useStore } from '../../state/store.jsx'
-import { focusPool, focusSpells, sgn } from '../../lib/sheet.js'
+import { focusList, focusPool, sgn } from '../../lib/sheet.js'
 import { spellDoIndice } from '../../lib/spells.js'
 import { spellKey } from '../../state/reducer.js'
 import BreakdownSheet from './BreakdownSheet.jsx'
-import Compendio, { paraPicker } from './Compendio.jsx'
+import Compendio, { paraPicker, rankEfetivo } from './Compendio.jsx'
 import { ActionCost } from './Feats.jsx'
 import SpellPicker, { SpellBody } from './SpellPicker.jsx'
 import { DescansoSheet } from './Resumo.jsx'
@@ -81,16 +81,23 @@ export default function Magias({ player, view }) {
     ...(vitals.bookSpells ?? []),
   ].sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name))
 
-  /* Magias de foco e a reserva que sai delas: um ponto por magia, até três. As
-     que vieram da ficha são só nome; as de mesa têm uid. */
-  const foco = focusSpells(sheet, vitals)
+  /* Truques de foco e magias de foco, separados como a regra os separa: o
+     truque não gasta ponto, a magia gasta. As que vieram da ficha são só nome;
+     as de mesa têm uid. */
+  const { cantrips: focoTruques, spells: focoMagias } = focusList(sheet, vitals)
 
   const espontanea = conj.preparation !== 'prepared'
   const maxFoco = focusPool(sheet, vitals)
   const focoAtual = Math.min(maxFoco, Math.max(0, Number(vitals.focusPoints) || 0))
 
   const capCantrips = conj.perDay?.[0] ?? 0
-  const cantripsPreparados = preparadas.filter((p) => p.rank === 0).length
+  /* O chip de truques conta coisas diferentes conforme o tipo de conjuração, e
+     `perDay[0]` é o teto dos dois: o preparado enche uma cota de truques todo
+     dia (conta o que está preparado), o espontâneo não prepara nada — os
+     truques dele são os que ele SABE, e é essa a lista que tem teto. */
+  const cantripsPreparados = espontanea
+    ? grimorio.filter((sp) => sp.rank === 0).length
+    : preparadas.filter((p) => p.rank === 0).length
 
   /* Um círculo por posição não-zero de `perDay`, a partir do 1 — o 0 (truques)
      tem tratamento próprio, junto do resto do cabeçalho. */
@@ -98,27 +105,37 @@ export default function Magias({ player, view }) {
     .map((total, rank) => ({ rank, total }))
     .filter(({ rank, total }) => rank > 0 && total > 0)
 
+  /* Quantos slots de cada rank o espontâneo já gastou hoje. O preparado marca
+     cada magia preparada como usada; o espontâneo não prepara nada, então o que
+     ele risca é o slot — e é este o número que as bolinhas de cada rank mexem. */
+  const slotsUsados = vitals.slotsUsed ?? {}
+  const usadosNoRank = (rank) =>
+    Math.min(conj.perDay?.[rank] ?? 0, Math.max(0, Number(slotsUsados[rank]) || 0))
+
   /* Visão de conjunto de todos os círculos numa linha só, como no protótipo —
      um resumo rápido de quanto sobrou antes de abrir cada balde individual.
-     Só para preparada: espontânea/inata não tem "pronto/total" por círculo,
-     porque a ficha não controla o que já foi lançado hoje (§17b).
+
+     Vale para os dois tipos de conjuração. No preparado o que sobrou sai das
+     magias preparadas ainda não usadas; no espontâneo, dos slots gastos, que
+     agora a ficha guarda (`vitals.slotsUsed`).
 
      Começa no círculo 1: os truques têm o próprio chip logo acima, e repeti-los
      na tabela gastaria uma coluna com o número que já está do lado. */
-  const tabelaSlots = espontanea
-    ? []
-    : (conj.perDay ?? [])
-        .map((total, rank) => ({ total, rank }))
-        .filter(({ rank }) => rank > 0)
-        .map(({ total, rank }) => {
-          if (!total) return { rank, vazio: true }
-          const prontas = preparadas.filter((p) => p.rank === rank && !p.used).length
-          return { rank, vazio: false, prontas, total }
-        })
+  const tabelaSlots = (conj.perDay ?? [])
+    .map((total, rank) => ({ total, rank }))
+    .filter(({ rank }) => rank > 0)
+    .map(({ total, rank }) => {
+      if (!total) return { rank, vazio: true }
+      const prontas = espontanea
+        ? total - usadosNoRank(rank)
+        : preparadas.filter((p) => p.rank === rank && !p.used).length
+      return { rank, vazio: false, prontas, total }
+    })
 
   /* Toda seção que existe nesta ficha, para o par Expandir/Recolher mexer só
      no que está de fato na tela. */
   const idsDeSecoes = [
+    'foco-truques',
     'foco',
     espontanea ? 'conhecidas' : null,
     !espontanea ? 'truques' : null,
@@ -198,72 +215,58 @@ export default function Magias({ player, view }) {
         }
       />
 
+      {/* ---------------------------------------------------- truques de foco
+
+          Vêm antes das magias de foco de propósito: o truque de foco não gasta
+          ponto nenhum — lança-se à vontade —, então é o que se lê primeiro no
+          meio do turno. A reserva de pontos não aparece aqui porque não é dele:
+          as bolinhas ficam na seção que de fato as gasta, logo abaixo.
+
+          Sem botão de acrescentar, e a seção só existe quando a ficha trouxe
+          algum: no corpus de hoje (pós-Remaster) NENHUMA magia de foco carrega
+          o traço `cantrip`, então não há o que oferecer numa lista de escolha.
+          Quem tem truque de foco é ficha de conteúdo legado, e ele chega pelo
+          `focusCantrips` do Pathbuilder. Voltando a existir no pack, a seção
+          volta a aparecer sozinha. */}
+      {focoTruques.length > 0 ? (
+        <FocoSecao
+          titulo="Truques de foco"
+          lista={focoTruques}
+          aberta={aberta('foco-truques')}
+          onToggle={() => setSecao('foco-truques', !aberta('foco-truques'))}
+          custoDe={custoDe}
+          player={player}
+          abertoId={aberto}
+          setAberto={setAberto}
+        />
+      ) : null}
+
       {/* A seção aparece para todo conjurador, mesmo sem nenhuma magia de foco:
           era ela que gastava a reserva, e escondê-la quando a reserva é zero
           tirava justamente o botão de ganhar a primeira. */}
-      <section className="list-group">
-          {/* As bolinhas ficam na faixa do título, como no protótipo: o quanto
-              sobrou de foco se lê sem abrir a seção. */}
-          <SectionHead
-            title="Magias de foco"
-            open={aberta('foco')}
-            onToggle={() => setSecao('foco', !aberta('foco'))}
-            action={
-              <FocoDots
-                atual={focoAtual}
-                max={maxFoco}
-                onSet={(value) => dispatch({ type: 'SET_FOCUS', playerId: player.id, value })}
-              />
-            }
+      <FocoSecao
+        titulo="Magias de foco"
+        lista={focoMagias}
+        aberta={aberta('foco')}
+        onToggle={() => setSecao('foco', !aberta('foco'))}
+        rotuloAdicionar="Adicionar magia de foco"
+        onAdicionar={() => setFocoAberto(true)}
+        custoDe={custoDe}
+        player={player}
+        abertoId={aberto}
+        setAberto={setAberto}
+        /* As bolinhas ficam na faixa do título, como no protótipo: o quanto
+           sobrou de foco se lê sem abrir a seção. E só aqui: a reserva é um
+           ponto por MAGIA de foco, e truque de foco não entra na conta. */
+        acao={
+          <Dots
+            atual={focoAtual}
+            max={maxFoco}
+            rotulo="Pontos de foco"
+            onSet={(value) => dispatch({ type: 'SET_FOCUS', playerId: player.id, value })}
           />
-          {aberta('foco') ? (
-            <>
-              {foco.length > 0 ? (
-                <div className="list-rows">
-                  {foco.map((sp) => (
-                    <SpellRow
-                      key={sp.uid ?? `foco-${sp.name}`}
-                      chave={sp.uid ?? `foco-${sp.name}`}
-                      nome={sp.name}
-                      custo={custoDe(sp.name)}
-                      aberto={aberto}
-                      setAberto={setAberto}
-                      depois={
-                        <>
-                          {/* Magia de foco também ataca — Hand of the Apprentice
-                              e Divine Lance rolam contra a CA como qualquer
-                              outra. A espada estava só no preparo e na lista
-                              especial. */}
-                          <EspadaBtn sp={sp} player={player} />
-                          <RemoverBtn
-                            rotulo={`Esquecer ${sp.name}`}
-                            onClick={() =>
-                              dispatch({
-                                type: 'REMOVE_FOCUS_SPELL',
-                                playerId: player.id,
-                                uid: sp.uid ?? null,
-                                name: sp.name,
-                              })
-                            }
-                          />
-                        </>
-                      }
-                    />
-                  ))}
-                </div>
-              ) : null}
-              <div className="list-rows">
-                <button
-                  type="button"
-                  className="magias__link-row"
-                  onClick={() => setFocoAberto(true)}
-                >
-                  Adicionar magia de foco
-                </button>
-              </div>
-            </>
-          ) : null}
-      </section>
+        }
+      />
 
       {/* ------------------------------------------------------ lista especial
 
@@ -301,21 +304,54 @@ export default function Magias({ player, view }) {
           {aberta('conhecidas') ? (
             <>
               <div className="list-rows">
-                {agruparPorRank(grimorio).map(([rank, itens]) => (
-                  <div className="magias__rank-bucket" key={rank}>
-                    <div className="field-label magias__rank-label">{rotuloRank(rank)}</div>
-                    {itens.map((sp, i) => (
-                      <SpellRow
-                        key={`${rank}-${sp.name}-${i}`}
-                        nome={sp.name}
-                        custo={custoDe(sp.name)}
-                        aberto={aberto}
-                        setAberto={setAberto}
-                        depois={<RemoverDoLivro sp={sp} player={player} />}
-                      />
-                    ))}
-                  </div>
-                ))}
+                {agruparPorRank(grimorio).map(([rank, itens]) => {
+                  /* Um marcador de slot por rank, do mesmo desenho das bolinhas
+                     de foco: cheia é slot disponível, vazia é slot gasto. Truque
+                     (rank 0) não tem slot — lança-se à vontade —, e rank que a
+                     ficha não dá slot nenhum também fica sem a fileira. */
+                  const total = conj.perDay?.[rank] ?? 0
+                  return (
+                    <div className="magias__rank-bucket" key={rank}>
+                      <div className="magias__rank-head">
+                        <span className="field-label magias__rank-label">{rotuloRank(rank)}</span>
+                        {rank > 0 && total > 0 ? (
+                          <Dots
+                            atual={total - usadosNoRank(rank)}
+                            max={total}
+                            rotulo={`Slots de ${rotuloRank(rank)}`}
+                            onSet={(value) =>
+                              dispatch({
+                                type: 'SET_SLOTS_USED',
+                                playerId: player.id,
+                                rank,
+                                value: total - value,
+                              })
+                            }
+                          />
+                        ) : null}
+                      </div>
+                      {itens.map((sp, i) => (
+                        <SpellRow
+                          key={`${rank}-${sp.name}-${i}`}
+                          nome={sp.name}
+                          custo={custoDe(sp.name)}
+                          aberto={aberto}
+                          setAberto={setAberto}
+                          depois={
+                            <>
+                              {/* Conjurador espontâneo lança direto da lista de
+                                  conhecidas: é aqui que a espada tem de estar,
+                                  senão ele não tem como mandar magia nenhuma
+                                  para a aba Ataques. */}
+                              <EspadaBtn sp={sp} player={player} />
+                              <RemoverDoLivro sp={sp} player={player} />
+                            </>
+                          }
+                        />
+                      ))}
+                    </div>
+                  )
+                })}
               </div>
             </>
           ) : null}
@@ -422,7 +458,7 @@ export default function Magias({ player, view }) {
         <FocoSheet
           player={player}
           sheet={sheet}
-          foco={foco}
+          foco={[...focoTruques, ...focoMagias]}
           onClose={() => setFocoAberto(false)}
         />
       ) : null}
@@ -443,33 +479,107 @@ export default function Magias({ player, view }) {
 /* ------------------------------------------------------------------ peças */
 
 /*
- * Os pontos de foco como bolinhas, no cabeçalho da seção — como no protótipo.
+ * Bolinhas de reserva, no cabeçalho de uma seção — como no protótipo.
  *
- * Cheia é ponto disponível, vazia é ponto gasto. Tocar numa bolinha leva o foco
- * até ela: gastar é tocar na última cheia, recuperar é tocar na primeira vazia.
- * Um stepper daria o mesmo, com o dobro de toques e sem dizer de relance quanto
+ * Cheia é disponível, vazia é gasta. Tocar numa bolinha leva a conta até ela:
+ * gastar é tocar na última cheia, recuperar é tocar na primeira vazia. Um
+ * stepper daria o mesmo, com o dobro de toques e sem dizer de relance quanto
  * sobrou — que é a pergunta que se faz no meio da mesa.
+ *
+ * São dois usos, e é o mesmo objeto: os pontos de foco e os slots de um rank do
+ * conjurador espontâneo. Um segundo desenho para "quanto sobrou" faria a mesma
+ * pergunta parecer duas coisas dentro da mesma aba.
  */
-function FocoDots({ atual, max, onSet }) {
+function Dots({ atual, max, rotulo, onSet }) {
   return (
-    <span className="foco-dots" role="group" aria-label={`Pontos de foco: ${atual} de ${max}`}>
+    <span className="foco-dots" role="group" aria-label={`${rotulo}: ${atual} de ${max}`}>
       {Array.from({ length: max }, (_, i) => {
         const cheia = i < atual
-        /* Tocar na bolinha que já é a última cheia zera aquele ponto; qualquer
-           outra leva o foco até ela. */
+        /* Tocar na bolinha que já é a última cheia zera aquela unidade;
+           qualquer outra leva a conta até ela. */
         const alvo = cheia && i + 1 === atual ? i : i + 1
         return (
           <button
             key={i}
             type="button"
             className={`foco-dot${cheia ? ' foco-dot--on' : ''}`}
-            aria-label={`Foco ${i + 1} de ${max}`}
+            aria-label={`${rotulo} ${i + 1} de ${max}`}
             aria-pressed={cheia}
             onClick={() => onSet(alvo)}
           />
         )
       })}
     </span>
+  )
+}
+
+/*
+ * Uma das duas seções de foco. As duas têm a mesma linha e o mesmo botão de
+ * acrescentar; o que muda é o título, a lista e — só na de magias — as bolinhas
+ * da reserva na faixa do título.
+ */
+function FocoSecao({
+  titulo,
+  lista,
+  aberta,
+  onToggle,
+  rotuloAdicionar = null,
+  onAdicionar = null,
+  custoDe,
+  player,
+  abertoId,
+  setAberto,
+  acao = null,
+}) {
+  const { dispatch } = useStore()
+
+  return (
+    <section className="list-group">
+      <SectionHead title={titulo} count={lista.length} open={aberta} onToggle={onToggle} action={acao} />
+      {aberta ? (
+        <>
+          {lista.length > 0 ? (
+            <div className="list-rows">
+              {lista.map((sp) => (
+                <SpellRow
+                  key={sp.uid ?? `foco-${sp.name}`}
+                  chave={sp.uid ?? `foco-${sp.name}`}
+                  nome={sp.name}
+                  custo={custoDe(sp.name)}
+                  aberto={abertoId}
+                  setAberto={setAberto}
+                  depois={
+                    <>
+                      {/* Magia de foco também ataca — Hand of the Apprentice e
+                          Divine Lance rolam contra a CA como qualquer outra. */}
+                      <EspadaBtn sp={sp} player={player} />
+                      <RemoverBtn
+                        rotulo={`Esquecer ${sp.name}`}
+                        onClick={() =>
+                          dispatch({
+                            type: 'REMOVE_FOCUS_SPELL',
+                            playerId: player.id,
+                            uid: sp.uid ?? null,
+                            name: sp.name,
+                          })
+                        }
+                      />
+                    </>
+                  }
+                />
+              ))}
+            </div>
+          ) : null}
+          {onAdicionar ? (
+            <div className="list-rows">
+              <button type="button" className="magias__link-row" onClick={onAdicionar}>
+                {rotuloAdicionar}
+              </button>
+            </div>
+          ) : null}
+        </>
+      ) : null}
+    </section>
   )
 }
 
@@ -815,10 +925,16 @@ function FocoSheet({ player, sheet, foco, onClose }) {
   const { dispatch } = useStore()
   const classe = String(sheet.class ?? '').toLowerCase()
 
+  /* Só o que gasta ponto: truque de foco (rank 0) tem seção própria, e a
+     divisão sai do corpus — `rankEfetivo` é quem sabe que truque é rank 0,
+     porque o pack guarda cantrip com o nível em que ele sobe. */
   const opcoes = useMemo(() => {
     if (!classe) return []
     return SPELL_INDEX.filter(
-      (sp) => (sp.traits ?? []).includes('focus') && (sp.traits ?? []).includes(classe),
+      (sp) =>
+        (sp.traits ?? []).includes('focus') &&
+        (sp.traits ?? []).includes(classe) &&
+        rankEfetivo(sp) > 0,
     )
       .map(paraPicker)
       .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name))
@@ -836,7 +952,9 @@ function FocoSheet({ player, sheet, foco, onClose }) {
       }
       spells={opcoes}
       jaTem={(sp) => jaTem.has(sp.name)}
-      onAdd={(sp) => dispatch({ type: 'ADD_FOCUS_SPELL', playerId: player.id, name: sp.name })}
+      onAdd={(sp) =>
+        dispatch({ type: 'ADD_FOCUS_SPELL', playerId: player.id, name: sp.name, rank: sp.rank })
+      }
       vazio={
         classe
           ? `Nenhuma magia de foco de ${sheet.class} nos packs.`

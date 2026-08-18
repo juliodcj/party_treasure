@@ -30,6 +30,13 @@ function comFichasDeExemplo(state) {
 }
 
 /**
+ * As chaves de primeiro nível que formam uma mesa. É a lista que o servidor usa
+ * para montar o instantâneo e o patch, e a mesma que a exportação em JSON leva
+ * para o arquivo — mesa exportada tem exatamente a forma de uma mesa nova.
+ */
+export const TABLE_KEYS = ['version', 'settings', 'history', 'players', 'campaignItems', 'shops']
+
+/**
  * Mesa de exemplo, usada na primeira vez que o servidor sobe (quando ainda não
  * existe `data/mesa.json`). Só dado compartilhado: em qual personagem cada
  * aparelho está olhando é sessão, não mesa — ver `state/session.js`.
@@ -37,9 +44,10 @@ function comFichasDeExemplo(state) {
 export function createInitialState() {
   return comFichasDeExemplo({
     version: 6,
-    // Config da mesa: livros que o mestre possui + remaster/legado, persistida
-    // e compartilhada por todas as telas (não é um filtro por aba, como os outros).
-    settings: { ownedCategories: [], remasterFilter: 'all' },
+    // Config da mesa: nome, livros que o mestre possui e remaster/legado,
+    // persistida e compartilhada por todas as telas (não é um filtro por aba,
+    // como os outros). O nome nasce vazio: quem batiza a mesa é o mestre.
+    settings: { tableName: '', ownedCategories: [], remasterFilter: 'all' },
     // Log das últimas alterações "perigosas", para o mestre poder reverter.
     history: [],
     players: [

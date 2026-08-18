@@ -19,7 +19,7 @@ let gruposAbertos = { class: true, skill: true, basic: true }
  * próprio pack `actions` do Foundry — `basic/`, `skill/` e `class/`. A Paizo já
  * organizou isso, e reorganizar por conta seria inventar.
  *
- * As 280 viajam no bundle (59 KB) e a aba abre instantânea, offline. A descrição
+ * As 280 viajam no bundle (63 KB) e a aba abre instantânea, offline. A descrição
  * é que é pesada, e ela chega do servidor quando a linha é aberta — uma consulta
  * por verbete, e só do que a pessoa abriu.
  *
@@ -206,9 +206,10 @@ export default function Acoes({ player }) {
 }
 
 /*
- * O balde das dez ações de perícia que fonte nenhuma do Foundry classifica —
- * Treat Wounds, Earn Income, Recall Knowledge, Learn a Spell e companhia. Não é
- * defeito da ingestão: o pack não diz, e a ingestão se recusa a chutar. Elas
+ * O balde das sete ações de perícia que fonte nenhuma do Foundry classifica —
+ * Recall Knowledge, Learn a Spell, Identify Magic, Earn Income e companhia. Não
+ * é defeito da ingestão: elas não TÊM uma perícia (dependem do assunto, da
+ * tradição, ou valem com qualquer uma), e a ingestão se recusa a chutar. Elas
  * continuam na tela, com o nome que têm, e o rótulo não promete o que não sabe.
  */
 const SEM_PERICIA = 'Sem perícia no pack'
@@ -306,6 +307,12 @@ function Linha({ acao, player, aberto, setAberto }) {
         >
           <span className="entry__title">
             <span className="entry__name">{acao.name}</span>
+            {/* "(Trained)" fica em inglês porque é vocabulário publicado do
+                PF2e, como Damage e AC Bonus — a moldura é que é traduzida. Só
+                aparece onde alguma fonte do pack DIZ que a ação exige treino
+                (ver `exigeTreinamento`, em scripts/build-lore.mjs); a ausência
+                dele não promete que dá para usar destreinado. */}
+            {acao.trained ? <span className="acoes__trained">(Trained)</span> : null}
             <ActionCost cost={acao.actionCost} />
           </span>
           <span className="entry__sub">

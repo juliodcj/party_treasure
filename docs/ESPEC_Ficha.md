@@ -490,11 +490,18 @@ Favoritos no topo. Corpo a corpo e À distância separados. Linha expansível co
 traços, ficha técnica, quantidade e MAP. Unarmed Strike sempre presente. Edição de
 modificadores manuais aqui e no inventário.
 
-**Magias** — conjuração com DC e ataque · truques · foco com Refocus · slots
-preparados · grimório · lista especial · **Compêndio navegável** com filtro de
-tradição e círculo, do índice no bundle + descrições do servidor. Personagem sem
-conjuração: aba não aparece. **Nunca foi exercitada contra dado real** — o
-`spellCasters` do fixture está vazio.
+**Magias** — conjuração com DC e ataque · tabela de slots · **truques de foco**
+e **magias de foco** em seções separadas (o truque não gasta ponto, e por isso
+não dá ponto: a reserva conta só as magias de foco) · slots preparados ·
+grimório · lista especial · **Compêndio navegável** com filtro de tradição e
+círculo, do índice no bundle + descrições do servidor. Personagem sem
+conjuração: aba não aparece.
+
+**Conjurador espontâneo** tem a mesma tabela de slots do preparado, e o que ela
+mostra vem de `vitals.slotsUsed` — ele não prepara nada, então o que se risca é
+o slot, uma bolinha por slot na faixa de cada rank da lista de conhecidas. A
+espada que manda a magia para a aba Ataques mora nessa mesma lista, que é de
+onde ele lança.
 
 **Feats** — agrupados em features de classe, feats de classe, ancestralidade e
 herança, outros. Favoritos. Descrição do Foundry na linha expandida.
@@ -647,16 +654,14 @@ divergir sem registro, não.
 | `traits.equipment.json` | — | renomeado para `traits.json`: passou a cobrir magia, condição, feat e ação (242 → 385 traços). |
 | Resolução de magia (fase 11) | nome via `nameIndex`, como feat/ação | **slug adivinhado**: `spell:<slugify(nome)>`, buscado direto por `/api/entry/`. O nome já chega desambiguado pelo contexto (`spellCasters[].spells`), então não precisa do índice de prioridade — e evita colisão com magia homônima de feat/ação. Medido 10/10 no fixture do mago. |
 | Círculo de truque no compêndio (fase 11) | — (não previsto na espec) | o Foundry guarda truque como **rank 1** com o traço `cantrip`, não rank 0 como o Pathbuilder. Sem correção, o compêndio não mostrava o filtro "Truque" e o botão Preparar de um truque gastava uma vaga de círculo 1. `Compendio.jsx` traduz: `rankEfetivo = traço "cantrip" ? 0 : rank`. |
-| Conjuração espontânea/inata (fase 11) | implementar como preparada | **modo leitura**: lista de magias conhecidas agrupada por círculo, com aviso explícito de que a ficha não controla quantas já foram lançadas hoje. Só existe fixture de conjurador **preparado** (`wizard.json`); implementar o controle de espontâneo sem um export real para testar seria a ficha chutando, o oposto de D6. |
+| Conjuração espontânea/inata (fase 11) | implementar como preparada | nasceu em **modo leitura** (lista de conhecidas, sem controle do que já foi lançado), por não haver fixture de espontâneo. **Reaberto depois, a pedido da mesa**: o espontâneo passou a ter a mesma tabela de slots do preparado, uma bolinha por slot na faixa de cada rank (`vitals.slotsUsed`, ação `SET_SLOTS_USED`) e a espada na lista de conhecidas, que é de onde ele lança. O que não se inventou continua não inventado: o gasto é marcado à mão, como o `used` do preparado. |
 | Lista especial (`vitals.extraSpells`, fase 11) | — (não prevista na espec) | magia de item/pergaminho/ritual/concessão do mestre, adicionada por nome livre, sem teto de círculo. `REST` não mexe nela — o app não sabe a regra de recarga de cada uma (D5). |
 
 ### O que ficou de fora, e continua de fora
 
 Runas · bulk e carga (D8) · contêineres · inventário por instância (o modificador
 manual vale para a pilha inteira, §8) · validação de número de mãos (§8) ·
-level-up, escolha de feat, rolagem de dado, iniciativa e controle de combate ·
-contagem de magias já lançadas por conjurador espontâneo/inato (fase 11, sem
-fixture real para testar).
+level-up, escolha de feat, rolagem de dado, iniciativa e controle de combate.
 
 **Anotado como sugestão futura, não implementado:** descanso do grupo inteiro na
 aba Mestre (a resposta 1 da §17 pediu por personagem).
@@ -666,8 +671,9 @@ aba Mestre (a resposta 1 da §17 pediu por personagem).
 1. ~~**Aba Magias escrita contra dados inventados** até chegar um JSON de
    conjurador.~~ **Fechado em 13/08**: `docs/fixtures/wizard.json`, mago humano
    nível 1, conjuração preparada. Cobre truque, círculo, foco e grimório; segue
-   sem fixture de conjurador **espontâneo/inato** — essa aba entra em modo
-   leitura nesse caso (§12.3, §17b).
+   sem fixture de conjurador **espontâneo/inato** de verdade — o controle de
+   slots dele (§17b) foi exercitado contra o mesmo export com
+   `spellcastingType` trocado, e não contra um export de sorcerer.
 2. **Cálculo vai divergir do Pathbuilder** em Giant Instinct, weapon
    specialization e Rage. Preço de D2; a resposta é o modificador manual.
 3. **`player.sheet` nulo** em caminho não tratado.
