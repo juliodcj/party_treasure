@@ -12,13 +12,19 @@
  * 2. **Errar em silêncio é o único erro inaceitável.** Chave que não
  *    reconhecemos entra em `warnings` com o nome que veio.
  *
+ * O que sai daqui como *bagagem*, e não como ficha:
+ *
+ * - `equipment`, `weapons`, `armor` → `startingItems`, uma lista crua de
+ *   `{ name, qty, kind }`. Este arquivo não conhece o catálogo e não resolve
+ *   nome nenhum: quem casa com o catálogo é `lib/startingGear.js`, e quem põe
+ *   na mochila é o reducer, **só na primeira vinculação** (D2, reaberta).
+ * - `money` → `startingCoins`, já em ouro/prata/cobre (a platina vira ouro).
+ *   Soma à carteira na primeira vinculação; reimportar não mexe (D3, reaberta).
+ *
  * O que NÃO é lido, e por quê:
  *
- * - `equipment`, `equipmentContainers` — D2: nenhum item vem do Pathbuilder. O
- *   inventário é 100% do app. `"Hide"` no Pathbuilder é `"Hide Armor"` no
- *   catálogo, e casar nome por aproximação erra calado.
- * - `weapons`, `armor` — mesma razão. O que a pessoa empunha sai do inventário.
- * - `money` — D3: a carteira é da mesa, não do construtor de personagem.
+ * - `equipmentContainers` — bulk e contêiner estão adiados (D8). Todo item
+ *   entra na mochila, e o aviso diz isso.
  * - `acTotal`, `formula` — D5: os números saem do nosso cálculo. Estes dois são
  *   gabarito de teste (§16), não fonte em produção.
  * - `pets`, `familiars`, `inventorMods`, `mods`, `rituals` — fora do escopo.
@@ -180,6 +186,11 @@ export function parsePathbuilder(input, { now = () => new Date() } = {}) {
 
     spellcasting: readSpellcasting(build, warn),
     focusPoints: Math.max(0, Math.round(toNumber(build.focusPoints, 0))),
+
+    /* A bagagem. Fica na ficha porque foi a ficha que a trouxe, mas não é
+       cálculo nem estado: é uma carta de entrega, aberta uma vez só. */
+    startingItems: readStartingItems(build, warn),
+    startingCoins: readStartingCoins(build.money, warn),
 
     unresolved: [],
     warnings,
@@ -519,6 +530,125 @@ function readSpellcasting(build, warn) {
   }
 }
 
+/* ------------------------------------------------------------- a bagagem */
+
+/*
+ * `equipment`, `weapons` e `armor` viram uma lista só de `{ name, qty, kind }`.
+ *
+ * Cru de propósito: aqui não se resolve nome, não se casa com o catálogo e não
+ * se decide categoria. `"Hide"` continua `"Hide"` — quem sabe que o catálogo
+ * chama isso de `"Hide Armor"` é `lib/startingGear.js`, num lugar só, com
+ * teste. Foi por esse casamento errado, feito no escuro, que D2 fechou a porta
+ * para item do Pathbuilder; a porta reabre com o casamento explícito e com o
+ * que não casar aparecendo na tela pelo nome que veio.
+ *
+ * `kind` não é a categoria do item: é de qual lista do Pathbuilder ele saiu. É
+ * o que permite tentar `"Hide Armor"` só para quem veio de `armor`.
+ */
+function readStartingItems(build, warn) {
+  const out = []
+  /* Quantidade ausente, zerada ou torta vira 1: o item está listado, logo existe
+     pelo menos um. Descartar por causa do número seria sumir com o item. */
+  const push = (name, qty, kind) => {
+    const text = toText(name)
+    if (!text) return
+    out.push({ name: text, qty: Math.max(1, Math.round(toNumber(qty, 1))), kind })
+  }
+
+  /* `["Backpack", 1, "Invested"]` e `["Bedroll", 1, "<uuid>", "Invested"]` — o
+     terceiro campo às vezes é contêiner, às vezes é flag. Só os dois primeiros
+     são posição fixa, e só eles são lidos. */
+  if (Array.isArray(build.equipment)) {
+    for (const entry of build.equipment) {
+      if (!Array.isArray(entry) || !toText(entry[0])) {
+        warn(`Item em formato inesperado, ignorado: ${JSON.stringify(entry)}.`)
+        continue
+      }
+      push(entry[0], entry[1], 'equipment')
+    }
+  } else if (build.equipment !== undefined) {
+    warn('Bloco `equipment` com formato inesperado; nenhum item veio dele.')
+  }
+
+  readGearObjects(build.weapons, 'weapons', 'weapon', push, warn)
+  readGearObjects(build.armor, 'armor', 'armor', push, warn)
+
+  /* Contêiner é bulk, e bulk está adiado (D8). Dizer isso é melhor que a pessoa
+     descobrir sozinha que a mochila dentro da mochila virou lista plana. */
+  if (build.equipmentContainers && Object.keys(build.equipmentContainers).length > 0) {
+    warn('Contêineres do Pathbuilder ignorados: todo item entra direto na mochila.')
+  }
+
+  return out
+}
+
+/** `weapons` e `armor` são objetos, não arrays posicionais — e trazem enfeite. */
+function readGearObjects(raw, campo, kind, push, warn) {
+  if (raw === undefined || raw === null) return
+  if (!Array.isArray(raw)) {
+    warn(`Bloco \`${campo}\` com formato inesperado; nenhum item veio dele.`)
+    return
+  }
+  for (const entry of raw) {
+    const name = toText(entry?.name)
+    if (!name) {
+      warn(`${campo}: entrada sem nome, ignorada: ${JSON.stringify(entry)}.`)
+      continue
+    }
+    push(name, entry.qty, kind)
+
+    /* Runa, material e potência são fora do escopo, e o item entra sem eles. O
+       jogador tem o modificador manual (D6) — mas precisa saber que precisa. */
+    const enfeite = []
+    if (toNumber(entry.pot, 0) > 0) enfeite.push('potência')
+    if (Array.isArray(entry.runes) && entry.runes.length) enfeite.push('runas')
+    if (meaningful(entry.mat)) enfeite.push('material')
+    if (meaningful(entry.grade)) enfeite.push('grade')
+    if (enfeite.length) {
+      warn(`${name}: ${enfeite.join(', ')} do Pathbuilder não entram no item. Use o modificador manual.`)
+    }
+
+    /* `name: "Greatpick"` com `display: "Large Greatpick"`: o tamanho está só no
+       display, e o item entra em tamanho normal. */
+    const display = meaningful(entry.display)
+    if (display && display !== name && display !== `${name} (x${entry.qty})`) {
+      warn(`${name}: o Pathbuilder mostra "${display}"; o item entra como "${name}".`)
+    }
+
+    if (entry.worn === true) {
+      warn(`${name} estava vestido no Pathbuilder; entra na mochila e você veste no app.`)
+    }
+  }
+}
+
+/**
+ * `{ cp, sp, gp, pp }` → a carteira do app, que não tem platina: 1 pp = 10 po.
+ * Converter é fiel (nada se perde); guardar uma quarta denominação só para esta
+ * importação seria mexer em toda tela de moeda por causa do Pathbuilder.
+ */
+function readStartingCoins(raw, warn) {
+  const zero = { gold: 0, silver: 0, copper: 0 }
+  if (raw === undefined || raw === null) return zero
+  if (typeof raw !== 'object' || Array.isArray(raw)) {
+    warn('Bloco `money` com formato inesperado; a carteira não recebeu nada.')
+    return zero
+  }
+
+  const desconhecidas = Object.keys(raw).filter((key) => !['cp', 'sp', 'gp', 'pp'].includes(key))
+  if (desconhecidas.length) {
+    warn(`Moedas ignoradas por não serem do PF2e: ${desconhecidas.join(', ')}.`)
+  }
+
+  const platina = Math.max(0, Math.round(toNumber(raw.pp, 0)))
+  if (platina > 0) warn(`${platina} pl viraram ${platina * 10} po: a carteira do app não tem platina.`)
+
+  return {
+    gold: Math.max(0, Math.round(toNumber(raw.gp, 0))) + platina * 10,
+    silver: Math.max(0, Math.round(toNumber(raw.sp, 0))),
+    copper: Math.max(0, Math.round(toNumber(raw.cp, 0))),
+  }
+}
+
 function emptySheet(now) {
   return {
     ok: false,
@@ -548,6 +678,8 @@ function emptySheet(now) {
     actions: [],
     spellcasting: null,
     focusPoints: 0,
+    startingItems: [],
+    startingCoins: { gold: 0, silver: 0, copper: 0 },
     unresolved: [],
     warnings: [],
   }

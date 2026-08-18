@@ -278,20 +278,85 @@ test('balde de magia em formato torto vira aviso, não trava a importação', ()
   assert.ok(sheet.warnings.some((w) => w.includes('spells')))
 })
 
-test('D2, D3 e D5: item, dinheiro e número pronto não entram na ficha', () => {
+test('D5: número pronto continua fora da ficha, mesmo com D2 e D3 reabertas', () => {
   const sheet = rurik()
 
-  // o export tem tudo isto, e nada disto pode ter atravessado
-  assert.ok(RURIK.build.equipment.length > 0)
-  assert.equal(RURIK.build.money.gp, 11)
   assert.equal(RURIK.build.acTotal.acTotal, 18)
-
-  const texto = JSON.stringify(sheet)
-  assert.equal(texto.includes('Waterskin'), false, 'nenhum item do Pathbuilder entra (D2)')
-  assert.equal(texto.includes('Grappling Hook'), false)
   for (const chave of ['money', 'acTotal', 'formula', 'pets', 'familiars', 'equipment']) {
     assert.equal(chave in sheet, false, `${chave} não pertence à ficha`)
   }
+})
+
+/* ------------------------------------------------------------- a bagagem */
+
+test('item do Pathbuilder vira lista crua, com a quantidade e a lista de origem', () => {
+  const itens = rurik().startingItems
+
+  assert.equal(itens.length, 13)
+  assert.deepEqual(itens[0], { name: 'Backpack', qty: 1, kind: 'equipment' })
+  assert.deepEqual(
+    itens.find((entrada) => entrada.name === 'Chalk'),
+    { name: 'Chalk', qty: 10, kind: 'equipment' },
+  )
+  // arma e armadura saem das listas próprias, com o `kind` que diz de onde vieram
+  assert.deepEqual(
+    itens.find((entrada) => entrada.name === 'Javelin'),
+    { name: 'Javelin', qty: 4, kind: 'weapon' },
+  )
+  // "Hide", não "Hide Armor": aqui o nome fica cru; quem casa é lib/startingGear.js
+  assert.deepEqual(
+    itens.find((entrada) => entrada.kind === 'armor'),
+    { name: 'Hide', qty: 1, kind: 'armor' },
+  )
+})
+
+test('o enfeite que não entra no item vira aviso, não silêncio', () => {
+  const sheet = parsePathbuilder({
+    build: {
+      name: 'Runada',
+      weapons: [{ name: 'Longsword', qty: 1, pot: 2, runes: ['striking'], mat: 'cold-iron' }],
+      armor: [{ name: 'Hide', qty: 1, worn: true }],
+    },
+  })
+
+  const avisos = sheet.warnings.join(' · ')
+  assert.match(avisos, /Longsword: potência, runas, material/)
+  assert.match(avisos, /modificador manual/)
+  assert.match(avisos, /Hide estava vestido/)
+  // e o item entra assim mesmo, sem as runas
+  assert.deepEqual(sheet.startingItems[0], { name: 'Longsword', qty: 1, kind: 'weapon' })
+})
+
+test('contêiner do Pathbuilder é ignorado, e o aviso diz isso', () => {
+  assert.ok(rurik().warnings.some((aviso) => aviso.includes('Contêineres')))
+  assert.ok(Object.keys(RURIK.build.equipmentContainers).length > 0)
+})
+
+test('moeda vira carteira do app, com a platina convertida em ouro', () => {
+  assert.deepEqual(rurik().startingCoins, { gold: 11, silver: 0, copper: 0 })
+
+  const rico = parsePathbuilder({ build: { name: 'Rico', money: { pp: 3, gp: 2, sp: 5, cp: 7, xp: 9 } } })
+  assert.deepEqual(rico.startingCoins, { gold: 32, silver: 5, copper: 7 })
+  assert.ok(rico.warnings.some((aviso) => aviso.includes('3 pl viraram 30 po')))
+  assert.ok(rico.warnings.some((aviso) => aviso.includes('xp')))
+})
+
+test('bagagem torta não trava a importação e nunca some calada', () => {
+  const sheet = parsePathbuilder({
+    build: { name: 'Torta', equipment: [['Rope', 1], 'só um texto', []], weapons: {}, money: 'muito' },
+  })
+
+  assert.equal(sheet.ok, true)
+  assert.deepEqual(sheet.startingItems, [{ name: 'Rope', qty: 1, kind: 'equipment' }])
+  assert.deepEqual(sheet.startingCoins, { gold: 0, silver: 0, copper: 0 })
+  // dois itens tortos, o bloco `weapons` que não é lista e o `money` que é texto
+  assert.equal(sheet.warnings.filter((aviso) => aviso.includes('formato inesperado')).length, 4)
+})
+
+test('ficha sem bagagem nenhuma tem lista vazia e carteira zerada, não undefined', () => {
+  const sheet = wizard()
+  assert.deepEqual(sheet.startingItems, [])
+  assert.deepEqual(sheet.startingCoins, { gold: 15, silver: 0, copper: 0 })
 })
 
 /* ------------------------------------------------- entrada torta nunca lança */

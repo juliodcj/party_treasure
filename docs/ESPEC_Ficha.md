@@ -42,8 +42,8 @@ Para decidir caso que a espec não previu. Nesta ordem.
 | # | Decisão | Razão em uma linha |
 |---|---|---|
 | D1 | Ficha entra **só colando JSON**; sem id de 6 dígitos, sem rede | Rodar em hotspot sem dados |
-| D2 | **Nenhum item importado** do Pathbuilder; inventário é 100% do app | `"Hide"` vs `"Hide Armor"` = matching fuzzy falhando em silêncio |
-| D3 | `money` do JSON ignorado | Carteira é da mesa |
+| D2 | ~~**Nenhum item importado** do Pathbuilder~~ **Reaberta (18/08)**: item entra na primeira vinculação, somando | Ver §2.1 |
+| D3 | ~~`money` do JSON ignorado~~ **Reaberta (18/08)**: soma à carteira na primeira vinculação | Ver §2.1 |
 | D4 | Ficha **vincula a jogador existente**, vive em `player.sheet` | Reimportar troca só essa fatia; some a política de merge |
 | D5 | Números vêm do **cálculo do app**, não dos campos prontos do JSON | Consequência de D2 |
 | D6 | **Modificadores manuais** de ataque/dano por item, com rótulo | Cobre Rage, Giant Instinct, weapon spec, runas |
@@ -59,6 +59,30 @@ Para decidir caso que a espec não previu. Nesta ordem.
 
 Fora do escopo: level-up, escolha de feat, rolagem de dado, iniciativa, controle
 de combate, runas, bulk.
+
+### 2.1 D2 e D3 reabertas — a bagagem entra uma vez
+
+Pedido de mesa: montar de novo, item por item, a mochila que o Pathbuilder já
+tinha é trabalho repetido logo na hora em que o personagem estreia. D2 e D3
+caem, com as três amarras que respondem ao motivo original delas:
+
+1. **Casamento exato, não aproximado.** `lib/startingGear.js` casa o nome contra
+   o catálogo por igualdade, com uma exceção só, escrita e testada: quem vem da
+   lista `armor` também tenta com o sufixo `Armor` — é o caso `"Hide"` →
+   `"Hide Armor"` que fechou D2. Nada de distância de edição, nada de prefixo.
+2. **O que não casa aparece.** Vira item avulso com o nome que veio, sem preço e
+   sem nível, destacado na conferência antes de confirmar. O medo de D2 era o
+   casamento errado **calado**; item avulso com o nome certo é o oposto disso.
+3. **Uma vez só, e somando.** `IMPORT_SHEET` entrega; `UPDATE_SHEET` não encosta
+   em item nem em moeda. Depois da primeira vinculação, o inventário é da mesa —
+   reimportar para subir de nível não ressuscita poção bebida nem ouro gasto.
+
+O que continua fora: contêiner (bulk está adiado, D8), runa, material, potência
+e tamanho — todos viram aviso na leitura, e a resposta segue sendo o modificador
+manual (D6). Vestir também: o item chega na mochila, e quem veste é a mesa.
+
+D5 não muda: os números continuam saindo do cálculo do app. `acTotal` e
+`weapons[].attack` seguem sendo gabarito de teste, nunca fonte.
 
 ---
 
@@ -116,14 +140,19 @@ specials                 ["Rage", "Giant Instinct", "Darkvision", ...]
 spellCasters focusPoints focus
 ```
 
-### 4.2 Ignorado
+### 4.2 Bagagem (§2.1) — lida, entregue na primeira vinculação
 
-`equipment` `equipmentContainers` `weapons` `armor` `money` `acTotal` `formula`
-`pets` `familiars` `inventorMods` `mods`.
+`equipment` `weapons` `armor` → `sheet.startingItems`, cru: `{ name, qty, kind }`.
+`money` → `sheet.startingCoins`, com a platina convertida em ouro.
+
+### 4.3 Ignorado
+
+`equipmentContainers` `acTotal` `formula` `pets` `familiars` `inventorMods`
+`mods`.
 
 `acTotal` e `weapons[].attack` só em teste, como gabarito (§16).
 
-### 4.3 Armadilhas (medidas no fixture)
+### 4.4 Armadilhas (medidas no fixture)
 
 - **Proficiência é número, não bônus:** `0`=untrained `2`=trained `4`=expert
   `6`=master `8`=legendary.
@@ -136,7 +165,12 @@ spellCasters focusPoints focus
   `Importada em 10/08 · Nv 1`.
 - `equipment` é posicionalmente inconsistente (`["Backpack",1,"Invested"]` vs
   `["Bedroll",1,"<uuid>","Invested"]`) e o flag `"Invested"` aparece em giz e
-  sabão. Irrelevante por D2; registrado caso D2 seja reaberta.
+  sabão. Com D2 reaberta (§2.1) isso passou a importar: **só `[0]` nome e `[1]`
+  quantidade são posição fixa**, e é só o que a leitura usa.
+- `armor[].name` é `"Hide"`, e o catálogo publica `"Hide Armor"` — a única
+  exceção de casamento por sufixo (§2.1).
+- `money` tem platina (`pp`), a carteira do app não: 1 pp = 10 po, convertido
+  com aviso.
 
 ---
 
@@ -502,10 +536,10 @@ herança, outros. Favoritos. Descrição do Foundry na linha expandida.
 **Ações** — agrupadas em Classe, Perícia, Básicas. As básicas vêm do pack
 `actions` e valem para todo personagem. Filtro por traço. Favoritos.
 
-**Estado vazio** — personagem sem ficha (§6). E, logo após importar: a CA do Rurik
-mostra 15 (desarmado), não 18, e Ataques nasce vazia, porque nenhum item veio
-junto (D2). Aviso: *"Ficha importada. Agora monte a mochila no Inventário e vista
-a armadura."*
+**Estado vazio** — personagem sem ficha (§6). Logo após importar, com D2 reaberta
+(§2.1), a mochila já vem cheia — mas nada está **vestido**: a CA do Rurik mostra
+15 (desarmado), não 18, até alguém vestir a Hide Armor que chegou. Aviso:
+*"Ficha importada. Agora vista a armadura no Inventário."*
 
 ---
 
@@ -669,7 +703,7 @@ aba Mestre (a resposta 1 da §17 pediu por personagem).
    sem fixture de conjurador **espontâneo/inato** — essa aba entra em modo
    leitura nesse caso (§12.3, §17b).
 2. **Cálculo vai divergir do Pathbuilder** em Giant Instinct, weapon
-   specialization e Rage. Preço de D2; a resposta é o modificador manual.
+   specialization e Rage. Preço de D5; a resposta é o modificador manual.
 3. **`player.sheet` nulo** em caminho não tratado.
 4. **Item equipado que sai do inventário** (§13.1).
 5. ~~**Termux:** o servidor pode ser um celular.~~ **Descartado em 13/08:** o servidor roda só no PC do mestre. Em troca entrou um risco novo — com o acesso por Cloudflare o app fica exposto à internet, e ele não tem login nem papéis (§6 do README): quem tiver o endereço mexe na mesa.

@@ -1,5 +1,6 @@
 import { addCoins, simplifyWallet, spendCopper, toCopper, withWalletCopper } from '../lib/money.js'
 import { makeId, normalizeItem, resolveItem } from '../lib/items.js'
+import { resolveStartingItems } from '../lib/startingGear.js'
 import { SELL_RATE } from '../config.js'
 import { emptySheetFields } from './migrations.js'
 import { focusPool, nightRest } from '../lib/sheet.js'
@@ -34,6 +35,51 @@ function withItemDelta(items, itemId, delta) {
   if (qty > 0) next[itemId] = qty
   else delete next[itemId]
   return next
+}
+
+/* ------------------------------------------------------ bagagem que chega
+
+   O que o Pathbuilder trazia na mochila e na carteira, entrando UMA vez, na
+   primeira vinculação da ficha. Duas funções porque são duas perguntas: o que
+   chega (resolvido contra o catálogo, sem olhar para o jogador) e como isso
+   entra na mochila de quem recebeu. */
+
+/** Resolve a bagagem da ficha contra o catálogo. `null` se não veio nada. */
+function arrivingGear(sheet) {
+  const { matched, unmatched } = resolveStartingItems(sheet.startingItems)
+  const coins = sheet.startingCoins ?? {}
+  const temMoeda = (coins.gold ?? 0) + (coins.silver ?? 0) + (coins.copper ?? 0) > 0
+  if (!matched.length && !unmatched.length && !temMoeda) return null
+
+  /* Nome que o catálogo não conhece vira item avulso com o nome que veio, sem
+     preço e sem nível: o que a fonte não deu não se inventa. Some da tela seria
+     o único desfecho proibido. */
+  const custom = unmatched.map((entry) => ({
+    item: normalizeItem({
+      id: makeId('custom'),
+      name: entry.name,
+      category: entry.category,
+    }),
+    qty: entry.qty,
+  }))
+
+  return { matched, custom, coins }
+}
+
+/** Soma a bagagem à mochila e à carteira. Nunca substitui: só acrescenta. */
+function withArrivingGear(player, arrival) {
+  if (!arrival) return player
+
+  let items = player.items ?? {}
+  for (const { itemId, qty } of arrival.matched) items = withItemDelta(items, itemId, qty)
+  for (const { item, qty } of arrival.custom) items = withItemDelta(items, item.id, qty)
+
+  return {
+    ...player,
+    ...addCoins(player, arrival.coins),
+    items,
+    customItems: [...(player.customItems ?? []), ...arrival.custom.map((entrada) => entrada.item)],
+  }
 }
 
 /* --------------------------------------------------------- item que sai
@@ -650,12 +696,22 @@ export function reducer(state, action) {
      * O que sobrevive: carteira, mochila, itens avulsos, observações, `vitals`,
      * `gear` e `itemMods`. A ficha diz quem o personagem é; o resto é o que
      * aconteceu na mesa, e isso não se perde numa reimportação.
+     *
+     * A ÚNICA diferença entre os dois é a bagagem: `IMPORT_SHEET` — vincular
+     * ficha a quem não tinha — despeja na mochila e na carteira o que estava no
+     * Pathbuilder; `UPDATE_SHEET` não encosta em item nem em moeda. Depois da
+     * primeira vez, quem manda no inventário é a mesa: reimportar para subir de
+     * nível não pode ressuscitar a poção que o grupo bebeu nem devolver o ouro
+     * que já foi gasto. Por isso a bagagem entra somando, nunca substituindo.
      */
     case 'IMPORT_SHEET':
     case 'UPDATE_SHEET': {
       const sheet = action.sheet
       if (!sheet || typeof sheet !== 'object') return state
       const hpMax = Math.max(1, Math.round(Number(sheet.hpMax) || 1))
+      /* A bagagem não depende de quem recebe: resolve aqui fora, e o callback
+         abaixo fica só com o que é do jogador. */
+      const bagagem = action.type === 'IMPORT_SHEET' ? arrivingGear(sheet) : null
 
       return {
         ...state,
@@ -665,11 +721,12 @@ export function reducer(state, action) {
              reimportação. Se o novo máximo for menor (perdeu Con, por exemplo),
              o atual desce junto — mas nunca sobe sozinho para o teto novo. */
           const hp = Math.min(vitals.hp ?? hpMax, hpMax)
-          return {
+          const comFicha = {
             ...player,
             sheet,
             vitals: { ...vitals, hp, preparedSpells: preparedSpellsFor(sheet, vitals) },
           }
+          return withArrivingGear(comFicha, bagagem)
         }),
       }
     }

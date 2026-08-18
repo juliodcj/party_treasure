@@ -9,8 +9,10 @@ import WIZARD from '../data/seed-sheets/wizard.json' with { type: 'json' }
  * magias — para a ficha abrir sem antes colar um JSON do Pathbuilder.
  *
  * Entram pelo mesmo `IMPORT_SHEET` que a tela despacha, e não escritas à mão:
- * assim HP inicial e magias preparadas saem da mesma regra, e a mesa de exemplo
- * não pode divergir do que uma importação de verdade produz.
+ * assim HP inicial, magias preparadas e a bagagem do Pathbuilder saem da mesma
+ * regra, e a mesa de exemplo não pode divergir do que uma importação de verdade
+ * produz. Por isso o Valeros abre a mesa com a mochila e as moedas do Rurik
+ * somadas às dele: é exatamente o que acontece ao vincular uma ficha.
  *
  * O que elas não têm é a resolução dos packs, que é do servidor e acontece na
  * importação: feat aparece com o nome e sem o texto de regra, a mesma degradação
