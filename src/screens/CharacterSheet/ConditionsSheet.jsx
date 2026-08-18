@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import Sheet from '../../components/Sheet.jsx'
+import Sheet, { SheetActions } from '../../components/Sheet.jsx'
 import Stepper from '../../components/Stepper.jsx'
 import { ChevronRight } from '../../components/Icons.jsx'
 import CONDITIONS from '../../data/conditions.json' with { type: 'json' }
@@ -12,21 +12,34 @@ import { useStore } from '../../state/store.jsx'
  * protótipo trazia 32 condições traduzidas por conta própria, e é exatamente
  * isso que não podia ser reaproveitado.
  *
- * As oito com efeito mecânico vêm primeiro, porque são as que mudam número na
- * tela. As outras 35 são marcação — o jogador aplica na mesa e a ficha lembra
- * dele — e ficam atrás do "Mais condições", para a lista curta ser a útil.
+ * A lista curta tem dez. Dying e Wounded abrem, e as oito com efeito mecânico
+ * vêm em seguida. As outras 33 são marcação — o jogador aplica na mesa e a
+ * ficha lembra dele — e ficam atrás do "Mais condições".
  */
 
 const chaveDe = (condicao) => conditionKey(condicao.slug)
 
+/* Dying e Wounded não mudam número nenhum na tela, e mesmo assim são as duas
+   primeiras: são as que a mesa mais mexe e as únicas em que errar o valor
+   custa o personagem. Vêm antes das oito com efeito por decisão de uso, não
+   por regra do sistema. */
+const DESTAQUE = ['dying', 'wounded']
+
 /* A ordem das oito é a de `MECHANICAL`, não a alfabética do pack: Frightened e
-   Sickened são as que mais aparecem na mesa e por isso abrem a lista. */
+   Sickened são as que mais aparecem na mesa e por isso abrem o grupo. */
 const ORDEM = Object.keys(MECHANICAL)
 
-const COM_EFEITO = CONDITIONS.filter((c) => MECHANICAL[chaveDe(c)]).sort(
+const emDestaque = (c) => DESTAQUE.includes(c.slug)
+
+const DE_MORTE = CONDITIONS.filter(emDestaque).sort(
+  (a, b) => DESTAQUE.indexOf(a.slug) - DESTAQUE.indexOf(b.slug),
+)
+const COM_EFEITO = CONDITIONS.filter((c) => !emDestaque(c) && MECHANICAL[chaveDe(c)]).sort(
   (a, b) => ORDEM.indexOf(chaveDe(a)) - ORDEM.indexOf(chaveDe(b)),
 )
-const SEM_EFEITO = CONDITIONS.filter((c) => !MECHANICAL[chaveDe(c)])
+const SEM_EFEITO = CONDITIONS.filter((c) => !emDestaque(c) && !MECHANICAL[chaveDe(c)])
+
+const CURTA = [...DE_MORTE, ...COM_EFEITO]
 
 /* Encumbered aparece na lista sem efeito de propósito: o bulk foi adiado (D8),
    então marcá-la não muda número nenhum, e prometer que muda seria pior. */
@@ -37,13 +50,42 @@ export default function ConditionsSheet({ player, onClose }) {
   const [aberta, setAberta] = useState(null)
   const ativas = player.vitals?.conditions ?? {}
 
+  /* O mapa como estava quando a folha abriu. É o que o "Cancelar" devolve —
+     inclusive depois de um "Limpar todas", que por isso não pede confirmação:
+     aqui desfazer é um botão, não um diálogo. Se outro aparelho mexer nas
+     condições enquanto a folha está aberta, cancelar desfaz aquilo também; é o
+     que cancelar quer dizer, e a folha fica aberta segundos. */
+  const [inicial] = useState(ativas)
+
   const definir = (key, value) =>
     dispatch({ type: 'SET_CONDITION', playerId: player.id, key, value })
 
-  const lista = mostrarTodas ? [...COM_EFEITO, ...SEM_EFEITO] : COM_EFEITO
+  const cancelar = () => {
+    dispatch({ type: 'SET_CONDITIONS', playerId: player.id, conditions: inicial })
+    onClose()
+  }
+
+  const lista = mostrarTodas ? [...CURTA, ...SEM_EFEITO] : CURTA
 
   return (
-    <Sheet title="Condições" onClose={onClose} fill>
+    <Sheet
+      title="Condições"
+      onClose={onClose}
+      fill
+      /* "Limpar todas" age sobre a folha inteira, e não sobre uma linha: por
+         isso mora no cabeçalho, e não no rodapé, que é do par Pronto/Cancelar.
+         Vermelho tingido, e não cheio — o vermelho cheio é do botão largo do
+         diálogo de confirmação (ver o comentário de `--danger`). */
+      action={
+        <button
+          type="button"
+          className="btn btn--danger-tint"
+          onClick={() => dispatch({ type: 'CLEAR_CONDITIONS', playerId: player.id })}
+        >
+          Limpar todas
+        </button>
+      }
+    >
       <div className="cond__list">
         {lista.map((condicao) => {
           const key = chaveDe(condicao)
@@ -99,26 +141,11 @@ export default function ConditionsSheet({ player, onClose }) {
         onClick={() => setMostrarTodas((v) => !v)}
       >
         {mostrarTodas
-          ? 'Só as que mudam número'
+          ? 'Só a lista curta'
           : `Mais condições (${SEM_EFEITO.length})`}
       </button>
 
-      {/* Par montado à mão, e não com <SheetActions>, por um motivo: "Limpar
-          todas" é vermelho (§12.1 lista limpar condições como destrutivo), e o
-          componente só sabe pintar o botão da esquerda. A ordem da casa fica
-          igual — a ação que a pessoa veio fazer primeiro, a saída depois. */}
-      <div className="sheet__actions">
-        <button type="button" className="btn btn--solid btn--wide" onClick={onClose}>
-          Pronto
-        </button>
-        <button
-          type="button"
-          className="btn btn--danger btn--wide"
-          onClick={() => dispatch({ type: 'CLEAR_CONDITIONS', playerId: player.id })}
-        >
-          Limpar todas
-        </button>
-      </div>
+      <SheetActions confirmLabel="Pronto" onConfirm={onClose} onCancel={cancelar} />
     </Sheet>
   )
 }

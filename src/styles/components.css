@@ -35,6 +35,13 @@
   border-radius: var(--r-pill);
   white-space: nowrap;
   flex-shrink: 0;
+  /* A altura vem do degrau, não da soma do tipo com o recheio. Sem isto o
+     "Comprar" da Loja media 31,5px contra os 32px do stepper que o substitui, e
+     a linha inteira pulava meio pixel ao entrar no carrinho. */
+  min-height: var(--h-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn--solid {
@@ -55,6 +62,14 @@
 .btn--danger {
   color: #fff;
   background: var(--danger);
+}
+
+/* Irmã do .btn--tint no vermelho: para a ação destrutiva que mora numa linha
+   (o "Limpar todas" do cabeçalho das condições), onde o vermelho cheio é do
+   botão largo do diálogo de confirmação. */
+.btn--danger-tint {
+  color: var(--danger-ink);
+  background: var(--danger-tint);
 }
 
 /* Metade de um par de ações: divide a linha com o irmão. */
@@ -117,9 +132,10 @@
   padding: 4px;
 }
 
-/* Dentro de uma linha de lista. */
+/* Dentro de uma linha de lista, na altura do `.btn` que ele substitui:
+   4px de recheio de cada lado mais o botão fecham `--h-pill`. */
 .stepper--sm {
-  --step: 24px;
+  --step: calc(var(--h-pill) - 8px);
   gap: 6px;
 }
 
@@ -548,6 +564,14 @@
   overflow: hidden;
 }
 
+/* A folha que existe para percorrer uma lista longa (escolher magia): vai do
+   topo da tela até onde a `--bottom` já a ancora. Nos 62dvh de sempre sobravam
+   quatro linhas e meia embaixo de quatro filtros parados. */
+.sheet--tall {
+  top: 16px;
+  max-height: none;
+}
+
 /* Diálogo centrado: traço, excluir, vender */
 .sheet--center {
   top: 50%;
@@ -557,12 +581,22 @@
   overflow: auto;
 }
 
+/* Título e, quando existe, a ação que age sobre a folha inteira. O respiro de
+   baixo mudou de lugar — era do título, agora é da linha; por isso `.sheet__title`
+   só aparece aqui dentro, e quem quer um título passa a prop `title` do <Sheet>. */
+.sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
 .sheet__title {
   font-size: var(--t-lg);
   font-weight: 700;
   color: var(--text);
   line-height: var(--lh-snug);
-  margin-bottom: 10px;
 }
 
 .sheet__question {

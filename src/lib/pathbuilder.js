@@ -399,6 +399,27 @@ function readFeats(raw, warn) {
   return out
 }
 
+/*
+ * O que o Pathbuilder põe em `specials` mas a ficha já tem por outro caminho.
+ *
+ * As 16 perícias aparecem ali quando o personagem é treinado nelas — "Crafting",
+ * "Society", "Stealth" —, e isso já está em `proficiencies`, com o grau. O
+ * "Spellbook" do mago é o grimório, que já está em `spellcasting.book`.
+ *
+ * Nenhum deles é feat, feature nem ação: procurá-los nos packs é procurar o que
+ * nunca esteve lá, e o resultado é uma linha "não resolvido" na tela para um
+ * dado que a ficha mostra certo dois dedos acima. Medido na mesa: 6 dos 8 nomes
+ * que não resolviam eram estes.
+ *
+ * Isto não é sumir com informação — é não mostrá-la duas vezes, uma delas
+ * quebrada. Nome que a ficha NÃO tenha em outro lugar continua entrando, mesmo
+ * sem resolver.
+ *
+ * Vale só para `specials`. Em `feats` o Pathbuilder manda feat de verdade, com
+ * categoria e nível; um feat que por acaso se chame como uma perícia é um feat.
+ */
+const SPECIAIS_JA_NA_FICHA = new Set([...Object.keys(SKILL_ABILITY), 'spellbook'])
+
 /**
  * `specials` são features de classe, sentidos e traços de herança, misturados
  * numa lista de nomes: ["Darkvision", "Giant Instinct", "Rage", "Dromaar"].
@@ -414,6 +435,7 @@ function readSpecials(raw) {
   for (const value of raw) {
     const name = meaningful(value)
     if (!name || seen.has(name)) continue
+    if (SPECIAIS_JA_NA_FICHA.has(name.toLowerCase())) continue
     seen.add(name)
     out.push(name)
   }

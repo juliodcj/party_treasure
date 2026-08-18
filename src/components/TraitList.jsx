@@ -18,8 +18,7 @@ export default function TraitList({ traits = [] }) {
       </div>
 
       {selected ? (
-        <Sheet center onClose={() => setSelected(null)}>
-          <div className="sheet__title">{traitLabel(selected)}</div>
+        <Sheet center title={traitLabel(selected)} onClose={() => setSelected(null)}>
           <div className="sheet__body">{traitDescription(selected)}</div>
           <div className="sheet__actions">
             <button

@@ -153,17 +153,40 @@ export function StarIcon({ filled = false, size = 15 }) {
 
 /*
  * Espada — "esta magia também é um ataque, mostre na aba Ataques".
- * Lâmina, guarda e punho em traço, para ler a 15px sem virar borrão.
+ *
+ * Lâmina cheia com ponta de verdade, guarda cruzando na diagonal e pomo
+ * redondo. O desenho antigo era um traço com um canto no lugar da ponta, e a
+ * 15px não lia como espada nenhuma.
  */
 export function SwordIcon({ size = 15 }) {
   return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M21 3v2.6l-8.1 8.1-2.6-2.6L18.4 3z" fill="currentColor" />
+      <path
+        d="M14.6 15.4 8.6 9.4M11.6 12.4 9.4 14.6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <circle cx="8.4" cy="15.6" r="1.7" fill="currentColor" />
+    </svg>
+  )
+}
+
+/*
+ * Escudo — "estou usando isto": a armadura vestida, o escudo empunhado, a arma
+ * equipada. Um desenho só para os três porque a pergunta é uma só, e porque a
+ * linha do inventário não tem espaço para três glifos que dizem a mesma coisa.
+ */
+export function ShieldIcon({ size = 15 }) {
+  return (
     <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true">
       <path
-        d="M17 3 8.5 11.5M17 3v3.5M17 3h-3.5M5 15l3-3M5 15l-2 2M5 15H2.8M5 15v2.2M8 12l1.6 1.6"
+        d="M10 2.5 4 4.6v5c0 3.4 2.4 6.4 6 7.9 3.6-1.5 6-4.5 6-7.9v-5z"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.6"
-        strokeLinecap="round"
         strokeLinejoin="round"
       />
     </svg>

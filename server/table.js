@@ -22,7 +22,7 @@ const TABLE_KEYS = ['version', 'settings', 'history', 'players', 'campaignItems'
  * confiar no `default:` do reducer é o que impede uma ação com nome errado de
  * virar um broadcast à toa — e deixa o erro visível em vez de silencioso.
  */
-const TABLE_ACTIONS = new Set([
+export const TABLE_ACTIONS = new Set([
   'SET_SETTINGS',
   'ADD_PLAYER',
   'RENAME_PLAYER',
@@ -64,11 +64,14 @@ const TABLE_ACTIONS = new Set([
   'APPLY_HEAL',
   'SET_TEMP_HP',
   'SET_CONDITION',
+  'SET_CONDITIONS',
   'CLEAR_CONDITIONS',
   'SET_FOCUS',
   'TOGGLE_SHIELD_RAISED',
   'SET_SHIELD_HP',
   'TOGGLE_FAVORITE',
+  // A descrição que o jogador escreve para um feat que os packs não conhecem.
+  'SET_FEAT_NOTE',
   'REST',
   'PREPARE_SPELL',
   'ADD_SPELL',

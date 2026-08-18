@@ -360,6 +360,28 @@ export function reducer(state, action) {
       }
     }
 
+    /*
+     * A descrição que o jogador escreve para um feat que os packs não conhecem.
+     *
+     * Mora no PLAYER e não na ficha, de propósito: `sheet` é substituída inteira
+     * a cada importação, e o texto que a pessoa digitou não pode morrer porque
+     * ela subiu de nível no Pathbuilder. Mesma casa e mesma razão do
+     * `itemNotes`. A chave é a de `favorites` (`feat:<id ou nome>`), então
+     * reimportar reencontra o texto pelo nome.
+     */
+    case 'SET_FEAT_NOTE': {
+      const text = action.text.trim()
+      return {
+        ...state,
+        players: mapPlayer(state.players, action.playerId, (player) => {
+          const featNotes = { ...player.featNotes }
+          if (text) featNotes[action.key] = text
+          else delete featNotes[action.key]
+          return { ...player, featNotes }
+        }),
+      }
+    }
+
     case 'DROP_ITEM':
       // Excluir tira o item da mochila inteiro. Não devolve dinheiro.
       return {
@@ -805,6 +827,21 @@ export function reducer(state, action) {
         if (value === true) conditions[action.key] = true
         else if (typeof value === 'number' && value > 0) conditions[action.key] = Math.round(value)
         else delete conditions[action.key]
+        return { conditions }
+      })
+
+    /* O mapa inteiro de uma vez. É o que o "Cancelar" da folha de condições
+       despacha: ele desfaz tudo o que foi mexido enquanto a folha esteve
+       aberta, e desfazer em vinte despachos separados deixaria o personagem
+       meio revertido se o Wi-Fi cair no meio. Normaliza igual ao SET_CONDITION
+       — valor zero ou lixo não entra. */
+    case 'SET_CONDITIONS':
+      return withVitals(state, action.playerId, () => {
+        const conditions = {}
+        for (const [key, bruto] of Object.entries(action.conditions ?? {})) {
+          if (bruto === true) conditions[key] = true
+          else if (Number(bruto) > 0) conditions[key] = Math.round(Number(bruto))
+        }
         return { conditions }
       })
 

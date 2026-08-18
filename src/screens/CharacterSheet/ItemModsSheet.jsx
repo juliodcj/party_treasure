@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Sheet, { SheetActions } from '../../components/Sheet.jsx'
+import { TrashIcon } from '../../components/Icons.jsx'
 import { useStore } from '../../state/store.jsx'
 
 /*
@@ -48,12 +49,16 @@ export default function ItemModsSheet({ player, item, onClose }) {
                 valor={mod.extraDice}
                 onChange={(v) => alterar(indice, 'extraDice', v)}
               />
+              {/* Lixeira, e no --accent do resto dos botões-ícone de linha: o
+                  vermelho fica para o que não se desfaz, e aqui o Cancelar da
+                  folha ainda desfaz tudo. */}
               <button
                 type="button"
-                className="btn btn--neutral"
+                className="icon-btn icon-btn--accent mods__tirar"
+                aria-label={`Tirar o modificador ${mod.label || indice + 1}`}
                 onClick={() => setMods((atual) => atual.filter((_, i) => i !== indice))}
               >
-                Tirar
+                <TrashIcon />
               </button>
             </div>
           </div>

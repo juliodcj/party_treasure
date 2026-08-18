@@ -1,5 +1,6 @@
 import { Price } from './Coins.jsx'
 import TraitList from './TraitList.jsx'
+import StatTable from './StatTable.jsx'
 import { ChevronRight } from './Icons.jsx'
 import { categoryLabel } from '../data/catalog.js'
 import { formatBulk, parseBulk } from '../lib/bulk.js'
@@ -61,25 +62,6 @@ function shieldFields(shield) {
 }
 
 /**
- * Grade de dois campos por linha, rótulo pequeno em cima e valor em destaque
- * embaixo — a ficha real de arma/armadura/escudo. Campo nulo nem entra.
- */
-function StatTable({ fields }) {
-  const rows = (fields ?? []).filter(([, value]) => value != null && value !== '')
-  if (!rows.length) return null
-  return (
-    <dl className="stat-table">
-      {rows.map(([label, value]) => (
-        <div className="stat-table__cell" key={label}>
-          <dt className="field-label stat-table__label">{label}</dt>
-          <dd className="stat-table__value">{value}</dd>
-        </div>
-      ))}
-    </dl>
-  )
-}
-
-/**
  * A linha de item do protótipo, usada pelo Inventário, pela Loja e pela
  * Biblioteca. Só um item fica aberto por vez, então quem controla é a tela.
  */
@@ -92,6 +74,10 @@ export default function ItemRow({
   priceInBody = false,
   cart = null,
   hasNote = false,
+  // Interruptor que mora na própria linha, ao lado do chevron — hoje só o
+  // escudo do Inventário. Fica no cabeçalho, e não no corpo, porque a resposta
+  // que ele dá ("estou usando isto?") precisa ser lida com o item fechado.
+  action = null,
   children,
 }) {
   // Escudo: a tabela de Dureza/PV/Limiar de Avaria abaixo já mostra o que o
@@ -109,6 +95,10 @@ export default function ItemRow({
           {hasNote ? <span className="item__note-dot" title="Tem observação" aria-hidden="true" /> : null}
           <span className="item__level">Nv {item.level ?? 0}</span>
         </button>
+
+        {/* Antes do contador: "estou usando isto" é sobre o item, e o contador
+            é sobre quantos. Depois dele, o escudo lia como parte do número. */}
+        {action}
 
         {qty > 0 ? <span className="item__qty">{qty}</span> : null}
 

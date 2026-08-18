@@ -27,13 +27,20 @@ Clone os packs primeiro (sparse checkout, em vez dos 384 MB do repositorio):
 
   git clone --depth 1 --filter=blob:none --sparse \\
     https://github.com/foundryvtt/pf2e.git vendor/pf2e
-  cd vendor/pf2e && git sparse-checkout set packs/pf2e static/lang src/module/actor
+  cd vendor/pf2e && git sparse-checkout set packs/pf2e static/lang \\
+    src/module/actor src/module/system/action-macros
 
 A pasta vendor/ nao vai para o Git — e so materia-prima da ingestao.
 
 src/module/actor entra porque o Punho basico (Unarmed Strike) nao esta em pack
 nenhum: no Foundry ele e montado em codigo. O build-lore.mjs extrai o bloco de
-la em vez de alguem escrever "1d4 bludgeoning" a mao.`
+la em vez de alguem escrever "1d4 bludgeoning" a mao.
+
+src/module/system/action-macros entra pela mesma razao: qual pericia rola cada
+acao de pericia nao esta no pack. Ja esteve — o pack tinha actions/skill/athletics/ —
+e hoje actions/skill/ e uma pasta so, sem nivel de pericia. Quem ainda guarda a
+divisao e o registro de acoes do sistema, uma pasta por pericia. So os NOMES das
+pastas sao lidos; nenhum TypeScript e parseado.`
 
 function fail(mensagem) {
   console.error(`\n${mensagem}\n${COMO_CLONAR}\n`)
@@ -87,6 +94,20 @@ export function resolveSystemFile(relativo, argumento = DEFAULT_VENDOR) {
   return alvo
 }
 
+/**
+ * Uma pasta do codigo-fonte do sistema, por caminho relativo a raiz do clone.
+ * Falha alto, como o resto: pasta que sumiu vira mensagem que ensina o comando,
+ * nunca um indice pela metade gravado por cima do bom.
+ */
+export function resolveSystemDir(relativo, argumento = DEFAULT_VENDOR) {
+  const base = path.resolve(argumento)
+  const alvo = path.join(base, relativo)
+  if (!isDir(alvo)) {
+    fail(`Nao encontrei a pasta ${relativo} em ${base}.\nFalta ela no sparse-checkout.`)
+  }
+  return alvo
+}
+
 /** O arquivo de localizacao oficial, de onde saem nome e descricao de traco. */
 export function resolveLangFile(argumento = DEFAULT_VENDOR) {
   const base = path.resolve(argumento)
@@ -106,4 +127,24 @@ export function resolveLangFile(argumento = DEFAULT_VENDOR) {
     )
   }
   return achado
+}
+
+/**
+ * O SEGUNDO arquivo de localizacao. O sistema divide os textos em dois: o
+ * `en.json` tem interface, tracos e glossario; o `re-en.json` tem o que as
+ * regras (rule elements) citam por chave — e e la que moram os
+ * `PF2E.SpecificRule.*` que 20 verbetes dos packs invocam com @Localize.
+ *
+ * Opcional de proposito: devolve null se nao existir, e quem chama segue com
+ * o `en.json` sozinho, avisando no log a chave que nao resolveu.
+ */
+export function resolveRuleLangFile(argumento = DEFAULT_VENDOR) {
+  const base = path.resolve(argumento)
+
+  const candidatos = [
+    path.join(base, 'static', 'lang', 're-en.json'),
+    path.join(base, 'lang', 're-en.json'),
+    path.join(base, 're-en.json'),
+  ]
+  return candidatos.find((c) => existsSync(c) && statSync(c).isFile()) ?? null
 }

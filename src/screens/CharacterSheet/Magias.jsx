@@ -4,6 +4,7 @@ import { ChevronRight, SwordIcon } from '../../components/Icons.jsx'
 import SectionHead, { ExpandCollapseAll } from '../../components/SectionHead.jsx'
 import { useStore } from '../../state/store.jsx'
 import { focusPool, focusSpells, sgn } from '../../lib/sheet.js'
+import { spellDoIndice } from '../../lib/spells.js'
 import { spellKey } from '../../state/reducer.js'
 import BreakdownSheet from './BreakdownSheet.jsx'
 import Compendio, { paraPicker } from './Compendio.jsx'
@@ -56,7 +57,19 @@ export default function Magias({ player, view }) {
 
   if (!conj) return null // a aba nem aparece sem conjuração (§12.3); é defesa a mais
 
-  const custos = conj.spellCosts ?? {}
+  /*
+   * O custo em ações de uma magia, com duas fontes e nesta ordem.
+   *
+   * `spellCosts` é o que a IMPORTAÇÃO resolveu, pelo slug do verbete, e por isso
+   * é a primeira: ela só tem nome que veio no export do Pathbuilder, mas resolveu
+   * pelo caminho mais confiável.
+   *
+   * Magia copiada do Compêndio depois da importação não está lá — e era esse o
+   * furo: o truque preparado a partir dela aparecia sem o losango, sozinho no
+   * meio de uma lista em que todos os outros tinham. O índice do bundle tem o
+   * custo das 1.993 magias, saído da mesma ingestão, e entra como segunda fonte.
+   */
+  const custoDe = (nome) => conj.spellCosts?.[nome] ?? spellDoIndice(nome)?.actionCost ?? null
 
   /* O grimório (ou a lista de conhecidas) é o que o Pathbuilder exportou, menos
      o que foi esquecido na mesa, mais o que foi copiado do Compêndio. Ordenado
@@ -212,21 +225,28 @@ export default function Magias({ player, view }) {
                       key={sp.uid ?? `foco-${sp.name}`}
                       chave={sp.uid ?? `foco-${sp.name}`}
                       nome={sp.name}
-                      custo={custos[sp.name]}
+                      custo={custoDe(sp.name)}
                       aberto={aberto}
                       setAberto={setAberto}
                       depois={
-                        <RemoverBtn
-                          rotulo={`Esquecer ${sp.name}`}
-                          onClick={() =>
-                            dispatch({
-                              type: 'REMOVE_FOCUS_SPELL',
-                              playerId: player.id,
-                              uid: sp.uid ?? null,
-                              name: sp.name,
-                            })
-                          }
-                        />
+                        <>
+                          {/* Magia de foco também ataca — Hand of the Apprentice
+                              e Divine Lance rolam contra a CA como qualquer
+                              outra. A espada estava só no preparo e na lista
+                              especial. */}
+                          <EspadaBtn sp={sp} player={player} />
+                          <RemoverBtn
+                            rotulo={`Esquecer ${sp.name}`}
+                            onClick={() =>
+                              dispatch({
+                                type: 'REMOVE_FOCUS_SPELL',
+                                playerId: player.id,
+                                uid: sp.uid ?? null,
+                                name: sp.name,
+                              })
+                            }
+                          />
+                        </>
                       }
                     />
                   ))}
@@ -288,7 +308,7 @@ export default function Magias({ player, view }) {
                       <SpellRow
                         key={`${rank}-${sp.name}-${i}`}
                         nome={sp.name}
-                        custo={custos[sp.name]}
+                        custo={custoDe(sp.name)}
                         aberto={aberto}
                         setAberto={setAberto}
                         depois={<RemoverDoLivro sp={sp} player={player} />}
@@ -308,7 +328,7 @@ export default function Magias({ player, view }) {
             rank={0}
             total={capCantrips}
             preparadas={preparadas.filter((p) => p.rank === 0)}
-            custos={custos}
+            custoDe={custoDe}
             player={player}
             aberto={aberto}
             setAberto={setAberto}
@@ -326,7 +346,7 @@ export default function Magias({ player, view }) {
               rank={rank}
               total={total}
               preparadas={preparadas.filter((p) => p.rank === rank)}
-              custos={custos}
+              custoDe={custoDe}
               player={player}
               aberto={aberto}
               setAberto={setAberto}
@@ -351,7 +371,7 @@ export default function Magias({ player, view }) {
                     key={`book-${sp.rank}-${sp.name}-${i}`}
                     nome={sp.name}
                     rankTag={rotuloRank(sp.rank)}
-                    custo={custos[sp.name]}
+                    custo={custoDe(sp.name)}
                     aberto={aberto}
                     setAberto={setAberto}
                     depois={<RemoverDoLivro sp={sp} player={player} />}
@@ -376,7 +396,7 @@ export default function Magias({ player, view }) {
         <PrepararSheet
           player={player}
           grimorio={grimorio}
-          custos={custos}
+          custoDe={custoDe}
           preparadas={preparadas.filter((p) => p.rank === escolhendo).length}
           rank={escolhendo}
           onClose={() => setEscolhendo(null)}
@@ -478,7 +498,7 @@ function RankBucket({
   rank,
   total,
   preparadas,
-  custos,
+  custoDe,
   player,
   aberto,
   setAberto,
@@ -506,7 +526,7 @@ function RankBucket({
               key={sp.uid}
               sp={sp}
               cantrip={cantrip}
-              custo={custos[sp.name]}
+              custo={custoDe(sp.name)}
               player={player}
               aberto={aberto}
               setAberto={setAberto}
@@ -724,11 +744,11 @@ function SpellRow({
  * A folha não fecha ao preparar: o círculo costuma ter mais de um slot vazio, e
  * fechar obrigaria a reabrir a lista para cada um.
  */
-function PrepararSheet({ player, grimorio, custos, preparadas, rank, onClose }) {
+function PrepararSheet({ player, grimorio, custoDe, preparadas, rank, onClose }) {
   const { dispatch } = useStore()
   const opcoes = grimorio
     .filter((sp) => sp.rank === rank)
-    .map((sp) => ({ name: sp.name, rank: sp.rank, actionCost: custos[sp.name] }))
+    .map((sp) => ({ name: sp.name, rank: sp.rank, actionCost: custoDe(sp.name) }))
 
   /* Preparar a mesma magia em dois slots é legítimo (é o que o mago faz com
      Magic Missile), então o + nunca desliga — `jaTem` fica falso de propósito,

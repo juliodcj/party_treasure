@@ -4,10 +4,9 @@ import TraitList from '../../components/TraitList.jsx'
 import { ChevronRight, StarIcon, SwordIcon } from '../../components/Icons.jsx'
 import SectionHead, { ExpandCollapseAll } from '../../components/SectionHead.jsx'
 import { useStore } from '../../state/store.jsx'
-import { sgn } from '../../lib/sheet.js'
+import { focusSpells, sgn } from '../../lib/sheet.js'
 import { titleCase } from '../../lib/text.js'
 import BreakdownSheet from './BreakdownSheet.jsx'
-import ItemModsSheet from './ItemModsSheet.jsx'
 import { ActionCost } from './Feats.jsx'
 import { ehMagiaDeAtaque, ehMagiaDeSalvamento, spellDoIndice } from '../../lib/spells.js'
 import { spellAttackKey } from './Magias.jsx'
@@ -40,7 +39,6 @@ const dano = (attack) => {
 export default function Ataques({ player, view }) {
   const [aberto, setAberto] = useState(null)
   const [breakdown, setBreakdown] = useState(null)
-  const [editando, setEditando] = useState(null)
   const [grupos, setGrupos] = useState(gruposAbertos)
 
   const setGrupo = (id, value) => {
@@ -63,7 +61,14 @@ export default function Ataques({ player, view }) {
    * de inventar uma fórmula de dano (§"onde o app não sabe, ele admite").
    */
   const custos = player.sheet?.spellcasting?.spellCosts ?? {}
-  const magias = [...(player.vitals?.preparedSpells ?? []), ...(player.vitals?.extraSpells ?? [])]
+  const magias = [
+    ...(player.vitals?.preparedSpells ?? []),
+    ...(player.vitals?.extraSpells ?? []),
+    /* As de foco entram pela mesma porta: Hand of the Apprentice e Divine Lance
+       rolam ataque como qualquer outra, e a espada delas não levava a lugar
+       nenhum enquanto esta lista só olhava o preparo. */
+    ...focusSpells(player.sheet, player.vitals ?? {}),
+  ]
     .filter((sp) => favoritos[spellAttackKey(sp.name)])
     .filter((sp, i, todas) => todas.findIndex((outra) => outra.name === sp.name) === i)
     .sort((a, b) => a.name.localeCompare(b.name))
@@ -79,7 +84,6 @@ export default function Ataques({ player, view }) {
     aberto,
     setAberto,
     onBreakdown: setBreakdown,
-    onEditarMods: setEditando,
     ehFavorito,
   }
 
@@ -133,7 +137,7 @@ export default function Ataques({ player, view }) {
             <div className="list-rows">
               {magias.map((sp) => (
                 <MagiaLinha
-                  key={sp.uid}
+                  key={sp.name}
                   sp={sp}
                   custo={custos[sp.name]}
                   player={player}
@@ -149,9 +153,6 @@ export default function Ataques({ player, view }) {
       ) : null}
 
       {breakdown ? <BreakdownSheet stat={breakdown} onClose={() => setBreakdown(null)} /> : null}
-      {editando ? (
-        <ItemModsSheet player={player} item={editando} onClose={() => setEditando(null)} />
-      ) : null}
     </>
   )
 }
@@ -171,7 +172,7 @@ function Grupo({ titulo, ataques, chave, open, onToggle, ...props }) {
   )
 }
 
-function Linha({ attack, grupo, player, aberto, setAberto, onBreakdown, onEditarMods, ehFavorito }) {
+function Linha({ attack, grupo, player, aberto, setAberto, onBreakdown, ehFavorito }) {
   const { dispatch } = useStore()
   const id = `${grupo}-${attack.id}`
   const open = aberto === id
@@ -182,6 +183,7 @@ function Linha({ attack, grupo, player, aberto, setAberto, onBreakdown, onEditar
      funcionarem igual. */
   const noInventario = attack.id !== 'unarmed-strike'
   const comStepper = Boolean(attack.thrown && noInventario)
+  const modificadores = player.itemMods?.[attack.id] ?? []
 
   return (
     <div className="atk__row">
@@ -260,18 +262,20 @@ function Linha({ attack, grupo, player, aberto, setAberto, onBreakdown, onEditar
             {noInventario ? <Celula rotulo="Quantidade" valor={attack.qty} /> : null}
           </dl>
 
-          {/* Sem o item na mochila não há o que modificar (é o caso do Punho):
-              o botão simplesmente não existe. */}
-          {noInventario ? (
-            <button
-              type="button"
-              className="btn btn--tint btn--block"
-              onClick={() => onEditarMods({ id: attack.id, name: attack.name })}
-            >
-              {(player.itemMods?.[attack.id] ?? []).length
-                ? `Modificadores (${player.itemMods[attack.id].length})`
-                : 'Acrescentar modificador'}
-            </button>
+          {/* Só leitura: o modificador é do ITEM, e quem o cria e apaga é o
+              Inventário (menu "⋯" do item). Aqui ele aparece porque é aqui que
+              ele muda um número — e o toque no número abre o breakdown com cada
+              parcela, esta inclusive. */}
+          {modificadores.length ? (
+            <dl className="stat-table">
+              {modificadores.map((mod, i) => (
+                <Celula
+                  key={`${mod.label}-${i}`}
+                  rotulo={mod.label || 'Sem rótulo'}
+                  valor={resumoDoMod(mod)}
+                />
+              ))}
+            </dl>
           ) : null}
         </div>
       ) : null}
@@ -308,7 +312,9 @@ function numerosDaMagia(nome) {
  */
 function MagiaLinha({ sp, custo, player, view, aberto, setAberto, onBreakdown }) {
   const { dispatch } = useStore()
-  const id = `magia-${sp.uid}`
+  /* Pelo NOME, não pelo uid: a lista acima já é uma entrada por nome, e a
+     magia de foco que veio do export do Pathbuilder não tem uid nenhum. */
+  const id = `magia-${sp.name}`
   const open = aberto === id
   const mostra = numerosDaMagia(sp.name)
 
@@ -377,6 +383,17 @@ function MagiaLinha({ sp, custo, player, view, aberto, setAberto, onBreakdown })
       ) : null}
     </div>
   )
+}
+
+/* "+2 atq · +1d6 dano" — o que o modificador manual faz, em uma linha. Só as
+   parcelas que não são zero: um "+0 dano" ocuparia espaço para dizer nada. */
+function resumoDoMod(mod) {
+  const partes = [
+    mod.atk ? `${sgn(mod.atk)} atq` : null,
+    mod.dmg ? `${sgn(mod.dmg)} dano` : null,
+    mod.extraDice ? `+${mod.extraDice}d dano` : null,
+  ].filter(Boolean)
+  return partes.length ? partes.join(' · ') : '—'
 }
 
 function Celula({ rotulo, valor, onClick = null }) {

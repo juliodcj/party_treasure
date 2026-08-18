@@ -113,6 +113,50 @@ test('"Sailing Lore" não resolver está certo — é perícia, não feat', seCo
   assert.deepEqual(unresolved, ['Sailing Lore'])
 })
 
+/* ------------------------------------------ apelidos de categoria (fase pós-12)
+
+   O Pathbuilder nomeia a escolha de classe pela categoria e o Foundry nomeia só
+   o miolo. A ponte sai das `otherTags` do pack, na ingestão — nada aqui é
+   escrito à mão, e nada disso é casamento aproximado: é nome exato contra um
+   índice a mais. */
+
+test('a escolha de classe resolve pelo nome que o Pathbuilder usa', seComCorpus, async () => {
+  const { entries, resolved, unresolved } = await fetchEntriesByName(
+    [
+      'Thief Racket', // rogue-racket        -> Thief
+      'Justice Cause', // champion-cause      -> Justice
+      'Arcane Thesis: Experimental Spellshaping', // wizard-arcane-thesis
+      'Arcane School: School of Unified Magical Theory', // wizard-arcane-school
+    ],
+    fetcherLocal(),
+  )
+
+  assert.deepEqual(unresolved, [])
+  assert.equal(entries[resolved['Thief Racket']].name, 'Thief')
+  assert.equal(entries[resolved['Justice Cause']].name, 'Justice')
+  assert.equal(entries[resolved['Arcane Thesis: Experimental Spellshaping']].name, 'Experimental Spellshaping')
+  assert.equal(
+    entries[resolved['Arcane School: School of Unified Magical Theory']].name,
+    'School of Unified Magical Theory',
+  )
+  for (const id of Object.values(resolved)) assert.equal(entries[id].kind, 'class-feature')
+})
+
+test('apelido nunca cobre nome de verbete de verdade', seComCorpus, () => {
+  const index = JSON.parse(readFileSync(path.join(ROOT, 'server/data/entries.idx.json'), 'utf8'))
+  const aliases = index.aliases ?? {}
+  assert.ok(Object.keys(aliases).length > 1000, 'o índice de apelidos não foi gerado')
+
+  for (const chave of Object.keys(aliases)) {
+    assert.equal(chave in index.names, false, `"${chave}" é nome de verbete e não podia ser apelido`)
+  }
+
+  // e o nome continua ganhando na consulta, não só no índice
+  const entries = createEntries()
+  assert.equal(entries.get(entries.resolveName('Rage')).kind, 'class-feature')
+  entries.close()
+})
+
 test('nada de casamento aproximado: nome quase certo não resolve', seComCorpus, async () => {
   const { resolved, unresolved } = await fetchEntriesByName(
     ['Ragee', 'Sudden Charg', 'Giant Instincts'],

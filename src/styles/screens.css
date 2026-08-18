@@ -1293,17 +1293,16 @@
   flex: 1;
 }
 
-/* Linha do "Vestir / Empunhar / Equipar", dentro do item aberto no Inventário. */
-.item__equip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
+/* O escudo do Inventário: vestir a armadura, empunhar o escudo, equipar a arma.
+   É um interruptor que mora na linha, como a espada de Magias — traço só, sem
+   pastilha em volta: quem responde "estou usando isto?" é a cor do desenho, e
+   o alvo de toque continua sendo o `.icon-btn` inteiro. */
+.item__shield {
+  color: var(--text-3);
 }
 
-.item__equip-hint {
-  font-size: var(--t-meta);
-  color: var(--text-3);
+.item__shield--on {
+  color: var(--accent);
 }
 
 /* -------------------------------------------------------- ficha: aba Resumo
@@ -1406,6 +1405,13 @@
   border-radius: var(--r-md);
 }
 
+/* A CA se lê de longe, igual ao HP: mesmo degrau da escala que o número da
+   barra de vida, e não o `--t-lg` das outras células. */
+.statcell--ac .statcell__value {
+  font-size: var(--t-title);
+  letter-spacing: var(--track-title);
+}
+
 /* --------------------------------------------------------------- HP e barra */
 
 .vitals {
@@ -1416,6 +1422,14 @@
      carrega o próprio respiro em vez de herdá-lo de um `.panel` que não existe
      mais — igual ao protótipo, `padding:12px 16px 14px`. */
   padding: 12px 16px 14px;
+}
+
+/* O filete de `.list-rows > * + *` separa uma linha da seguinte, e presume que
+   os filhos ficam EMPILHADOS. Aqui eles ficam lado a lado: o traço aparecia em
+   cima de Condições, que é só a segunda coluna, e em cima de mais nada — uma
+   linha divisória sem nada para dividir. */
+.vitals > * + * {
+  border-top: none;
 }
 
 .vitals__hp {
@@ -1901,7 +1915,9 @@
 .profs__name {
   flex: 1;
   min-width: 0;
-  font-size: var(--t-meta);
+  /* O mesmo degrau do nome de perícia: as duas seções listam a mesma coisa
+     (um nome e um grau), e liam-se em tamanhos diferentes. */
+  font-size: var(--t-sm);
   font-weight: 600;
 }
 
@@ -2074,6 +2090,23 @@
   display: flex;
   align-items: flex-end;
   gap: 8px;
+}
+
+/* A lixeira encosta na linha dos campos, não na base do rótulo deles. */
+.mods__tirar {
+  margin-bottom: 3px;
+}
+
+/* Descrição escrita à mão para um feat que os packs não conhecem. Campo alto
+   como o da observação de item — é texto de regra, não um rótulo. */
+.feat-note__field {
+  min-height: 120px;
+}
+
+/* E o texto salvo lê como texto corrido, não como aviso do sistema. */
+.feat-note {
+  white-space: pre-wrap;
+  color: var(--text-body);
 }
 
 /* ------------------------------------------- ficha: listas de verbete
@@ -2407,15 +2440,23 @@
 
 /* --------------------------------------------------------------- compêndio */
 
+/* Faixa de filtro que rola de lado, numa linha só: os treze chips em duas
+   linhas que quebravam custavam mais altura do que duas magias da lista. */
 .comp__chips {
   display: flex;
-  flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  overflow-x: auto;
+  /* A barra some, mas o gesto fica — é uma faixa de dedo, não de mouse. */
+  scrollbar-width: none;
+}
+
+.comp__chips::-webkit-scrollbar {
+  display: none;
 }
 
 .comp__mostrar-tudo {
-  margin-bottom: 10px;
+  margin-left: 6px;
 }
 
 .comp__list {
@@ -2435,31 +2476,6 @@
   line-height: var(--lh-text);
   color: var(--text-2);
   margin-bottom: 10px;
-}
-
-/* Ficha técnica da magia (Range, Targets, Defense), acima da descrição. Rótulo
-   e valor na mesma linha: são três linhas curtas, e uma tabela de duas colunas
-   deixaria metade da largura vazia. */
-.spell-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.spell-stats__row {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
-.spell-stats__label {
-  flex-shrink: 0;
-}
-
-.spell-stats__value {
-  font-size: var(--t-sm);
-  color: var(--text-body);
-  min-width: 0;
 }
 
 /* Quem rola é esta lista, não a folha (ver `fill` em Sheet.jsx): título,
@@ -2510,6 +2526,23 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* "adicionada", ao lado do nome, por um segundo e meio depois do +. Preparar
+   magia não muda nada visível — a mesma magia pode ocupar dois slots, então o +
+   nunca desliga — e sem isto não havia como saber se o toque pegou. */
+.picker__feito {
+  flex-shrink: 0;
+  font-size: var(--t-label);
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* O + vira um "pronto" cheio pelo mesmo tempo. */
+.picker__add--feito {
+  color: var(--on-accent);
+  background: var(--accent);
 }
 
 /* A descrição usa a largura inteira da folha — a folha já tem o recuo. */

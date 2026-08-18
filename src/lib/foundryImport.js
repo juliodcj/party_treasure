@@ -49,11 +49,225 @@ export function priceToCopper(price) {
   return Math.round(pp * 10 * CP_PER_GP + gp * CP_PER_GP + sp * CP_PER_SP + cp)
 }
 
+/*
+ * ------------------------------------------------------- fórmulas dos packs
+ *
+ * O Foundry escreve o número dentro do macro como a expressão que o motor dele
+ * resolve na hora de rolar: o Caustic Blast guarda
+ * `@Damage[(1+floor((@item.rank -1)/2))[persistent,acid]]`. Sem resolver, a
+ * magia chegava à tela dizendo "takes (1+floor((@item.rank -1)/2))
+ * persistent,acid damage" — sintaxe de automação no lugar do texto da Paizo.
+ *
+ * Nas 1.993 magias as únicas referências são `@item.rank` e `@item.level`, e as
+ * duas são o nível do próprio verbete: dá para resolver na íntegra. Fora das
+ * magias aparecem `@actor.*` e `@self.*`, que dependem de quem lança — essas
+ * ficam como vieram, e o build as registra no log em vez de sumir com elas.
+ *
+ * Nada de `eval`: as fórmulas usam treze funções, todas listadas aqui.
+ */
+
+const FUNCOES = {
+  floor: Math.floor,
+  ceil: Math.ceil,
+  round: Math.round,
+  abs: Math.abs,
+  max: Math.max,
+  min: Math.min,
+  /* `resolve` é o "calcule isto agora" do Foundry; fora de lá, identidade. */
+  resolve: (x) => x,
+  ternary: (cond, sim, nao) => (cond ? sim : nao),
+  gte: (a, b) => (a >= b ? 1 : 0),
+  gt: (a, b) => (a > b ? 1 : 0),
+  lte: (a, b) => (a <= b ? 1 : 0),
+  lt: (a, b) => (a < b ? 1 : 0),
+  eq: (a, b) => (a === b ? 1 : 0),
+}
+
+/**
+ * Avalia uma expressão aritmética e devolve o número, ou `null` se houver
+ * qualquer coisa que não seja número, operador ou uma das funções acima —
+ * dado (`2d6`) e referência não resolvida (`@actor.level`) devolvem `null`.
+ *
+ * Descida recursiva de três níveis, sobre os tokens da expressão inteira.
+ */
+function avaliarFormula(texto) {
+  const tokens = String(texto).match(/\d+(?:\.\d+)?|[a-z]\w*|[-+*/(),]/gi)
+  if (!tokens) return null
+
+  let i = 0
+  let falhou = false
+  const olhar = () => tokens[i]
+  const comer = () => tokens[i++]
+  const falhar = () => {
+    falhou = true
+    return 0
+  }
+
+  const soma = () => {
+    let valor = produto()
+    while (olhar() === '+' || olhar() === '-') {
+      valor = comer() === '+' ? valor + produto() : valor - produto()
+    }
+    return valor
+  }
+  const produto = () => {
+    let valor = unario()
+    while (olhar() === '*' || olhar() === '/') {
+      const op = comer()
+      const direita = unario()
+      valor = op === '*' ? valor * direita : direita === 0 ? falhar() : valor / direita
+    }
+    return valor
+  }
+  const unario = () => {
+    if (olhar() === '-') {
+      comer()
+      return -unario()
+    }
+    if (olhar() === '+') {
+      comer()
+      return unario()
+    }
+    return primario()
+  }
+  const primario = () => {
+    const t = comer()
+    if (t === undefined) return falhar()
+    if (/^\d/.test(t)) return Number(t)
+    if (t === '(') {
+      const valor = soma()
+      return comer() === ')' ? valor : falhar()
+    }
+    const fn = FUNCOES[t]
+    if (!fn || comer() !== '(') return falhar()
+    const args = []
+    if (olhar() !== ')') {
+      args.push(soma())
+      while (olhar() === ',') {
+        comer()
+        args.push(soma())
+      }
+    }
+    if (comer() !== ')') return falhar()
+    return fn(...args)
+  }
+
+  const valor = soma()
+  if (falhou || i !== tokens.length || !Number.isFinite(valor)) return null
+  return valor
+}
+
+/**
+ * Reduz o que der numa expressão que também pode ter dado: `(9 -3)d6` vira
+ * `6d6`, e `(1+floor((1 -1)/2))` vira `1`. Grupo que não avalia fica como está.
+ */
+export function reduzirFormula(texto) {
+  let atual = String(texto).trim()
+  let anterior
+  do {
+    anterior = atual
+    /* Um grupo sem parênteses dentro, levando junto o nome da função quando
+       houver — senão `floor((9-1)/2)` reduziria para `floor4`. */
+    atual = atual.replace(/([a-z]\w*)?\(([^()]*)\)/gi, (macro, nome, dentro) => {
+      const valor = avaliarFormula(nome ? `${nome}(${dentro})` : dentro)
+      return valor == null ? macro : String(valor)
+    })
+  } while (atual !== anterior)
+  const inteiro = avaliarFormula(atual)
+  return inteiro == null ? atual.trim() : String(inteiro)
+}
+
+/** Troca `@item.rank`/`@item.level` pelo nível do próprio verbete. */
+function resolverItem(texto, level) {
+  if (level == null) return String(texto)
+  return String(texto).replace(/@item\.(rank|level)\b/g, String(level))
+}
+
+/**
+ * Quebra "4d6[slashing],2d6[persistent,fire]" nas duas parcelas. A vírgula
+ * dentro de `[...]` e a de `max(1,2)` não separam nada.
+ */
+function partesDoDano(corpo) {
+  const partes = []
+  let profundidade = 0
+  let atual = ''
+  for (const c of String(corpo)) {
+    if (c === '(' || c === '[') profundidade += 1
+    else if (c === ')' || c === ']') profundidade -= 1
+    if (c === ',' && profundidade === 0) {
+      partes.push(atual)
+      atual = ''
+      continue
+    }
+    atual += c
+  }
+  partes.push(atual)
+  return partes.filter((p) => p.trim())
+}
+
+/**
+ * `@Damage[(9 -3)d6[void]|options:area-damage]` -> "6d6 void".
+ *
+ * O que vem depois do primeiro `|` é configuração do motor (`options:`,
+ * `traits:`, `shortLabel`) e não texto de regra. Os tipos vêm separados por
+ * vírgula (`persistent,acid`) e se leem com espaço, como o livro escreve.
+ */
+function formatarDano(expr, level) {
+  const corpo = resolverItem(String(expr).split('|')[0], level)
+  return partesDoDano(corpo)
+    .map((parte) => {
+      const casa = parte.trim().match(/^(.*?)\[([^[\]]*)\]$/)
+      const formula = reduzirFormula(casa ? casa[1] : parte)
+      const tipos = casa
+        ? casa[2]
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean)
+            .join(' ')
+        : ''
+      return tipos ? `${formula} ${tipos}` : formula
+    })
+    .join(' and ')
+}
+
+/**
+ * `@Template[type:cone|distance:60]` -> "60-foot cone"; com largura,
+ * "100-foot-long, 10-foot-wide line", que é como o próprio pack rotula à mão
+ * os poucos que ele rotula.
+ */
+function formatarTemplate(expr) {
+  const partes = String(expr).split('|')
+  const campo = (nome) => {
+    const achado = partes.find((p) => p.startsWith(`${nome}:`))
+    return achado ? achado.slice(nome.length + 1) : null
+  }
+  const tipo = campo('type') ?? partes.find((p) => !p.includes(':')) ?? null
+  const distancia = campo('distance')
+  const largura = campo('width')
+  if (!tipo) return partes.join(' ')
+  if (!distancia) return tipo
+  if (largura) return `${distancia}-foot-long, ${largura}-foot-wide ${tipo}`
+  return `${distancia}-foot ${tipo}`
+}
+
+/** `@Check[reflex|basic|dc:20]` -> "basic Reflex CD 20". */
+function formatarCheck(expr, level) {
+  const partes = String(expr).split('|')
+  const tipo = titleFromSlug(partes[0] ?? '')
+  const basic = partes.includes('basic') || partes.includes('basic:true')
+  const dc = partes.find((p) => p.startsWith('dc:'))
+  const alvo = dc ? `${tipo} CD ${reduzirFormula(resolverItem(dc.slice(3), level))}` : tipo
+  return basic ? `basic ${alvo}` : alvo
+}
+
 /**
  * Troca a sintaxe do Foundry por texto legível, preservando o resto do HTML
  * (inclusive `<table class="pf2e remaster">`, que renderiza bem).
+ *
+ * `level` é o nível do verbete, e é o que resolve `@item.rank`/`@item.level`
+ * dentro das fórmulas. Sem ele, a expressão fica como veio.
  */
-export function sanitizeDescription(html) {
+export function sanitizeDescription(html, { level = null } = {}) {
   if (!html) return ''
   return (
     String(html)
@@ -71,26 +285,29 @@ export function sanitizeDescription(html) {
       .replace(/\[\[\/act\s+([^\]\s|#]+)[^\]]*\]\](?:\{([^}]*)\})?/g, (_m, slug, label) =>
         label ? label : titleFromSlug(slug),
       )
-      // [[/r 1d6]] , [[/br 2d8 #dano]] -> a fórmula
+      // [[/r 1d6]] , [[/br 2d8 #dano]] -> a fórmula, já reduzida
       .replace(/\[\[\/b?r\s+([^\]#|]+)[^\]]*\]\](?:\{([^}]*)\})?/g, (_m, formula, label) =>
-        label ? label : formula.trim(),
+        label ? label : reduzirFormula(resolverItem(formula, level)),
       )
       // @Damage[2d6[fire]] -> 2d6 fire (o argumento tem colchetes aninhados)
       .replace(/@Damage\[((?:[^[\]]|\[[^\]]*\])*)\](?:\{([^}]*)\})?/g, (_m, expr, label) =>
-        label ? label : expr.replace(/[[\]]/g, ' ').replace(/\s+/g, ' ').trim(),
+        label ? label : formatarDano(expr, level),
       )
-      // @Check[reflex|dc:20] -> Reflex DC 20
-      .replace(/@Check\[([^\]]*)\](?:\{([^}]*)\})?/g, (_m, expr, label) => {
-        if (label) return label
-        const parts = String(expr).split('|')
-        const kind = titleFromSlug(parts[0] ?? '')
-        const dc = parts.find((part) => part.startsWith('dc:'))
-        return dc ? `${kind} CD ${dc.slice(3)}` : kind
-      })
-      // Templates e demais macros que sobrarem viram o próprio rótulo
+      // @Template[type:cone|distance:60] -> 60-foot cone
+      .replace(/@Template\[([^\]]*)\](?:\{([^}]*)\})?/g, (_m, expr, label) =>
+        label ? label : formatarTemplate(expr),
+      )
+      // @Check[reflex|dc:20] -> Reflex CD 20
+      .replace(/@Check\[([^\]]*)\](?:\{([^}]*)\})?/g, (_m, expr, label) =>
+        label ? label : formatarCheck(expr, level),
+      )
+      // Os demais macros viram o próprio rótulo
       .replace(/@\w+\[(?:[^[\]]|\[[^\]]*\])*\]\{([^}]*)\}/g, '$1')
       .replace(/@\w+\[((?:[^[\]]|\[[^\]]*\])*)\]/g, (_m, expr) =>
-        expr.replace(/[[\]]/g, ' ').replace(/\s+/g, ' ').trim(),
+        reduzirFormula(resolverItem(expr, level))
+          .replace(/[[\]]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim(),
       )
       .trim()
   )
@@ -206,7 +423,9 @@ export function readSubcategory(system) {
 /** Converte UM objeto de item do Foundry. Devolve o item normalizado. */
 export function convertFoundryItem(raw) {
   const system = raw?.system ?? raw?.data ?? {}
-  const html = sanitizeDescription(system?.description?.value ?? '')
+  const html = sanitizeDescription(system?.description?.value ?? '', {
+    level: system?.level?.value ?? null,
+  })
   const traits = Array.isArray(system?.traits?.value) ? system.traits.value : []
   const rarity = system?.traits?.rarity ?? null
   const shield = raw?.type === 'shield' ? readShield(system) : null

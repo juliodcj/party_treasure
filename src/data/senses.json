@@ -1,0 +1,30 @@
+{
+  "todos": [
+    "bloodsense",
+    "darkvision",
+    "echolocation",
+    "electromagnetic-sense",
+    "greater-darkvision",
+    "infrared-vision",
+    "lifesense",
+    "low-light-vision",
+    "magicsense",
+    "motion-sense",
+    "scent",
+    "see-invisibility",
+    "spiritsense",
+    "thoughtsense",
+    "tremorsense",
+    "truesight",
+    "wavesense"
+  ],
+  "visao": [
+    "darkvision",
+    "greater-darkvision",
+    "infrared-vision",
+    "low-light-vision",
+    "see-invisibility",
+    "truesight"
+  ],
+  "origem": "foundryvtt/pf2e src/module/actor/creature/values.ts"
+}

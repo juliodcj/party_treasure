@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import Sheet from '../../components/Sheet.jsx'
 import TraitList from '../../components/TraitList.jsx'
-import { ChevronRight, MinusIcon, PlusIcon } from '../../components/Icons.jsx'
+import StatTable from '../../components/StatTable.jsx'
+import { CheckIcon, ChevronRight, MinusIcon, PlusIcon } from '../../components/Icons.jsx'
 import { spellRef } from '../../lib/loreResolve.js'
 import { defesaDaMagia } from '../../lib/spells.js'
 import { ActionCost } from './Feats.jsx'
@@ -35,9 +36,14 @@ export default function SpellPicker({
 
   /* `fill`: a folha para de rolar e quem rola é a lista. É o que mantém o
      título, os filtros e o "Fechar" parados enquanto se percorre setecentas
-     magias — sem isso, o botão de sair fica no fim da rolagem. */
+     magias — sem isso, o botão de sair fica no fim da rolagem.
+
+     `tall`: a folha vai do topo da tela até a barra de abas. Nos 62dvh padrão
+     sobravam 232px para a lista num celular de 812 — quatro magias e meia
+     abaixo de quatro filtros parados. Aqui a parte estática é a mesma e a
+     lista fica com o dobro. */
   return (
-    <Sheet title={title} onClose={onClose} fill>
+    <Sheet title={title} onClose={onClose} fill tall>
       {hint ? <p className="picker__hint">{hint}</p> : null}
       {children}
 
@@ -69,10 +75,32 @@ export default function SpellPicker({
   )
 }
 
+/*
+ * Quanto tempo o "pronto" fica na tela depois do +.
+ *
+ * Existe porque preparar magia não muda nada visível: a mesma magia pode ocupar
+ * dois slots, então o + nunca desliga, a folha não fecha, e o único sinal era um
+ * contador no topo de uma lista de setecentas linhas. Tocava-se três vezes na
+ * dúvida e preparava-se três.
+ */
+const PISCA_MS = 1400
+
 function SpellPickerRow({ sp, dentro, onAdd, onRemove, open, onToggle }) {
   /* Sem `onRemove`, estar dentro é só um estado — o + desliga e diz por quê no
      rótulo. Com `onRemove`, o mesmo botão vira o − que desfaz. */
   const podeTirar = dentro && onRemove
+  const [feito, setFeito] = useState(0)
+
+  useEffect(() => {
+    if (!feito) return
+    const t = setTimeout(() => setFeito(0), PISCA_MS)
+    return () => clearTimeout(t)
+  }, [feito])
+
+  const adicionar = () => {
+    onAdd()
+    setFeito((n) => n + 1)
+  }
 
   return (
     <div className="picker__entry">
@@ -81,17 +109,27 @@ function SpellPickerRow({ sp, dentro, onAdd, onRemove, open, onToggle }) {
           <span className="picker__rank">{sp.rank === 0 ? 'Truque' : `R${sp.rank}`}</span>
           <span className="picker__name">{sp.name}</span>
           <ActionCost cost={sp.actionCost} />
+          {/* Fica na própria linha, e não num aviso no topo: o dedo está aqui.
+              `aria-live` para quem não vê a marca ouvir o mesmo. */}
+          {feito ? (
+            <span className="picker__feito" role="status">
+              {feito > 1 ? `${feito}×` : ''} adicionada
+            </span>
+          ) : null}
         </button>
         <button
           type="button"
-          className={`icon-btn ${podeTirar ? 'icon-btn--danger' : 'icon-btn--accent'}`}
+          /* O preenchimento só entra onde o botão NÃO mudou sozinho: no
+             Compêndio o + já virou − e isso é a confirmação; no preparo ele
+             continua +, e é lá que faltava sinal. */
+          className={`icon-btn ${podeTirar ? 'icon-btn--danger' : 'icon-btn--accent'}${feito && !podeTirar ? ' picker__add--feito' : ''}`}
           disabled={dentro && !onRemove}
           aria-label={
             podeTirar ? `Tirar ${sp.name}` : dentro ? `${sp.name} já está na lista` : `Adicionar ${sp.name}`
           }
-          onClick={podeTirar ? onRemove : onAdd}
+          onClick={podeTirar ? onRemove : adicionar}
         >
-          {dentro ? <MinusIcon size={14} /> : <PlusIcon size={14} />}
+          {feito && !podeTirar ? <CheckIcon /> : dentro ? <MinusIcon size={14} /> : <PlusIcon size={14} />}
         </button>
         <button
           type="button"
@@ -154,7 +192,7 @@ export function SpellBody({ id = null, nome }) {
   return (
     <>
       {entry.traits?.length ? <TraitList traits={entry.traits} /> : null}
-      <SpellStats entry={entry} />
+      <StatTable fields={fichaDaMagia(entry)} />
       <div className="item__desc" dangerouslySetInnerHTML={{ __html: entry.descriptionHtml }} />
       {/* O livro de origem fecha a descrição, no mesmo cinza e no mesmo lugar
           em que o item do Inventário mostra o dele. Só aparece quando o pack
@@ -165,33 +203,22 @@ export function SpellBody({ id = null, nome }) {
 }
 
 /*
- * Range, Targets e Defense, acima da descrição.
+ * Alcance, área, alvo e defesa — a ficha técnica da magia, acima da descrição.
  *
- * No Foundry esses três não estão no texto: são campos do sistema que a ficha
+ * No Foundry esses quatro não estão no texto: são campos do sistema que a ficha
  * dele desenha por cima, e por isso a magia aberta aqui vinha sem eles.
  *
+ * A grade é a mesma `<StatTable>` da arma e da armadura no Inventário: é a
+ * mesma pergunta ("os números publicados deste verbete") e por isso é o mesmo
+ * desenho, em vez de uma lista só desta tela.
+ *
  * Rótulo em inglês porque é ficha técnica do PF2e, como `Damage` e `AC Bonus`
- * no Inventário. Linha que o pack não traz não aparece: 636 magias não têm
+ * no Inventário. Campo que o pack não traz não entra: 636 magias não têm
  * alcance e 991 não têm alvo — pôr "—" nelas seria encher a tela de nada.
  */
-function SpellStats({ entry }) {
-  const linhas = [
-    ['Range', entry.range],
-    ['Targets', entry.targets],
-    ['Defense', defesaDaMagia(entry)],
-  ].filter(([, valor]) => valor)
-
-  if (!linhas.length) return null
-
-  return (
-    <dl className="spell-stats">
-      {linhas.map(([rotulo, valor]) => (
-        <div className="spell-stats__row" key={rotulo}>
-          <dt className="field-label spell-stats__label">{rotulo}</dt>
-          <dd className="spell-stats__value">{valor}</dd>
-        </div>
-      ))}
-    </dl>
-  )
-}
-
+const fichaDaMagia = (entry) => [
+  ['Range', entry.range],
+  ['Area', entry.area],
+  ['Targets', entry.targets],
+  ['Defense', defesaDaMagia(entry)],
+]

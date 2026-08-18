@@ -5,7 +5,8 @@ import Stepper from '../components/Stepper.jsx'
 import { Price } from '../components/Coins.jsx'
 import ItemForm from '../components/ItemForm.jsx'
 import { SearchBox } from '../components/ItemFilters.jsx'
-import { EditIcon, MoreIcon, PlusIcon, TrashIcon } from '../components/Icons.jsx'
+import { EditIcon, MoreIcon, PlusIcon, ShieldIcon, TrashIcon } from '../components/Icons.jsx'
+import ItemModsSheet from './CharacterSheet/ItemModsSheet.jsx'
 import { useStore } from '../state/store.jsx'
 import { CATEGORY_ORDER, categoryLabel } from '../data/catalog.js'
 import {
@@ -25,6 +26,7 @@ export default function InventoryScreen({ player, filters, openId, onToggle }) {
   const [selling, setSelling] = useState(null)
   const [sending, setSending] = useState(null)
   const [editing, setEditing] = useState(null)
+  const [mods, setMods] = useState(null)
 
   const entries = useMemo(() => playerInventory(state, player), [state, player])
   const visible = entries.filter(
@@ -73,6 +75,7 @@ export default function InventoryScreen({ player, filters, openId, onToggle }) {
                   onSell={() => setSelling({ item, qty: 1, owned: qty })}
                   onSend={() => setSending({ item, qty: 1, owned: qty })}
                   onEdit={() => setEditing(item)}
+                  onEditarMods={() => setMods(item)}
                 />
               ))}
             </div>
@@ -85,6 +88,10 @@ export default function InventoryScreen({ player, filters, openId, onToggle }) {
       </button>
 
       {adding ? <AddItemSheet player={player} onClose={() => setAdding(false)} /> : null}
+
+      {/* A mesma folha que a aba Ataques abria. Ela mudou de porta, não de dono:
+          o modificador sempre foi do item. */}
+      {mods ? <ItemModsSheet player={player} item={mods} onClose={() => setMods(null)} /> : null}
 
       {deleting ? (
         <Sheet center onClose={() => setDeleting(null)}>
@@ -156,6 +163,11 @@ export default function InventoryScreen({ player, filters, openId, onToggle }) {
  * Uma linha da mochila. Só "Excluir" fica à mostra; o resto (enviar, vender,
  * renomear, observação) espera atrás do "⋯".
  */
+/* Quem aceita modificador manual: o que entra em alguma conta da ficha. Poção e
+   corda não têm ataque nem CA para modificar, e o item de menu prometeria um
+   efeito que não existe. */
+const MODIFICAVEL = new Set(['weapon', 'armor', 'shield'])
+
 function InventoryItem({
   player,
   item,
@@ -168,6 +180,7 @@ function InventoryItem({
   onSell,
   onSend,
   onEdit,
+  onEditarMods,
 }) {
   const { dispatch } = useStore()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -210,15 +223,14 @@ function InventoryItem({
       open={open}
       onToggle={onToggle}
       hasNote={!!savedNote}
+      /* Só aparece com ficha: sem ela não há CA para uma armadura mexer, e o
+         ícone prometeria um efeito que não existe. */
+      action={player.sheet ? <EquipButton player={player} item={item} qty={qty} /> : null}
     >
       {/* Observação já escrita continua à vista; só o "+ Observação" some no menu. */}
       {savedNote || noteOpen ? (
         <ItemNote player={player} item={item} autoEdit={noteOpen && !savedNote} />
       ) : null}
-
-      {/* Só aparece com ficha: sem ela não há CA para uma armadura mexer, e o
-          botão prometeria um efeito que não existe. */}
-      {player.sheet ? <EquipButton player={player} item={item} qty={qty} /> : null}
 
       <div className="item__foot">
         <div className="item__tools">
@@ -298,6 +310,25 @@ function InventoryItem({
               Observação
             </button>
           )}
+          {/* O modificador manual mora no ITEM, não no ataque: é a runa, o
+              encanto, o bônus de mesa que aquele objeto carrega. A aba Ataques
+              só lê o que está aqui. Precisa de ficha pelo mesmo motivo do
+              escudo — sem ela não há conta para o modificador mexer. */}
+          {player.sheet && MODIFICAVEL.has(item.category) ? (
+            <button
+              type="button"
+              role="menuitem"
+              className="item__menu-item"
+              onClick={() => {
+                onEditarMods()
+                setMenuOpen(false)
+              }}
+            >
+              {(player.itemMods?.[item.id] ?? []).length
+                ? `Modificadores (${player.itemMods[item.id].length})`
+                : 'Add. Modificador'}
+            </button>
+          ) : null}
           {custom ? (
             <button type="button" role="menuitem" className="item__menu-item" onClick={onEdit}>
               Editar
@@ -506,18 +537,25 @@ function SendItemSheet({ player, entry, onClose }) {
 }
 
 /*
- * Vestir a armadura, empunhar o escudo, equipar a arma.
+ * Vestir a armadura, empunhar o escudo, equipar a arma — um escudo na linha.
  *
- * O rótulo muda com o tipo porque é assim que se fala na mesa: ninguém "equipa"
- * um escudo, empunha. Azul, nunca vermelho — equipar se desfaz com um toque.
+ * Era um botão de texto dentro do item aberto, e o texto mudava com o tipo
+ * ("Vestir", "Empunhar", "Equipar") porque é assim que se fala na mesa. O
+ * problema é que a pergunta que ele responde — "estou usando isto?" — é a que
+ * mais se faz com o item FECHADO, e a resposta estava a um toque de distância,
+ * uma linha de cada vez.
  *
- * O que está equipado importa: a armadura vestida entra na CA, o escudo
- * empunhado habilita o Erguer, e a arma equipada aparece primeiro em Ataques.
+ * Agora é o mesmo interruptor da espada em Magias: mora no cabeçalho, ligado é
+ * azul de ação e desligado é o cinza de traço decorativo. A frase da mesa não
+ * se perdeu — virou o rótulo do botão para leitor de tela e a dica do mouse.
+ *
+ * Só arma, armadura e escudo têm o ícone: são os únicos que mudam alguma conta
+ * ao serem equipados (CA, Erguer, ordem em Ataques). Poção equipada não existe.
  */
 const ROTULO_EQUIPAR = {
-  armor: { on: 'Vestida', off: 'Vestir', nome: 'armadura' },
-  shield: { on: 'Empunhado', off: 'Empunhar', nome: 'escudo' },
-  weapon: { on: 'Equipada', off: 'Equipar', nome: 'arma' },
+  armor: { on: 'Vestida', off: 'Vestir', tirar: 'Tirar' },
+  shield: { on: 'Empunhado', off: 'Empunhar', tirar: 'Guardar' },
+  weapon: { on: 'Equipada', off: 'Equipar', tirar: 'Desequipar' },
 }
 
 function EquipButton({ player, item, qty }) {
@@ -531,28 +569,24 @@ function EquipButton({ player, item, qty }) {
     gear.heldShieldId === item.id ||
     (gear.equippedWeaponIds ?? []).includes(item.id)
 
+  const acao = equipado ? `${rotulo.tirar} ${item.name}` : `${rotulo.off} ${item.name}`
+
   return (
-    <div className="item__equip">
-      <button
-        type="button"
-        className={`chip${equipado ? ' chip--on' : ''}`}
-        aria-pressed={equipado}
-        onClick={() =>
-          dispatch({
-            type: equipado ? 'UNEQUIP_ITEM' : 'EQUIP_ITEM',
-            playerId: player.id,
-            itemId: item.id,
-          })
-        }
-      >
-        {equipado ? rotulo.on : rotulo.off}
-      </button>
-      {equipado && item.category === 'armor' ? (
-        <span className="item__equip-hint">Entra na CA</span>
-      ) : null}
-      {equipado && item.category === 'shield' ? (
-        <span className="item__equip-hint">Dá para erguer na Ficha</span>
-      ) : null}
-    </div>
+    <button
+      type="button"
+      className={`icon-btn item__shield${equipado ? ' item__shield--on' : ''}`}
+      aria-pressed={equipado}
+      aria-label={acao}
+      title={equipado ? `${rotulo.on} — toque para ${rotulo.tirar.toLowerCase()} ${item.name}` : acao}
+      onClick={() =>
+        dispatch({
+          type: equipado ? 'UNEQUIP_ITEM' : 'EQUIP_ITEM',
+          playerId: player.id,
+          itemId: item.id,
+        })
+      }
+    >
+      <ShieldIcon size={16} />
+    </button>
   )
 }

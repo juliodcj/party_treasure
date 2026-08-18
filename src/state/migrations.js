@@ -11,8 +11,9 @@
  * `hp = sheet.hpMax` no `IMPORT_SHEET`.
  *
  * `vitals` sobrevive à reimportação e à remoção da ficha — é fato de mesa, não
- * cálculo. `gear` e `itemMods` idem: o que a pessoa está vestindo e o que o
- * mestre concedeu não se perdem porque a ficha foi trocada.
+ * cálculo. `gear`, `itemMods` e `featNotes` idem: o que a pessoa está vestindo,
+ * o que o mestre concedeu e o texto que ela mesma escreveu para um feat que os
+ * packs não conhecem não se perdem porque a ficha foi trocada.
  */
 export function emptySheetFields() {
   return {
@@ -35,6 +36,7 @@ export function emptySheetFields() {
     },
     gear: { wornArmorId: null, heldShieldId: null, equippedWeaponIds: [] },
     itemMods: {},
+    featNotes: {},
   }
 }
 
@@ -50,6 +52,7 @@ export function withSheetFields(player) {
     vitals: { ...empty.vitals, ...(player.vitals ?? {}) },
     gear: { ...empty.gear, ...(player.gear ?? {}) },
     itemMods: player.itemMods ?? {},
+    featNotes: player.featNotes ?? {},
   }
 }
 

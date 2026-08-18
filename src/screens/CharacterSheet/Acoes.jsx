@@ -4,6 +4,8 @@ import { ChevronRight } from '../../components/Icons.jsx'
 import SectionHead, { ExpandCollapseAll } from '../../components/SectionHead.jsx'
 import ACTION_INDEX from '../../data/index.actions.json' with { type: 'json' }
 import { traitLabel } from '../../data/traits.js'
+import { slugify } from '../../lib/loreResolve.js'
+import { titleCase } from '../../lib/text.js'
 import { useStore } from '../../state/store.jsx'
 import { ActionCost } from './Feats.jsx'
 
@@ -17,10 +19,16 @@ let gruposAbertos = { class: true, skill: true, basic: true }
  * próprio pack `actions` do Foundry — `basic/`, `skill/` e `class/`. A Paizo já
  * organizou isso, e reorganizar por conta seria inventar.
  *
- * Básicas e de perícia valem para TODO personagem, então viajam no bundle (84
- * verbetes, 13 KB) e a aba abre instantânea, offline. A descrição é que é
- * pesada, e ela chega do servidor quando a linha é aberta — uma consulta por
- * verbete, e só do que a pessoa abriu.
+ * As 280 viajam no bundle (59 KB) e a aba abre instantânea, offline. A descrição
+ * é que é pesada, e ela chega do servidor quando a linha é aberta — uma consulta
+ * por verbete, e só do que a pessoa abriu.
+ *
+ * As de classe entraram no bundle depois. A aposta original era que elas
+ * chegariam pela importação, porque o personagem tem a feature que as concede;
+ * medido na mesa, não chegam — o Pathbuilder manda "Rage" e o desempate de nome
+ * resolve para a FEATURE de classe, nunca para a ação homônima. A aba ficava
+ * vazia para todo mundo. Agora a lista é a da classe da ficha, e o que a
+ * importação resolveu continua entrando por cima, com a descrição que já trouxe.
  */
 
 const GRUPOS = [
@@ -57,17 +65,7 @@ export default function Acoes({ player }) {
     })
   }
 
-  /* As de classe são as que a importação resolveu como ação; as outras duas
-     saem do índice do bundle. */
-  const daClasse = player.sheet?.actions ?? []
-
-  const todas = useMemo(
-    () => [
-      ...daClasse.map((acao) => ({ ...acao, group: 'class' })),
-      ...ACTION_INDEX,
-    ],
-    [daClasse],
-  )
+  const todas = useMemo(() => acoesDoPersonagem(player.sheet), [player.sheet])
 
   /* O filtro só oferece traço que existe na lista — um menu com 200 traços em
      que 190 não filtram nada é pior que não ter filtro. */
@@ -100,9 +98,24 @@ export default function Acoes({ player }) {
    */
   const secoes = useMemo(() => {
     if (aba === 'skill') {
-      return agrupar(daAba, (acao) => acao.skill ?? SEM_PERICIA)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([pericia, itens]) => [`skill-${pericia}`, pericia, itens])
+      /* Uma ação cabe em mais de uma perícia, e o pack diz quais: Decipher
+         Writing rola com Society, Arcana, Occultism ou Religion, e aparece
+         embaixo das quatro. A pergunta que a aba responde é "estou com Society
+         na mão, o que dá para fazer?". */
+      return agrupar(daAba, (acao) => (acao.skills?.length ? acao.skills : [SEM_PERICIA]))
+        .sort(([a], [b]) => (a === SEM_PERICIA) - (b === SEM_PERICIA) || a.localeCompare(b))
+        /* O pack grava a perícia em minúscula (`athletics`); o que a ficha
+           mostra é o nome publicado, como no resto do app. */
+        .map(([pericia, itens]) => [
+          `skill-${pericia}`,
+          pericia === SEM_PERICIA ? pericia : titleCase(pericia),
+          itens,
+        ])
+    }
+    if (aba === 'class') {
+      return agrupar(daAba, (acao) => [tituloDeClasse(acao, player.sheet)])
+        .sort(([a], [b]) => ORDEM_CLASSE(a) - ORDEM_CLASSE(b) || a.localeCompare(b))
+        .map(([titulo, itens]) => [`class-${titulo}`, titulo, itens])
     }
     if (aba === 'fav') {
       return GRUPOS.map(({ id, titulo }) => [
@@ -112,7 +125,7 @@ export default function Acoes({ player }) {
       ]).filter(([, , itens]) => itens.length > 0)
     }
     return []
-  }, [aba, daAba])
+  }, [aba, daAba, player.sheet])
 
   return (
     <>
@@ -192,9 +205,64 @@ export default function Acoes({ player }) {
   )
 }
 
-/* Rótulo do balde de quem não trouxe perícia do pack. Some sozinho quando a
-   ingestão é refeita — e enquanto não for, a ação continua na tela. */
-const SEM_PERICIA = 'Outras'
+/*
+ * O balde das dez ações de perícia que fonte nenhuma do Foundry classifica —
+ * Treat Wounds, Earn Income, Recall Knowledge, Learn a Spell e companhia. Não é
+ * defeito da ingestão: o pack não diz, e a ingestão se recusa a chutar. Elas
+ * continuam na tela, com o nome que têm, e o rótulo não promete o que não sabe.
+ */
+const SEM_PERICIA = 'Sem perícia no pack'
+
+/* A faixa das que várias classes ganham (`actions/class/shared/` da Paizo, hoje
+   só a Reactive Strike): entram na aba de todo mundo, mas debaixo de um título
+   que não finge que são da classe de quem está olhando. */
+const COMUNS = 'Comuns a várias classes'
+/* E a das que a importação trouxe e o pack não põe na pasta da classe — ação
+   concedida por arquétipo, por exemplo. */
+const DA_FICHA = 'Da sua ficha'
+
+/* A classe da pessoa primeiro; os dois baldes genéricos por último. */
+const ORDEM_CLASSE = (titulo) => ([COMUNS, DA_FICHA].indexOf(titulo) + 1 || -1)
+
+const tituloDeClasse = (acao, sheet) => {
+  if (!acao.class) return DA_FICHA
+  if (acao.class === 'shared') return COMUNS
+  return nomeDaClasse(acao.class, sheet)
+}
+
+/** "fighter" -> "Fighter", preferindo como a ficha escreve ("Barbarian"). */
+function nomeDaClasse(slug, sheet) {
+  for (const nome of [sheet?.class, sheet?.dualClass]) {
+    if (nome && slugify(nome) === slug) return nome
+  }
+  return titleCase(slug)
+}
+
+/**
+ * As ações que esta ficha mostra: as básicas e de perícia (que valem para todo
+ * personagem), as da classe dela, e o que a importação resolveu como ação.
+ *
+ * O que a importação trouxe ganha do verbete do pack quando é a mesma ação —
+ * ele já vem com a descrição dentro, e uma consulta a menos ao servidor é uma
+ * linha que abre na hora. Mas a classe continua sendo a do pack: a importação
+ * não sabe de que pasta a ação veio.
+ */
+export function acoesDoPersonagem(sheet) {
+  const minhas = new Set([sheet?.class, sheet?.dualClass].filter(Boolean).map(slugify))
+
+  const doPack = ACTION_INDEX.filter(
+    (acao) => acao.group !== 'class' || minhas.has(acao.class) || acao.class === 'shared',
+  )
+
+  /* Sem ficha não há classe para filtrar, e a aba Classe fica vazia — é o mesmo
+     que já acontecia, e é honesto: sem ficha o app não sabe a classe. */
+  const porId = new Map(doPack.map((acao) => [acao.id, acao]))
+  for (const acao of sheet?.actions ?? []) {
+    const doPacote = porId.get(acao.id)
+    porId.set(acao.id, { ...doPacote, ...acao, group: 'class', class: doPacote?.class ?? null })
+  }
+  return [...porId.values()]
+}
 
 const VAZIO = {
   fav: 'Nenhuma ação favoritada. Toque na estrela de uma ação para trazê-la para cá.',
@@ -203,13 +271,17 @@ const VAZIO = {
   basic: 'Nada aqui com esse filtro.',
 }
 
-/** Agrupa mantendo a ordem de chegada dentro de cada balde. */
-function agrupar(lista, chaveDe) {
+/**
+ * Agrupa mantendo a ordem de chegada dentro de cada balde. `chaveDe` devolve uma
+ * LISTA: uma ação que rola com quatro perícias aparece embaixo das quatro.
+ */
+function agrupar(lista, chavesDe) {
   const mapa = new Map()
   for (const item of lista) {
-    const chave = chaveDe(item)
-    if (!mapa.has(chave)) mapa.set(chave, [])
-    mapa.get(chave).push(item)
+    for (const chave of chavesDe(item)) {
+      if (!mapa.has(chave)) mapa.set(chave, [])
+      mapa.get(chave).push(item)
+    }
   }
   return [...mapa]
 }

@@ -38,7 +38,15 @@ import path from 'node:path'
 
 import { sanitizeDescription, toPlainText, readSource } from '../src/lib/foundryImport.js'
 import { normalizeName } from '../src/lib/loreResolve.js'
-import { DEFAULT_VENDOR, ROOT, resolveLangFile, resolvePack, resolveSystemFile } from './vendor-pf2e.mjs'
+import {
+  DEFAULT_VENDOR,
+  ROOT,
+  resolveLangFile,
+  resolveRuleLangFile,
+  resolvePack,
+  resolveSystemDir,
+  resolveSystemFile,
+} from './vendor-pf2e.mjs'
 
 const vendor = process.argv[2] ?? DEFAULT_VENDOR
 
@@ -85,6 +93,182 @@ const PRIORIDADE_DE_NOME = [
 const prioridade = (kind) => {
   const i = PRIORIDADE_DE_NOME.indexOf(kind)
   return i === -1 ? PRIORIDADE_DE_NOME.length : i
+}
+
+/*
+ * ------------------------------------------------------------------ apelidos
+ *
+ * O Pathbuilder nomeia a escolha de classe pela categoria; o Foundry nomeia só o
+ * miolo:
+ *
+ *   "Thief Racket"                          -> "Thief"
+ *   "Justice Cause"                         -> "Justice"
+ *   "Arcane Thesis: Experimental Spellshaping" -> "Experimental Spellshaping"
+ *
+ * A ponte entre os dois está dentro do próprio pack, em `system.traits.otherTags`:
+ *
+ *   class-features/thief.json                    ["rogue-racket"]
+ *   class-features/justice.json                  ["champion-cause"]
+ *   class-features/experimental-spellshaping.json ["wizard-arcane-thesis"]
+ *
+ * Tira-se o nome da classe do começo da tag e sobra a categoria — "racket",
+ * "cause", "arcane thesis". Daí saem os dois formatos que o Pathbuilder usa:
+ * "<Nome> <Categoria>" e "<Categoria>: <Nome>".
+ *
+ * O ponto é que isto é **gerado, não escrito**: nenhum nome de jogo entra no
+ * nosso código (D-zero-placeholder), e a categoria que a Paizo criar amanhã
+ * entra sozinha na próxima ingestão, em vez de apodrecer numa lista à mão. É a
+ * vantagem que o Pathmuncher não tem — ele roda dentro do Foundry e só enxerga
+ * o índice dos compêndios (nome, tipo, slug), por isso precisa de 161 pares
+ * escritos à mão.
+ *
+ * Duas travas, porque apelido que erra é pior que apelido que falta:
+ *
+ *   1. Apelido nunca cobre nome de verbete de verdade. Se "Cause" existir como
+ *      nome, o nome ganha.
+ *   2. Apelido disputado por dois verbetes é descartado, não desempatado. A
+ *      prioridade de pack responde "qual dos Rage?", que é outra pergunta; aqui
+ *      a resposta certa para a dúvida é não responder.
+ *
+ * Medido no pack de hoje: 51 categorias, ~1.550 apelidos, zero ambíguos e zero
+ * colidindo com nome existente.
+ */
+
+/* Os slugs de classe, para saber onde a tag para de falar de classe e começa a
+   falar de categoria. Vem do pack `classes`, não de uma lista nossa. */
+const CLASS_SLUGS = new Set(
+  readdirSync(resolvePack('classes', vendor))
+    .filter((f) => f.endsWith('.json') && f !== '_folders.json')
+    .map((f) => f.replace(/\.json$/, '')),
+)
+
+/* chave normalizada -> Set de ids que a reivindicam. Vira índice no fim, quando
+   já se sabe quais nomes de verdade existem e quais chaves ficaram disputadas. */
+const apelidosCrus = new Map()
+
+function apelidar(nome, id) {
+  const chave = normalizeName(nome)
+  if (!chave) return
+  if (!apelidosCrus.has(chave)) apelidosCrus.set(chave, new Set())
+  apelidosCrus.get(chave).add(id)
+}
+
+/** Os apelidos de um verbete, a partir das tags de categoria que ele carrega. */
+function apelidarPorTags(entry, otherTags) {
+  for (const tag of otherTags) {
+    const partes = String(tag).split('-')
+    /* "rogue-racket" -> ["racket"];  "wizard-arcane-thesis" -> ["arcane","thesis"].
+       Tag que não começa com classe ("melee", "blessing-of-the-devoted") entra
+       inteira: se não for categoria de escolha, ninguém vai perguntar por ela. */
+    const semClasse = CLASS_SLUGS.has(partes[0]) ? partes.slice(1) : partes
+    if (!semClasse.length) continue
+
+    const categoria = semClasse.join(' ')
+    /* A última palavra sozinha porque o Pathbuilder às vezes encurta:
+       `witch-elementalist-patron` vira "Mosquito Witch Patron", não
+       "Mosquito Witch Elementalist Patron". */
+    const curta = semClasse[semClasse.length - 1]
+
+    for (const forma of new Set([categoria, curta])) {
+      apelidar(`${entry.name} ${forma}`, entry.id)
+      apelidar(`${forma}: ${entry.name}`, entry.id)
+    }
+  }
+}
+
+/*
+ * --------------------------------------------------- a perícia de cada ação
+ *
+ * "Qual perícia rola o Climb?" já era uma pergunta que o pack respondia sozinho:
+ * ele guardava `actions/skill/athletics/climb.json`. Hoje `actions/skill/` é uma
+ * pasta plana, e o segundo nível não existe mais — foi por isso que TODA ação de
+ * perícia caiu no balde "Outras".
+ *
+ * Quem ainda guarda a divisão é o registro de ações do próprio sistema, em
+ * `src/module/system/action-macros/<perícia>/<slug>.ts`. Lemos só os NOMES das
+ * pastas e dos arquivos; nenhum TypeScript é interpretado. É o mesmo caminho que
+ * o Punho básico já usava: quando o dado não está em pack, vai-se ao código do
+ * Foundry, e nunca à memória de quem escreve.
+ *
+ * Cobre 45 das 54. A segunda fonte é a marcação da própria descrição, que também
+ * é estrutura e não prosa:
+ *
+ *   @Check[survival|...]                      -> Cover Tracks
+ *   [[/act disable-device]]{Thievery}         -> Disable a Device
+ *
+ * E são uma LISTA, não uma escolha. Decipher Writing rola com Society, Arcana,
+ * Occultism ou Religion, e o pack diz as quatro; Recall Knowledge idem. A ação
+ * aparece embaixo de cada perícia que a rola, porque a pergunta que a aba
+ * responde é "estou com Society na mão, o que dá para fazer?".
+ *
+ * Sobram 7 (Treat Wounds, Earn Income, Craft…) para as quais nenhuma das duas
+ * fontes diz a perícia. Ficam sem perícia e caem num balde na tela, com o nome
+ * que têm — chutar "Medicine" para Treat Wounds seria escrever regra de jogo no
+ * nosso código, que é exatamente o que não se faz aqui.
+ */
+const PERICIAS = new Set([
+  'acrobatics',
+  'arcana',
+  'athletics',
+  'crafting',
+  'deception',
+  'diplomacy',
+  'intimidation',
+  'medicine',
+  'nature',
+  'occultism',
+  'performance',
+  'religion',
+  'society',
+  'stealth',
+  'survival',
+  'thievery',
+])
+
+const ACTION_MACROS = 'src/module/system/action-macros'
+
+/** slug da ação -> perícia, a partir das pastas do registro do sistema. */
+function lerPericiasDoRegistro() {
+  const raiz = resolveSystemDir(ACTION_MACROS, vendor)
+  const mapa = new Map()
+  for (const pasta of readdirSync(raiz, { withFileTypes: true })) {
+    if (!pasta.isDirectory() || !PERICIAS.has(pasta.name)) continue
+    for (const arquivo of readdirSync(path.join(raiz, pasta.name))) {
+      if (!arquivo.endsWith('.ts') || arquivo === 'index.ts') continue
+      mapa.set(arquivo.replace(/\.ts$/, ''), pasta.name)
+    }
+  }
+  if (mapa.size < 30) {
+    console.error(
+      `\nO registro de ações em ${ACTION_MACROS} devolveu só ${mapa.size} ações.\n` +
+        'Ele mudou de forma. Conserte o extrator — não escreva a perícia de cada ação à mão.\n',
+    )
+    process.exit(1)
+  }
+  return mapa
+}
+
+const PERICIA_DO_REGISTRO = lerPericiasDoRegistro()
+
+/** Toda perícia nomeada pela marcação da descrição — `@Check[…]` e `[[/act …]]{…}`. */
+function periciasDaMarcacao(html) {
+  const achadas = new Set()
+  for (const [, nome] of String(html).matchAll(/@Check\[([a-z]+)/g)) {
+    if (PERICIAS.has(nome)) achadas.add(nome)
+  }
+  for (const [, rotulo] of String(html).matchAll(/\[\[\/act [^\]]*\]\]\{([^}]+)\}/g)) {
+    const nome = rotulo.toLowerCase()
+    if (PERICIAS.has(nome)) achadas.add(nome)
+  }
+  return achadas
+}
+
+/** As perícias que rolam uma ação, em ordem. Vazio quando nenhuma fonte diz. */
+function periciasDaAcao(slug, html) {
+  const achadas = periciasDaMarcacao(html)
+  const doRegistro = PERICIA_DO_REGISTRO.get(slug)
+  if (doRegistro) achadas.add(doRegistro)
+  return [...achadas].sort()
 }
 
 /* --------------------------------------------------------------- utilidades */
@@ -161,9 +345,63 @@ function readSpellStats(system) {
 
   return {
     range: texto(system?.range?.value),
+    /* `area.details` é a prosa que a Paizo publicou ("20-foot-radius burst",
+       "10-foot radius, 40-foot-tall cylinder") e ganha do par tipo+valor
+       sempre que existe; as outras 434 se escrevem "5-foot burst". */
+    area: lerArea(system?.area),
     targets: texto(system?.target?.value),
     defense,
   }
+}
+
+/** `{type:'burst', value:5}` -> "5-foot burst"; `null` quando a magia não tem. */
+function lerArea(area) {
+  if (!area) return null
+  const detalhe = String(area.details ?? '').trim()
+  if (detalhe) return detalhe
+  const valor = Number(area.value)
+  if (!area.type || !Number.isFinite(valor)) return null
+  return `${valor}-foot ${area.type}`
+}
+
+/* ------------------------------------------------------------- @Localize
+
+   Cinco verbetes dos packs não trazem a descrição no próprio JSON: escrevem
+   `@Localize[PF2E.condition.sickened.rules]` e deixam o texto no arquivo de
+   localização. Sickened é um deles, e sem resolver isto a condição chegava à
+   tela com descrição vazia — placeholder às avessas, dado que existe na fonte
+   e o app jogava fora.
+
+   O `en.json` era lido só lá embaixo, para o glossário dos sentidos; subiu para
+   cá porque agora o laço dos packs também depende dele. */
+
+const en = JSON.parse(readFileSync(resolveLangFile(vendor), 'utf8'))
+
+/* O sistema divide os textos em dois arquivos: o `en.json` da interface e o
+   `re-en.json` das regras. Das 20 chaves que os packs invocam, 19 estão no
+   segundo (as do repertório de magias de feiticeiro e invocador). */
+const arquivoDeRegras = resolveRuleLangFile(vendor)
+const enRegras = arquivoDeRegras ? JSON.parse(readFileSync(arquivoDeRegras, 'utf8')) : {}
+
+const noCaminho = (raiz, caminho) =>
+  String(caminho)
+    .split('.')
+    .reduce((atual, parte) => (atual == null ? undefined : atual[parte]), raiz)
+
+const chaveDoEn = (caminho) => noCaminho(en, caminho) ?? noCaminho(enRegras, caminho)
+
+let localizeSemChave = 0
+
+function resolveLocalize(html) {
+  return String(html ?? '').replace(/@Localize\[([^\]]*)\]/g, (macro, caminho) => {
+    const valor = chaveDoEn(caminho.trim())
+    if (typeof valor === 'string') return valor
+    /* Errar em silêncio é o único erro inaceitável: a chave que não resolve
+       aparece no log e o macro fica no texto, em vez de sumir. */
+    localizeSemChave += 1
+    console.warn(`  ! @Localize sem tradução: ${caminho}`)
+    return macro
+  })
 }
 
 /* --------------------------------------------------------- leitura dos packs */
@@ -190,6 +428,11 @@ const actionIndex = []
 const conditions = []
 const counts = {}
 let semNome = 0
+/* Fórmula que depende de quem lança (`@actor.level`, `sibling(...)`) não tem
+   como ser resolvida sem personagem, então fica no texto como veio. Contada
+   aqui para aparecer no relatório: some do log, some da conta, some da tela. */
+let comRefDeAtor = 0
+const TEM_REF_DE_ATOR = /@(actor|self)\.|@item\.(?!rank|level)|sibling\(/
 
 for (const { pack, kind } of PACKS) {
   const dir = resolvePack(pack, vendor)
@@ -216,12 +459,22 @@ for (const { pack, kind } of PACKS) {
        própria Paizo em vez de uma lista nossa. */
     const partes = path.relative(dir, file).split(path.sep)
     const grupo = partes[0].replace(/\.json$/, '') || null
-    /* Dentro de `skill/` a Paizo separa por perícia (`skill/athletics/...`), e é
-       essa pasta que vira o agrupamento da aba Ações. Pack sem esse nível
-       devolve null, e a tela junta tudo num balde só em vez de sumir com a
-       ação. Perícia continua em inglês, como o resto do pack (D12). */
-    const pericia = grupo === 'skill' && partes.length > 2 ? partes[1] : null
-    const html = sanitizeDescription(system?.description?.value ?? '')
+    const bruto = resolveLocalize(system?.description?.value ?? '')
+    /* O nível do próprio verbete resolve `@item.rank`/`@item.level` dentro das
+       fórmulas do pack — é o que faz o Caustic Blast dizer "1 persistent acid"
+       em vez de "(1+floor((@item.rank -1)/2)) persistent,acid". */
+    const nivel = Number.isFinite(Number(system?.level?.value)) ? Number(system.level.value) : null
+    const html = sanitizeDescription(bruto, { level: nivel })
+
+    /* Perícia e classe de uma ação: os dois agrupamentos da aba Ações, os dois
+       vindos da organização da Paizo e não de uma lista nossa.
+
+       Classe ainda é a pasta (`class/barbarian/rage.json`) — o traço da ação não
+       serve, porque 83 das 196 não carregam o traço da própria classe. Perícia
+       já foi pasta e não é mais; ver o bloco no topo. Ambas em inglês, como o
+       resto do pack (D12). */
+    const pericias = kind === 'action' && grupo === 'skill' ? periciasDaAcao(slug, bruto) : []
+    const classeDaAcao = kind === 'action' && grupo === 'class' && partes.length > 2 ? partes[1] : null
     const traitBlock = system?.traits ?? {}
 
     const entry = {
@@ -230,7 +483,7 @@ for (const { pack, kind } of PACKS) {
       name: String(raw.name).trim(),
       kind,
       pack,
-      level: Number.isFinite(Number(system?.level?.value)) ? Number(system.level.value) : null,
+      level: nivel,
       category: system?.category ?? null,
       group: grupo,
       rarity: traitBlock.rarity ?? null,
@@ -251,6 +504,7 @@ for (const { pack, kind } of PACKS) {
       console.warn(`  ! verbete repetido: ${entry.id}`)
       continue
     }
+    if (TEM_REF_DE_ATOR.test(entry.descriptionText)) comRefDeAtor += 1
     entries.set(entry.id, entry)
     counts[pack] += 1
 
@@ -258,6 +512,9 @@ for (const { pack, kind } of PACKS) {
        feature de classe, e nunca ora para ela, ora para a ação. */
     reivindicar(nameIndex, normalizeName(entry.name), entry.id, kind)
     reivindicar(slugIndex, slug, entry.id, kind)
+    /* "Thief" também atende por "Thief Racket", porque o pack diz que ele é um
+       `rogue-racket` e é assim que o Pathbuilder o chama. */
+    apelidarPorTags(entry, Array.isArray(traitBlock.otherTags) ? traitBlock.otherTags : [])
 
     if (kind === 'spell') {
       /* O índice do bundle NÃO leva descrição: são ~2.000 magias, e a descrição
@@ -283,17 +540,30 @@ for (const { pack, kind } of PACKS) {
         source: entry.source,
       })
     }
-    /* Só `basic` e `skill` vão no bundle: são 84 verbetes, valem para todo
-       personagem e a aba precisa deles de cara. As 196 ações de classe só
-       aparecem se o personagem tiver a feature, e essas chegam resolvidas pela
-       importação. */
-    if (kind === 'action' && (grupo === 'basic' || grupo === 'skill')) {
+    /* `basic`, `skill` e `class` vão no bundle. As de classe entraram depois: a
+       aposta original era que elas chegariam resolvidas pela importação, porque
+       o personagem tem a feature que as concede. Medido na mesa: não chegam. O
+       Pathbuilder manda "Rage" e o desempate de nome resolve para a FEATURE de
+       classe (é a ordem certa, e a espec a exige) — a ação homônima nunca é
+       alcançada, e a aba Classe ficava vazia para todo mundo.
+
+       No Foundry quem faz a ponte é a regra `GrantItem` da feature, que aponta
+       para a ação. Seguir essa corrente é o certo e continua na mesa (ver o
+       estudo do Pathmuncher); enquanto isso, a pasta da Paizo já diz de que
+       classe é cada ação, e a tela filtra pela classe da ficha.
+
+       Custo: 196 verbetes a mais no índice, sem descrição — de 14 KB para ~46. */
+    if (kind === 'action' && ['basic', 'skill', 'class'].includes(grupo)) {
       actionIndex.push({
         id: entry.id,
         slug,
         name: entry.name,
         group: grupo,
-        skill: pericia,
+        skills: pericias,
+        // `shared` é pasta de verdade da Paizo: ação que várias classes ganham
+        // (hoje só a Reactive Strike). A tela dá a ela uma faixa própria em vez
+        // de fingir que é da classe de quem está olhando.
+        class: classeDaAcao,
         actionCost: entry.actionCost,
         traits: entry.traits,
         rarity: entry.rarity,
@@ -323,7 +593,6 @@ for (const { pack, kind } of PACKS) {
  * descrição. Eles vivem no arquivo de localização, sob
  * PF2E.NPC.Abilities.Glossary, com a chave em PascalCase sem hífen.
  */
-const en = JSON.parse(readFileSync(resolveLangFile(vendor), 'utf8'))
 const glossary = en?.PF2E?.NPC?.Abilities?.Glossary ?? {}
 let glossarioAdicionado = 0
 
@@ -404,6 +673,57 @@ const punho = {
   origem: `foundryvtt/pf2e ${FONTE_PUNHO}`,
 }
 
+/* ----------------------------------------------- apelidos: as duas travas */
+
+/* Só agora dá para filtrar: o nome de verbete que cobre um apelido pode ter sido
+   lido depois dele. */
+const aliasIndex = new Map()
+let apelidosCobertos = 0
+let apelidosAmbiguos = 0
+
+for (const [chave, ids] of apelidosCrus) {
+  if (nameIndex.has(chave)) {
+    apelidosCobertos += 1
+    continue
+  }
+  if (ids.size > 1) {
+    apelidosAmbiguos += 1
+    console.warn(`  ! apelido ambíguo, descartado: "${chave}" -> ${[...ids].join(' | ')}`)
+    continue
+  }
+  aliasIndex.set(chave, [...ids][0])
+}
+
+/* ------------------------------------------ sentidos, que também são código
+
+   A ficha mostrava como "Sentidos" tudo que resolveu no glossário — e o
+   glossário do Foundry tem 55 verbetes, dos quais a maioria não é sentido
+   nenhum: Grab, Trample, Shield Block, Ferocity. Somava ainda a lista inteira de
+   nomes não resolvidos, e assim "Holy Aura" e "Deity Skill" viravam sentidos do
+   Seelah.
+
+   A lista de verdade está no código do sistema, em `SENSE_TYPES` — 17 nomes.
+   Extraímos o bloco de lá, como já se faz com o Punho básico, e falhamos alto se
+   ele mudar de forma. Dentro dela, os de VISÃO são os que a própria Paizo nomeia
+   assim: `darkvision`, `low-light-vision`, `truesight`, `see-invisibility`. Não é
+   heurística sobre prosa — é o identificador do sistema, e a lista fechada de 17
+   fica impressa no relatório do build para conferência. */
+
+const FONTE_SENTIDOS = 'src/module/actor/creature/values.ts'
+const codigoSentidos = readFileSync(resolveSystemFile(FONTE_SENTIDOS, vendor), 'utf8')
+const blocoSentidos = codigoSentidos.match(/const SENSE_TYPES = new Set\(\[([\s\S]*?)\]/)
+const sentidos = blocoSentidos ? [...blocoSentidos[1].matchAll(/"([\w-]+)"/g)].map((m) => m[1]) : []
+
+if (sentidos.length < 10) {
+  console.error(
+    `\nNão achei SENSE_TYPES em ${FONTE_SENTIDOS} (vieram ${sentidos.length} sentidos).\n` +
+      'Conserte o extrator — não escreva a lista de sentidos à mão.\n',
+  )
+  process.exit(1)
+}
+
+const sentidosDeVisao = sentidos.filter((s) => /vision|sight|^see-/.test(s))
+
 /* --------------------------------------------------------------- gravação */
 
 const dataDir = path.join(ROOT, 'src', 'data')
@@ -417,6 +737,10 @@ writeFileSync(path.join(dataDir, 'index.spells.json'), JSON.stringify(spellIndex
 actionIndex.sort((a, b) => a.name.localeCompare(b.name))
 writeFileSync(path.join(dataDir, 'index.actions.json'), JSON.stringify(actionIndex))
 writeFileSync(path.join(dataDir, 'conditions.json'), JSON.stringify(conditions))
+writeFileSync(
+  path.join(dataDir, 'senses.json'),
+  `${JSON.stringify({ todos: sentidos, visao: sentidosDeVisao, origem: `foundryvtt/pf2e ${FONTE_SENTIDOS}` }, null, 2)}\n`,
+)
 writeFileSync(path.join(dataDir, 'unarmed.json'), `${JSON.stringify(punho, null, 2)}\n`)
 
 /* Um arquivo só, concatenado, com um índice de offsets ao lado. Nove mil
@@ -446,6 +770,10 @@ writeFileSync(
     entries: offsets,
     names: Object.fromEntries([...nameIndex].map(([k, v]) => [k, v.id])),
     slugs: Object.fromEntries([...slugIndex].map(([k, v]) => [k, v.id])),
+    /* Separado de `names` de propósito: nome de verbete e apelido derivado não
+       têm o mesmo peso, e quem lê o índice precisa poder saber por qual dos dois
+       um nome resolveu. */
+    aliases: Object.fromEntries(aliasIndex),
   }),
 )
 
@@ -458,11 +786,31 @@ console.log(`\nVerbetes por pack:`)
 for (const { pack } of PACKS) console.log(`  ${pack.padEnd(18)} ${String(counts[pack]).padStart(5)}`)
 console.log(`  ${'en.json (sentidos)'.padEnd(18)} ${String(glossarioAdicionado).padStart(5)}`)
 if (semNome) console.log(`  ${String(semNome)} arquivo(s) sem nome, ignorados`)
+if (comRefDeAtor)
+  console.log(
+    `  ${String(comRefDeAtor)} verbete(s) com fórmula que depende do personagem` +
+      ` (@actor/@self), mantida como veio`,
+  )
+if (localizeSemChave)
+  console.log(`  ${String(localizeSemChave)} @Localize sem tradução no en.json, macro mantido no texto`)
 
 console.log(`\nGerado:`)
 console.log(`  src/data/index.spells.json     ${spellIndex.length} magias, ${kb(bytes(path.join(dataDir, 'index.spells.json')))}`)
-console.log(`  src/data/index.actions.json    ${actionIndex.length} ações básicas e de perícia, ${kb(bytes(path.join(dataDir, 'index.actions.json')))}`)
+const semPericia = actionIndex.filter((a) => a.group === 'skill' && !a.skills.length)
+console.log(
+  `  src/data/index.actions.json    ${actionIndex.length} ações básicas, de perícia e de classe,` +
+    ` ${kb(bytes(path.join(dataDir, 'index.actions.json')))}`,
+)
+console.log(
+  `  ${''.padEnd(28)} ${semPericia.length} sem perícia em fonte nenhuma` +
+    (semPericia.length ? `: ${semPericia.map((a) => a.name).join(', ')}` : ''),
+)
 console.log(`  src/data/conditions.json       ${conditions.length} condições, ${kb(bytes(path.join(dataDir, 'conditions.json')))}`)
 console.log(`  src/data/unarmed.json          ${punho.name} ${punho.weapon.damage.dice}${punho.weapon.damage.die} ${punho.weapon.damage.damageType} [${punho.traits.join(' ')}]`)
+console.log(`  src/data/senses.json           ${sentidos.length} sentidos, ${sentidosDeVisao.length} de visão: ${sentidosDeVisao.join(', ')}`)
 console.log(`  server/data/entries.bin        ${entries.size} verbetes, ${kb(offset)}`)
 console.log(`  server/data/entries.idx.json   ${nameIndex.size} nomes indexados, ${kb(bytes(path.join(serverDataDir, 'entries.idx.json')))}`)
+console.log(
+  `  ${''.padEnd(28)} ${aliasIndex.size} apelidos de categoria` +
+    ` (${apelidosCobertos} já eram nome, ${apelidosAmbiguos} descartados por ambiguidade)`,
+)

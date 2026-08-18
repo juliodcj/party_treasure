@@ -9,7 +9,20 @@ import { useEffect } from 'react'
  * sozinho — é o que mantém título e rodapé parados. Sem ele, uma lista que
  * também rola vira caixa dentro de caixa, com dois cortes na tela.
  */
-export default function Sheet({ title, onClose, center = false, fill = false, children }) {
+export default function Sheet({
+  title,
+  onClose,
+  center = false,
+  fill = false,
+  /* Do topo da tela até a barra de abas, em vez dos 62dvh de sempre — para a
+     folha que existe para percorrer uma lista longa. */
+  tall = false,
+  /* Um botão à direita do título, para a ação que age sobre a folha inteira e
+     não sobre uma linha dela ("Limpar todas", nas condições). Fica no
+     cabeçalho e não no rodapé porque o rodapé é do par aceitar/cancelar. */
+  action = null,
+  children,
+}) {
   useEffect(() => {
     const onKey = (event) => {
       if (event.key === 'Escape') onClose()
@@ -27,12 +40,17 @@ export default function Sheet({ title, onClose, center = false, fill = false, ch
     <>
       <div className="overlay" onClick={onClose} />
       <div
-        className={`sheet${center ? ' sheet--center' : ' sheet--bottom'}${fill ? ' sheet--fill' : ''}`}
+        className={`sheet${center ? ' sheet--center' : ' sheet--bottom'}${fill ? ' sheet--fill' : ''}${tall ? ' sheet--tall' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}
       >
-        {title ? <div className="sheet__title">{title}</div> : null}
+        {title || action ? (
+          <div className="sheet__head">
+            {title ? <div className="sheet__title">{title}</div> : <span />}
+            {action}
+          </div>
+        ) : null}
         {children}
       </div>
     </>

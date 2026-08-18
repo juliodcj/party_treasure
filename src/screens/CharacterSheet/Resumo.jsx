@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import Sheet, { SheetActions } from '../../components/Sheet.jsx'
 import Stepper from '../../components/Stepper.jsx'
+import SENSES from '../../data/senses.json' with { type: 'json' }
 import { useStore } from '../../state/store.jsx'
 import { nightRest, sgn } from '../../lib/sheet.js'
+import { slugify } from '../../lib/loreResolve.js'
 import { RANK_NAMES } from '../../lib/pathbuilder.js'
 import { BedIcon } from '../../components/Icons.jsx'
 import BreakdownSheet, { FactCell, StatCell } from './BreakdownSheet.jsx'
@@ -208,7 +210,10 @@ export default function Resumo({ player, view, onGoToGm }) {
             </button>
           ))}
         </div>
-        <p className="skills__legend">U destreinado · T treinado · E expert · M mestre · L lendário</p>
+        {/* Grau de proficiência é vocabulário publicado do PF2e, como
+            `Damage` e `AC Bonus`: a letra já vem de lá, e a legenda que a
+            explica fala a mesma língua. */}
+        <p className="skills__legend">U untrained · T trained · E expert · M master · L legendary</p>
       </Bloco>
 
       {/* ------------------------------------------------------ proficiências */}
@@ -375,14 +380,29 @@ export function DescansoSheet({ player, onClose, onConfirm }) {
   )
 }
 
-/* Os sentidos vêm dos `specials` resolvidos no glossário. O que não resolveu
-   aparece assim mesmo, com o nome que veio — sumir é o único desfecho proibido. */
+/*
+ * Sentidos de visão: Darkvision, Low-Light Vision, Truesight e companhia.
+ *
+ * A regra era "tudo que resolveu no glossário, mais tudo que não resolveu". Só
+ * que o glossário do Foundry tem 55 verbetes e a maioria não é sentido nenhum —
+ * o Rurik anunciava "Shield Block" como sentido — e a lista de não resolvidos
+ * punha "Holy Aura" e "Deity Skill" ali junto, que não são nem sentido nem
+ * visão.
+ *
+ * Agora o critério é o identificador do próprio sistema (`SENSE_TYPES`,
+ * extraído na ingestão para `senses.json`): o nome vira slug e tem de estar na
+ * lista de visão. Nada some da ficha por causa disto — o que não é sentido
+ * continua listado como feature na aba Feats, que é onde ele sempre esteve.
+ */
+const VISAO = new Set(SENSES.visao)
+
 function sentidos(sheet) {
-  const doGlossario = (sheet.feats ?? [])
-    .filter((feat) => feat.kind === 'glossary')
-    .map((feat) => feat.name)
-  const orfaos = (sheet.unresolved ?? []).filter((nome) => !doGlossario.includes(nome))
-  return [...doGlossario, ...orfaos].join(' · ')
+  const nomes = [...(sheet.feats ?? []).map((f) => f.name), ...(sheet.specials ?? [])]
+  const vistos = new Set()
+  for (const nome of nomes) {
+    if (VISAO.has(slugify(nome))) vistos.add(nome)
+  }
+  return [...vistos].join(' · ')
 }
 
 const dataCurta = (iso) => {

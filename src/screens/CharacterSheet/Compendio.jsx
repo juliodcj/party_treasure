@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import SPELL_INDEX from '../../data/index.spells.json' with { type: 'json' }
+import { SearchBox } from '../../components/ItemFilters.jsx'
 import { useStore } from '../../state/store.jsx'
 import { matchesContent } from '../../lib/items.js'
+import { normalizeName } from '../../lib/loreResolve.js'
 import { spellKey } from '../../state/reducer.js'
 import SpellPicker from './SpellPicker.jsx'
 
@@ -39,6 +41,7 @@ export default function Compendio({ player, conj, grimorio, onClose }) {
   const { state, dispatch } = useStore()
   const [rank, setRank] = useState(null)
   const [mostrarTudo, setMostrarTudo] = useState(false)
+  const [busca, setBusca] = useState('')
 
   const daTradicao = useMemo(
     () => SPELL_INDEX.filter((sp) => (sp.traditions ?? []).includes(conj.tradition)),
@@ -53,10 +56,15 @@ export default function Compendio({ player, conj, grimorio, onClose }) {
       ? daTradicao
       : daTradicao.filter((sp) => matchesContent(sp, state.settings))
     const porRank = rank == null ? porConteudo : porConteudo.filter((sp) => rankEfetivo(sp) === rank)
-    return porRank
+    /* Busca por pedaço do nome, com a mesma normalização que resolve nome contra
+       o corpus — quem digita "sure str" acha "Sure Strike", e o acento e o hífen
+       do nome publicado não atrapalham. */
+    const alvo = normalizeName(busca)
+    const porNome = alvo ? porRank.filter((sp) => normalizeName(sp.name).includes(alvo)) : porRank
+    return porNome
       .map(paraPicker)
       .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name))
-  }, [daTradicao, mostrarTudo, state.settings, rank])
+  }, [daTradicao, mostrarTudo, state.settings, rank, busca])
 
   const ranksPresentes = useMemo(
     () => [...new Set(daTradicao.map(rankEfetivo))].sort((a, b) => a - b),
@@ -91,6 +99,13 @@ export default function Compendio({ player, conj, grimorio, onClose }) {
       vazio="Nenhuma magia com esses filtros."
       onClose={onClose}
     >
+      {/* Antes dos chips: com ~1.993 magias na tradição, rolar até "Wall of
+          Stone" era a operação mais cara da tela. */}
+      <SearchBox value={busca} onChange={setBusca} placeholder="Buscar magia..." sunken />
+
+      {/* Uma faixa só, que rola de lado. Em duas linhas que quebravam, os
+          treze filtros comiam 95px do alto da folha — mais do que duas magias
+          da lista que eles filtram. */}
       <div className="comp__chips">
         <button
           type="button"
@@ -109,16 +124,17 @@ export default function Compendio({ player, conj, grimorio, onClose }) {
             {r === 0 ? 'Truque' : `R${r}`}
           </button>
         ))}
+        {/* Filtra outra coisa (conteúdo da mesa, não círculo), e por isso fecha
+            a faixa depois de um vão maior, em vez de virar mais um círculo. */}
+        <button
+          type="button"
+          className={`chip chip--sm comp__mostrar-tudo${mostrarTudo ? ' chip--on' : ''}`}
+          aria-pressed={mostrarTudo}
+          onClick={() => setMostrarTudo((v) => !v)}
+        >
+          {mostrarTudo ? 'Mostrando tudo' : 'Mostrar tudo'}
+        </button>
       </div>
-
-      <button
-        type="button"
-        className={`chip chip--sm comp__mostrar-tudo${mostrarTudo ? ' chip--on' : ''}`}
-        aria-pressed={mostrarTudo}
-        onClick={() => setMostrarTudo((v) => !v)}
-      >
-        {mostrarTudo ? 'Mostrando tudo' : 'Mostrar tudo'}
-      </button>
     </SpellPicker>
   )
 }

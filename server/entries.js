@@ -48,6 +48,7 @@ export function createEntries() {
   const offsets = index.entries ?? {}
   const names = index.names ?? {}
   const slugs = index.slugs ?? {}
+  const aliases = index.aliases ?? {}
 
   /* Aberto uma vez e mantido aberto: abrir e fechar a cada verbete faria uma
      syscall a mais por linha de lista de feats. */
@@ -98,8 +99,18 @@ export function createEntries() {
     return out
   }
 
-  /** Nome exato, com caixa e pontuação normalizadas. Nada de aproximação. */
-  const resolveName = (name) => names[normalizeName(name)] ?? null
+  /**
+   * Nome exato, com caixa e pontuação normalizadas. Nada de aproximação.
+   *
+   * Duas passadas, nesta ordem, e a ordem é o contrato: primeiro o nome do
+   * verbete, depois o apelido de categoria que a ingestão derivou das tags do
+   * pack ("Thief Racket" -> `class-feature:thief`). Apelido nunca ganha de nome
+   * — a ingestão já descarta o que colidiria, e a ordem aqui garante o resto.
+   */
+  const resolveName = (name) => {
+    const chave = normalizeName(name)
+    return names[chave] ?? aliases[chave] ?? null
+  }
 
   return {
     ok: true,

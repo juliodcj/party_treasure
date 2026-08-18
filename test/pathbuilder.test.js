@@ -168,6 +168,28 @@ test('specials ficam separados dos feats, mesmo com nome repetido', () => {
   assert.ok(sheet.feats.some((f) => f.name === 'Dromaar'))
 })
 
+test('perícia e grimório não viram special: a ficha já os mostra em outro lugar', () => {
+  const build = {
+    ...RURIK.build,
+    specials: ['Darkvision', 'Crafting', 'Rage', 'Society', 'Spellbook', 'Stealth'],
+  }
+  const sheet = parsePathbuilder({ build })
+
+  // O Pathbuilder repete a perícia treinada em `specials`. Procurar "Crafting"
+  // no pack de feats é procurar o que nunca esteve lá — e o resultado era uma
+  // linha "não resolvido" para um dado que `proficiencies` mostra certo.
+  assert.deepEqual(sheet.specials, ['Darkvision', 'Rage'])
+
+  // e continua sendo perícia, com o grau, onde sempre esteve
+  const cra = skillList(sheet).find((s) => s.key === 'crafting')
+  assert.equal(cra.rank, RURIK.build.proficiencies.crafting)
+})
+
+test('special que não é perícia continua entrando, mesmo desconhecido', () => {
+  const build = { ...RURIK.build, specials: ['Craftiness', 'Fúria do Julio'] }
+  assert.deepEqual(parsePathbuilder({ build }).specials, ['Craftiness', 'Fúria do Julio'])
+})
+
 test('bárbaro não tem conjuração, e isso é null e não um objeto vazio', () => {
   const sheet = rurik()
   assert.equal(sheet.spellcasting, null)

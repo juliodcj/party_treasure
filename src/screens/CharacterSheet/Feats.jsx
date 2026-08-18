@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import TraitList from '../../components/TraitList.jsx'
-import { ChevronRight } from '../../components/Icons.jsx'
+import { ChevronRight, EditIcon } from '../../components/Icons.jsx'
 import SectionHead, { ExpandCollapseAll } from '../../components/SectionHead.jsx'
 import { useStore } from '../../state/store.jsx'
 
@@ -151,6 +151,32 @@ function Linha({ feat, id, player, aberto, setAberto }) {
   const open = aberto === id
   const favorito = Boolean(player.vitals?.favorites?.[chave(feat)])
 
+  /*
+   * Descrição escrita à mão, e só para quem não tem verbete.
+   *
+   * Não é uma brecha na regra "zero placeholder": a regra proíbe NÓS
+   * escrevermos texto de regra no código. Aqui quem escreve é a pessoa dona da
+   * ficha, sobre um feat que os packs não cobrem — conteúdo de livro novo,
+   * homebrew da mesa —, e o texto dela fica marcado como dela. Onde há verbete,
+   * o verbete manda e o lápis nem aparece.
+   */
+  const podeAnotar = !feat.descriptionHtml
+  const nota = player.featNotes?.[chave(feat)] ?? ''
+  const [editando, setEditando] = useState(false)
+  const [rascunho, setRascunho] = useState(nota)
+
+  useEffect(() => setRascunho(nota), [nota])
+
+  const salvar = () => {
+    dispatch({ type: 'SET_FEAT_NOTE', playerId: player.id, key: chave(feat), text: rascunho })
+    setEditando(false)
+  }
+
+  const anotar = () => {
+    setAberto(id)
+    setEditando(true)
+  }
+
   return (
     <div className="entry">
       <div className="entry__head">
@@ -172,6 +198,20 @@ function Linha({ feat, id, player, aberto, setAberto }) {
             {feat.resolved === false ? ' · sem verbete nos packs' : ''}
           </span>
         </button>
+
+        {/* O lápis só existe onde falta descrição — e é o convite para a pessoa
+            escrever a dela, sem precisar descobrir que a linha abre. */}
+        {podeAnotar ? (
+          <button
+            type="button"
+            className="icon-btn icon-btn--accent"
+            aria-label={`${nota ? 'Editar' : 'Escrever'} a descrição de ${feat.name}`}
+            title={nota ? 'Editar a descrição' : 'Escrever a descrição'}
+            onClick={anotar}
+          >
+            <EditIcon size={14} />
+          </button>
+        ) : null}
 
         <button
           type="button"
@@ -202,10 +242,28 @@ function Linha({ feat, id, player, aberto, setAberto }) {
               // Vem sanitizado da ingestão: sem script nem handler inline.
               dangerouslySetInnerHTML={{ __html: feat.descriptionHtml }}
             />
+          ) : editando ? (
+            <textarea
+              className="textarea feat-note__field"
+              value={rascunho}
+              onChange={(event) => setRascunho(event.target.value)}
+              onBlur={salvar}
+              placeholder={`O que ${feat.name} faz…`}
+              aria-label={`Descrição de ${feat.name}`}
+              autoFocus
+            />
+          ) : nota ? (
+            /* Texto da pessoa, e dito com todas as letras: quem lê a ficha
+               precisa saber que isto não saiu de livro nenhum. */
+            <>
+              <p className="item__desc item__desc--plain feat-note">{nota}</p>
+              <div className="item__source">Escrito na mesa, não veio dos packs</div>
+            </>
           ) : (
             <p className="item__desc item__desc--plain">
               Os packs do Foundry não têm verbete com este nome, então a
-              descrição não aparece. O nome é o que o Pathbuilder mandou.
+              descrição não aparece. O nome é o que o Pathbuilder mandou — toque
+              no lápis para escrever a sua.
             </p>
           )}
           {feat.entrySource ? <div className="item__source">{feat.entrySource.title}</div> : null}
