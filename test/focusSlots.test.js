@@ -9,6 +9,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
 import { focusList, focusPool, nightRest } from '../src/lib/sheet.js'
+import { truqueDeFoco } from '../src/lib/spells.js'
 import { reducer } from '../src/state/reducer.js'
 import { TABLE_ACTIONS } from '../server/table.js'
 
@@ -66,6 +67,39 @@ test('escolha antiga, gravada sem rank, continua contando como magia de foco', (
 
   assert.deepEqual(focusList(sheet, antiga).cantrips, [])
   assert.equal(focusPool(sheet, antiga), 1)
+})
+
+/*
+ * A divisão não pode depender de o Pathbuilder ter classificado certo: o corpus
+ * é quem sabe. E "é de foco" vem da PASTA `spells/focus/` do pack, não do traço
+ * `focus` — 49 dos truques de foco do jogo não carregam esse traço.
+ */
+test('o corpus reconhece truque de foco do Remaster, que não tem o traço focus', () => {
+  assert.equal(truqueDeFoco('Courageous Anthem'), true, 'truque de composição do bardo')
+  assert.equal(truqueDeFoco('Imaginary Weapon'), true, 'psi cantrip do psychic')
+  assert.equal(truqueDeFoco('Boost Eidolon'), true, 'truque do summoner')
+  assert.equal(truqueDeFoco('Counter Performance'), false, 'magia de foco, não truque')
+  assert.equal(truqueDeFoco('Fireball'), false, 'truque nenhum, foco nenhum')
+  assert.equal(truqueDeFoco('Inspire Courage'), null, 'nome legado: o corpus não conhece, e diz isso')
+})
+
+test('o corpus corrige a lista quando o export classifica errado', () => {
+  /* Se o export mandar o truque de composição dentro de `focusSpells`, ele não
+     pode virar um ponto de foco que a regra não dá. */
+  const errado = fichaCom({ focusCantrips: [], focusSpells: ['Courageous Anthem', 'Counter Performance'] })
+  const { cantrips, spells } = focusList(errado, {})
+
+  assert.deepEqual(cantrips.map((sp) => sp.name), ['Courageous Anthem'])
+  assert.deepEqual(spells.map((sp) => sp.name), ['Counter Performance'])
+  assert.equal(focusPool(errado, {}), 1, 'o truque não inflou a reserva')
+})
+
+test('nome que o corpus não conhece fica na lista de onde veio', () => {
+  const legado = fichaCom({ focusCantrips: ['Inspire Courage'], focusSpells: ['Nome Inventado'] })
+  const { cantrips, spells } = focusList(legado, {})
+
+  assert.deepEqual(cantrips.map((sp) => sp.name), ['Inspire Courage'])
+  assert.deepEqual(spells.map((sp) => sp.name), ['Nome Inventado'])
 })
 
 test('SET_SLOTS_USED guarda o gasto do espontâneo, preso ao que a ficha dá', () => {

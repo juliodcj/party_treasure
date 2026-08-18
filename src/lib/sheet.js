@@ -29,6 +29,7 @@
 import UNARMED from '../data/unarmed.json' with { type: 'json' }
 import { ABILITY_CONDITION, conditionMods } from './conditions.js'
 import { RANK_NAMES, abilityMod, skillList } from './pathbuilder.js'
+import { truqueDeFoco } from './spells.js'
 
 /**
  * A regra de proficiência, num lugar só.
@@ -543,15 +544,34 @@ export function focusList(sheet, vitals = {}) {
   if (!conj) return { cantrips: [], spells: [] }
 
   const esquecidas = new Set(vitals.forgottenFocusSpells ?? [])
-  const daFicha = (nomes) => (nomes ?? []).filter((name) => !esquecidas.has(name)).map((name) => ({ name }))
+  const cantrips = []
+  const spells = []
 
-  const extras = vitals.extraFocusSpells ?? []
-  const ehTruque = (sp) => sp.rank != null && Number(sp.rank) === 0
-
-  return {
-    cantrips: [...daFicha(conj.focusCantrips), ...extras.filter(ehTruque)],
-    spells: [...daFicha(conj.focusSpells), ...extras.filter((sp) => !ehTruque(sp))],
+  /*
+   * Quem decide de que lado a magia cai é o CORPUS, e não a lista de onde o
+   * nome veio: o pack sabe que Courageous Anthem é truque de foco mesmo que o
+   * export a tenha mandado como magia de foco. Quando o corpus não conhece o
+   * nome — conteúdo legado, slug que não resolve — vale o `padrao`, que é a
+   * lista do Pathbuilder que a trouxe ou o rank gravado na escolha de mesa.
+   */
+  const separar = (sp, padrao) => {
+    const doCorpus = truqueDeFoco(sp.name)
+    const truque = doCorpus == null ? padrao : doCorpus
+    if (truque) cantrips.push(sp)
+    else spells.push(sp)
   }
+
+  for (const name of conj.focusCantrips ?? []) {
+    if (!esquecidas.has(name)) separar({ name }, true)
+  }
+  for (const name of conj.focusSpells ?? []) {
+    if (!esquecidas.has(name)) separar({ name }, false)
+  }
+  for (const sp of vitals.extraFocusSpells ?? []) {
+    separar(sp, sp.rank != null && Number(sp.rank) === 0)
+  }
+
+  return { cantrips, spells }
 }
 
 /** As duas listas numa só, para quem não precisa da divisão (a aba Ataques). */

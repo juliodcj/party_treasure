@@ -903,7 +903,8 @@ src/
     catalog.js               categorias e a ordem de exibição
     traits.json / traits.js  dicionário de traços
     conditions.json          as 43 condições, com a descrição da Paizo
-    index.spells.json        1.993 magias, sem descrição (o compêndio)
+    index.spells.json        1.993 magias, sem descrição (o compêndio);
+                             `focus: true` nas 545 da pasta spells/focus/
     index.actions.json       ações básicas, de perícia e de classe,
                              com a perícia de cada uma e o "(Trained)"
     unarmed.json             o Punho, que não é item

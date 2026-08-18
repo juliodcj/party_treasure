@@ -21,6 +21,30 @@ export function spellDoIndice(nome) {
 }
 
 /*
+ * A magia é um TRUQUE de foco?
+ *
+ * Duas perguntas numa: ela é de foco, e ela é truque.
+ *
+ * "É de foco" vem do campo `focus` do índice, que a ingestão tira da pasta
+ * `spells/focus/` do pack — e não do traço `focus`. Das 545 magias daquela
+ * pasta, 52 não carregam o traço, e 49 dessas 52 são exatamente os truques de
+ * foco: Courageous Anthem, Imaginary Weapon, Buzzing Bites, Boost Eidolon. Quem
+ * pergunta pelo traço conclui que truque de foco deixou de existir no Remaster.
+ *
+ * "É truque" é o traço `cantrip`. O pack guarda truque com o nível em que ele
+ * sobe (Courageous Anthem é `rank: 1`), então o rank sozinho também não serve.
+ *
+ * Devolve `null` quando o corpus não conhece o nome — magia de conteúdo legado,
+ * ou nome que o slug não resolve. Quem chama decide o que fazer com o silêncio,
+ * em vez de receber um `false` que parece resposta.
+ */
+export function truqueDeFoco(nome) {
+  const sp = spellDoIndice(nome)
+  if (!sp) return null
+  return Boolean(sp.focus) && (sp.traits ?? []).includes('cantrip')
+}
+
+/*
  * A magia pede rolagem de ataque?
  *
  * Quem marca isso no corpus é o traço `attack` — 94 magias (Telekinetic

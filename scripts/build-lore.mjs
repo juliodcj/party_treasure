@@ -615,6 +615,21 @@ for (const { pack, kind } of PACKS) {
         traits: entry.traits,
         rarity: entry.rarity,
         actionCost: entry.actionCost,
+        /*
+         * Magia de foco, dita pela PASTA do pack (`spells/focus/`) — o mesmo
+         * critério das ações, e pela mesma razão: a organização é da Paizo.
+         *
+         * O traço `focus` NÃO serve sozinho, e essa foi uma lição cara: das 545
+         * magias da pasta, 52 não o carregam, e 49 dessas 52 são exatamente os
+         * TRUQUES de foco — Courageous Anthem, Imaginary Weapon, Boost Eidolon,
+         * Buzzing Bites. Quem filtrasse pelo traço concluiria que truque de foco
+         * não existe mais depois do Remaster. Existe: é o truque de composição
+         * do bardo, o psi do psychic, o hex da bruxa, o do eidolon.
+         *
+         * Só sai no índice quando é verdade, para não somar 26 KB de `false` nas
+         * 1.448 magias que não são de foco.
+         */
+        ...(grupo === 'focus' ? { focus: true } : {}),
         /* Contra o quê a magia joga. Vem no bundle (+54 KB em 606) porque a aba
            Ataques precisa dele para escolher entre mostrar a DC ou o bônus de
            ataque, e essa escolha é síncrona — buscar no servidor faria a linha

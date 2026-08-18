@@ -35,7 +35,7 @@ export default function Magias({ player, view }) {
   const [escolhendo, setEscolhendo] = useState(null) // rank do slot vazio tocado
   const [compendioAberto, setCompendioAberto] = useState(false)
   const [especialAberta, setEspecialAberta] = useState(false)
-  const [focoAberto, setFocoAberto] = useState(false)
+  const [focoAberto, setFocoAberto] = useState(null) // 'truque' | 'magia'
   const [descansando, setDescansando] = useState(false)
   const [secoes, setSecoes] = useState(secoesAbertas)
 
@@ -220,26 +220,19 @@ export default function Magias({ player, view }) {
           Vêm antes das magias de foco de propósito: o truque de foco não gasta
           ponto nenhum — lança-se à vontade —, então é o que se lê primeiro no
           meio do turno. A reserva de pontos não aparece aqui porque não é dele:
-          as bolinhas ficam na seção que de fato as gasta, logo abaixo.
-
-          Sem botão de acrescentar, e a seção só existe quando a ficha trouxe
-          algum: no corpus de hoje (pós-Remaster) NENHUMA magia de foco carrega
-          o traço `cantrip`, então não há o que oferecer numa lista de escolha.
-          Quem tem truque de foco é ficha de conteúdo legado, e ele chega pelo
-          `focusCantrips` do Pathbuilder. Voltando a existir no pack, a seção
-          volta a aparecer sozinha. */}
-      {focoTruques.length > 0 ? (
-        <FocoSecao
-          titulo="Truques de foco"
-          lista={focoTruques}
-          aberta={aberta('foco-truques')}
-          onToggle={() => setSecao('foco-truques', !aberta('foco-truques'))}
-          custoDe={custoDe}
-          player={player}
-          abertoId={aberto}
-          setAberto={setAberto}
-        />
-      ) : null}
+          as bolinhas ficam na seção que de fato as gasta, logo abaixo. */}
+      <FocoSecao
+        titulo="Truques de foco"
+        lista={focoTruques}
+        aberta={aberta('foco-truques')}
+        onToggle={() => setSecao('foco-truques', !aberta('foco-truques'))}
+        rotuloAdicionar="Adicionar truque de foco"
+        onAdicionar={() => setFocoAberto('truque')}
+        custoDe={custoDe}
+        player={player}
+        abertoId={aberto}
+        setAberto={setAberto}
+      />
 
       {/* A seção aparece para todo conjurador, mesmo sem nenhuma magia de foco:
           era ela que gastava a reserva, e escondê-la quando a reserva é zero
@@ -250,7 +243,7 @@ export default function Magias({ player, view }) {
         aberta={aberta('foco')}
         onToggle={() => setSecao('foco', !aberta('foco'))}
         rotuloAdicionar="Adicionar magia de foco"
-        onAdicionar={() => setFocoAberto(true)}
+        onAdicionar={() => setFocoAberto('magia')}
         custoDe={custoDe}
         player={player}
         abertoId={aberto}
@@ -458,8 +451,9 @@ export default function Magias({ player, view }) {
         <FocoSheet
           player={player}
           sheet={sheet}
+          truque={focoAberto === 'truque'}
           foco={[...focoTruques, ...focoMagias]}
-          onClose={() => setFocoAberto(false)}
+          onClose={() => setFocoAberto(null)}
         />
       ) : null}
       {descansando ? (
@@ -919,35 +913,52 @@ function EspecialSheet({ player, conj, extras, onClose }) {
  * de propósito, e esta precisa do próprio filtro.
  *
  * Sem `sheet.class` no export, a lista sai vazia e diz por quê — não se mostra
- * as 493 magias de foco do jogo na esperança de acertar.
+ * as 545 magias de foco do jogo na esperança de acertar.
+ *
+ * As duas seções saem daqui: `truque` diz qual delas está pedindo a lista. É por
+ * este caminho que se ganha magia e truque de foco DEPOIS da importação, sem
+ * voltar ao Pathbuilder — que é como a mesa usa o app.
  */
-function FocoSheet({ player, sheet, foco, onClose }) {
+function FocoSheet({ player, sheet, foco, truque, onClose }) {
   const { dispatch } = useStore()
   const classe = String(sheet.class ?? '').toLowerCase()
+  const rotulo = truque ? 'truque de foco' : 'magia de foco'
 
-  /* Só o que gasta ponto: truque de foco (rank 0) tem seção própria, e a
-     divisão sai do corpus — `rankEfetivo` é quem sabe que truque é rank 0,
-     porque o pack guarda cantrip com o nível em que ele sobe. */
+  /*
+   * O que é magia de foco vem do campo `focus` do índice, que a ingestão tira da
+   * PASTA `spells/focus/` do pack — não do traço `focus`.
+   *
+   * A diferença não é detalhe: das 545 magias daquela pasta, 52 não carregam o
+   * traço, e 49 dessas são justamente os TRUQUES de foco (Courageous Anthem,
+   * Imaginary Weapon, Buzzing Bites, Boost Eidolon). Filtrando pelo traço, esta
+   * lista dizia que truque de foco não existe mais — e o jogador ficava sem
+   * poder acrescentar um sem reimportar a ficha.
+   *
+   * Dentro da pasta, quem separa as duas seções é o rank: `rankEfetivo` sabe que
+   * truque é rank 0, porque o pack guarda cantrip com o nível em que ele sobe.
+   */
   const opcoes = useMemo(() => {
     if (!classe) return []
     return SPELL_INDEX.filter(
       (sp) =>
-        (sp.traits ?? []).includes('focus') &&
+        sp.focus &&
         (sp.traits ?? []).includes(classe) &&
-        rankEfetivo(sp) > 0,
+        (truque ? rankEfetivo(sp) === 0 : rankEfetivo(sp) > 0),
     )
       .map(paraPicker)
       .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name))
-  }, [classe])
+  }, [classe, truque])
 
   const jaTem = new Set(foco.map((sp) => sp.name))
 
   return (
     <SpellPicker
-      title="Adicionar magia de foco"
+      title={`Adicionar ${rotulo}`}
       hint={
         classe
-          ? `Magias de foco de ${sheet.class}. Gastar e recuperar foco continua nas bolinhas do cabeçalho.`
+          ? truque
+            ? `Truques de foco de ${sheet.class}. Truque de foco não gasta ponto da reserva — a lista dele não mexe nas bolinhas.`
+            : `Magias de foco de ${sheet.class}. Gastar e recuperar foco continua nas bolinhas do cabeçalho.`
           : null
       }
       spells={opcoes}
@@ -957,7 +968,7 @@ function FocoSheet({ player, sheet, foco, onClose }) {
       }
       vazio={
         classe
-          ? `Nenhuma magia de foco de ${sheet.class} nos packs.`
+          ? `Nenhum ${rotulo} de ${sheet.class} nos packs.`
           : 'A ficha importada não trouxe a classe — sem ela não dá para saber quais magias de foco oferecer.'
       }
       onClose={onClose}
