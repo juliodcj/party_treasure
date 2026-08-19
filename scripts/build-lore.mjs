@@ -41,6 +41,7 @@ import { normalizeName } from '../src/lib/loreResolve.js'
 import {
   DEFAULT_VENDOR,
   ROOT,
+  resolveActionLangFile,
   resolveLangFile,
   resolveRuleLangFile,
   resolvePack,
@@ -196,15 +197,20 @@ function apelidarPorTags(entry, otherTags) {
  *   @Check[survival|...]                      -> Cover Tracks
  *   [[/act disable-device]]{Thievery}         -> Disable a Device
  *
+ * E a terceira é o texto publicado dizendo o nome da perícia colado em "check"
+ * — "The Medicine check DC is usually 15" (ver `periciasDaProsa`). Foi ela que
+ * trouxe a Treat Wounds para Medicine, sem ninguém escrever isso aqui.
+ *
  * E são uma LISTA, não uma escolha. Decipher Writing rola com Society, Arcana,
  * Occultism ou Religion, e o pack diz as quatro; Recall Knowledge idem. A ação
  * aparece embaixo de cada perícia que a rola, porque a pergunta que a aba
  * responde é "estou com Society na mão, o que dá para fazer?".
  *
- * Sobram 7 (Treat Wounds, Earn Income, Craft…) para as quais nenhuma das duas
- * fontes diz a perícia. Ficam sem perícia e caem num balde na tela, com o nome
- * que têm — chutar "Medicine" para Treat Wounds seria escrever regra de jogo no
- * nosso código, que é exatamente o que não se faz aqui.
+ * Sobram as que não TÊM uma perícia para achar: Recall Knowledge, Learn a Spell
+ * e Identify Magic dependem do assunto ou da tradição, e Earn Income vale com
+ * qualquer perícia. Ficam sem perícia e caem num balde na tela, com o nome que
+ * têm — chutar uma para elas seria escrever regra de jogo no nosso código, que
+ * é exatamente o que não se faz aqui.
  */
 const PERICIAS = new Set([
   'acrobatics',
@@ -263,13 +269,94 @@ function periciasDaMarcacao(html) {
   return achadas
 }
 
+/*
+ * A TERCEIRA fonte: o próprio texto da ação dizendo "<Perícia> check".
+ *
+ *   "The Medicine check DC is usually 15"        -> Treat Wounds
+ *   "Attempt a Crafting check"                   -> Deconstruct, Fortify Camp
+ *
+ * Continua sendo o dado publicado, e continua sendo uma regra só aplicada a
+ * todas as 54 — não uma tabela nossa dizendo que a Treat Wounds é de Medicine.
+ * O padrão é estreito de propósito: o nome de uma perícia, em maiúscula, colado
+ * na palavra "check". Medido contra o pack inteiro, ele não contradiz nenhuma
+ * das duas outras fontes onde as três se sobrepõem (Cover Tracks, Create
+ * Forgery, Hide, Impersonate, Steal), e resolve seis que ficavam sem nenhuma.
+ *
+ * O que continua sem perícia continua sem: Recall Knowledge, Learn a Spell e
+ * Identify Magic dependem do assunto ou da tradição, e Earn Income vale com
+ * qualquer perícia. Nenhuma delas TEM uma perícia para ser achada.
+ */
+function periciasDaProsa(html) {
+  const achadas = new Set()
+  for (const [, nome] of String(html).matchAll(/\b([A-Z][a-z]+) check\b/g)) {
+    if (PERICIAS.has(nome.toLowerCase())) achadas.add(nome.toLowerCase())
+  }
+  return achadas
+}
+
 /** As perícias que rolam uma ação, em ordem. Vazio quando nenhuma fonte diz. */
 function periciasDaAcao(slug, html) {
   const achadas = periciasDaMarcacao(html)
   const doRegistro = PERICIA_DO_REGISTRO.get(slug)
   if (doRegistro) achadas.add(doRegistro)
+  for (const nome of periciasDaProsa(html)) achadas.add(nome)
   return [...achadas].sort()
 }
+
+/*
+ * ------------------------------------------------- "precisa ser treinado?"
+ *
+ * A ação exige o grau de treinado na perícia para ser usada? É o "(Trained)"
+ * que a ficha põe ao lado do nome.
+ *
+ * Não existe campo para isso em pack nenhum — procurei. O que existe são três
+ * lugares em que a própria Paizo/Foundry DIZ, e as três são lidas aqui, na
+ * mesma regra para todas as ações:
+ *
+ *   1. a lista de tarefas de exemplo do verbete. Ela abre em "Untrained" para a
+ *      ação que qualquer um usa (Balance, Climb, Swim) e abre direto em
+ *      "Trained" para a que exige treino (Decipher Writing, Squeeze, Maneuver
+ *      in Flight);
+ *   2. o texto dizendo com todas as letras — "you must be trained in",
+ *      "you must have the trained proficiency rank in" (Earn Income, Learn a
+ *      Spell);
+ *   3. a mensagem de erro que a própria ação dispara, em `action-en.json`:
+ *      "{name} is not trained in {skill}." É o que marca a Treat Wounds, que
+ *      não diz nada disso na descrição.
+ *
+ * `false` aqui quer dizer "nenhuma das três fontes falou", e NÃO "pode usar
+ * destreinado" — é a mesma honestidade do resto do arquivo. A ficha, por isso,
+ * só ACRESCENTA o "(Trained)"; ela nunca escreve "(Untrained)".
+ */
+
+/** `treat-wounds` -> `TreatWounds`, que é como o action-en.json chaveia. */
+const chaveDeLocalizacao = (slug) =>
+  slug.split('-').map((parte) => parte.charAt(0).toUpperCase() + parte.slice(1)).join('')
+
+const arquivoDeAcoes = resolveActionLangFile(vendor)
+const ACTION_LANG = arquivoDeAcoes
+  ? JSON.parse(readFileSync(arquivoDeAcoes, 'utf8'))?.PF2E?.Actions ?? {}
+  : {}
+if (!arquivoDeAcoes) {
+  console.warn('  ! static/lang/action-en.json não encontrado: a fonte 3 do "(Trained)" fica de fora.')
+}
+
+/* A lista de tarefas de exemplo existe e não começa em "Untrained". */
+const amostraSoTreinado = (html) =>
+  /<strong>Trained<\/strong>/.test(html) && !/<strong>Untrained<\/strong>/.test(html)
+
+/* O texto diz o requisito com todas as letras. */
+const prosaExigeTreino = (html) =>
+  /must be trained in|must have the trained proficiency rank/i.test(html)
+
+/* A ação dispara "não está treinado em" quando alguém tenta usá-la. */
+const erroExigeTreino = (slug) => {
+  const bloco = ACTION_LANG[chaveDeLocalizacao(slug)]
+  return Boolean(bloco) && /is not trained in/.test(JSON.stringify(bloco))
+}
+
+const exigeTreinamento = (slug, html) =>
+  amostraSoTreinado(html) || prosaExigeTreino(html) || erroExigeTreino(slug)
 
 /* --------------------------------------------------------------- utilidades */
 
@@ -528,6 +615,21 @@ for (const { pack, kind } of PACKS) {
         traits: entry.traits,
         rarity: entry.rarity,
         actionCost: entry.actionCost,
+        /*
+         * Magia de foco, dita pela PASTA do pack (`spells/focus/`) — o mesmo
+         * critério das ações, e pela mesma razão: a organização é da Paizo.
+         *
+         * O traço `focus` NÃO serve sozinho, e essa foi uma lição cara: das 545
+         * magias da pasta, 52 não o carregam, e 49 dessas 52 são exatamente os
+         * TRUQUES de foco — Courageous Anthem, Imaginary Weapon, Boost Eidolon,
+         * Buzzing Bites. Quem filtrasse pelo traço concluiria que truque de foco
+         * não existe mais depois do Remaster. Existe: é o truque de composição
+         * do bardo, o psi do psychic, o hex da bruxa, o do eidolon.
+         *
+         * Só sai no índice quando é verdade, para não somar 26 KB de `false` nas
+         * 1.448 magias que não são de foco.
+         */
+        ...(grupo === 'focus' ? { focus: true } : {}),
         /* Contra o quê a magia joga. Vem no bundle (+54 KB em 606) porque a aba
            Ataques precisa dele para escolher entre mostrar a DC ou o bônus de
            ataque, e essa escolha é síncrona — buscar no servidor faria a linha
@@ -567,6 +669,9 @@ for (const { pack, kind } of PACKS) {
         actionCost: entry.actionCost,
         traits: entry.traits,
         rarity: entry.rarity,
+        // "(Trained)" ao lado do nome. `false` é "nenhuma fonte falou", não
+        // "dá para usar destreinado" — ver `exigeTreinamento`.
+        trained: exigeTreinamento(slug, bruto),
       })
     }
     if (kind === 'condition') {
@@ -804,6 +909,11 @@ console.log(
 console.log(
   `  ${''.padEnd(28)} ${semPericia.length} sem perícia em fonte nenhuma` +
     (semPericia.length ? `: ${semPericia.map((a) => a.name).join(', ')}` : ''),
+)
+const treinadas = actionIndex.filter((a) => a.trained)
+console.log(
+  `  ${''.padEnd(28)} ${treinadas.length} exigem treinamento em alguma fonte` +
+    (treinadas.length ? `: ${treinadas.map((a) => a.name).join(', ')}` : ''),
 )
 console.log(`  src/data/conditions.json       ${conditions.length} condições, ${kb(bytes(path.join(dataDir, 'conditions.json')))}`)
 console.log(`  src/data/unarmed.json          ${punho.name} ${punho.weapon.damage.dice}${punho.weapon.damage.die} ${punho.weapon.damage.damageType} [${punho.traits.join(' ')}]`)

@@ -104,7 +104,10 @@ export default function ItemRow({
 
         {priceInHead ? <Price totalCp={item.priceCp} /> : null}
 
-        {cart ? <div className="item__cart">{cart}</div> : null}
+        {/* `--fixo`: a caixa tem a largura do stepper, e o "Comprar" que se
+            reveza com ele ocupa a mesma. Trocar um pelo outro não pode mexer o
+            filete nem o preço que ficam ao lado. */}
+        {cart ? <div className="item__cart item__cart--fixo">{cart}</div> : null}
 
         {/* O alvo é o botão, não o desenho: antes a área clicável era o próprio
             SVG de 7×12px, ao lado de botões-ícone de 28. */}

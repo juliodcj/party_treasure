@@ -144,6 +144,15 @@
      da Loja vira quantidade) não pode mexer a linha. */
   --h-pill: 32px;
 
+  /* Largura dessa mesma caixa na linha da Loja. A altura já era igual; a
+     largura não era, e o "Comprar" media alguns pixels a menos que o stepper
+     que ocupa o lugar dele — ao comprar, o filete cinza, o preço e o ícone de
+     moeda andavam para a esquerda.
+
+     É a medida exata do `stepper--sm`: recheio (4+4) + dois botões
+     (`--h-pill` − 8 cada) + dois vãos de 6 + o corpo do número (16). */
+  --w-cart: calc(var(--h-pill) * 2 + 20px);
+
   /* Caixa fixa da CA ao lado do painel de Escudo (Resumo), medida do
      protótipo — é a única largura fixa de célula do app, por isso não
      virou um degrau de espaçamento geral. */

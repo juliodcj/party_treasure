@@ -130,6 +130,26 @@ export function resolveLangFile(argumento = DEFAULT_VENDOR) {
 }
 
 /**
+ * O TERCEIRO arquivo de localizacao: `action-en.json`, com os textos das acoes
+ * (`PF2E.Actions.<Acao>.*`). E de la que sai a unica pista estruturada de que a
+ * Treat Wounds exige treinamento — a mensagem de erro que a propria acao
+ * dispara ("{name} is not trained in {skill}.").
+ *
+ * Opcional como o `re-en.json`: devolve null se nao existir, e quem chama segue
+ * sem essa fonte, dizendo no log quantas acoes ficaram sem ela.
+ */
+export function resolveActionLangFile(argumento = DEFAULT_VENDOR) {
+  const base = path.resolve(argumento)
+
+  const candidatos = [
+    path.join(base, 'static', 'lang', 'action-en.json'),
+    path.join(base, 'lang', 'action-en.json'),
+    path.join(base, 'action-en.json'),
+  ]
+  return candidatos.find((c) => existsSync(c) && statSync(c).isFile()) ?? null
+}
+
+/**
  * O SEGUNDO arquivo de localizacao. O sistema divide os textos em dois: o
  * `en.json` tem interface, tracos e glossario; o `re-en.json` tem o que as
  * regras (rule elements) citam por chave — e e la que moram os

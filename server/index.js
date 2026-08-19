@@ -152,12 +152,18 @@ http.listen(port, () => {
 
 // Ctrl+C não pode custar a última compra: grava o que estiver pendente antes
 // de sair. A gravação normal é adiada de propósito (ver storage.js).
+//
+// E fechar a mesa deixa uma cópia datada em `data/backups/`: é o fim de uma
+// sessão de jogo, o momento em que dá para voltar atrás se algo tiver saído
+// errado na mesa de hoje. O `.bak` sozinho não serve para isso — ele é sempre
+// a versão de uma gravação atrás, e some na próxima.
 let closing = false
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => {
     if (closing) return
     closing = true
     storage.flush()
+    storage.backup('mesa fechada')
     entries.close()
     io.close()
     http.close(() => process.exit(0))

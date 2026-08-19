@@ -1084,7 +1084,14 @@ export function reducer(state, action) {
         const acrescentadas = vitals.extraFocusSpells ?? []
         if (acrescentadas.some((sp) => sp.name === name)) return null
 
-        return { extraFocusSpells: [...acrescentadas, { uid: makeId('spell'), name }] }
+        /* O `rank` vem junto porque é ele que diz se a magia é truque de foco
+           (rank 0) ou magia de foco — e é essa divisão que decide se ela dá um
+           ponto de reserva. Escolha sem rank (ação antiga) conta como magia de
+           foco, que é como ela já contava. */
+        const rank = Number.isFinite(Number(action.rank))
+          ? Math.max(0, Math.round(Number(action.rank)))
+          : null
+        return { extraFocusSpells: [...acrescentadas, { uid: makeId('spell'), name, rank }] }
       })
 
     /* Simétrico ao grimório: a de mesa tem `uid` e some; a que veio da ficha
@@ -1102,6 +1109,29 @@ export function reducer(state, action) {
         const esquecidas = vitals.forgottenFocusSpells ?? []
         if (esquecidas.includes(name)) return null
         return { forgottenFocusSpells: [...esquecidas, name] }
+      })
+
+    /*
+     * Quantos slots de um rank já foram gastos hoje.
+     *
+     * É o controle do conjurador ESPONTÂNEO, que não prepara nada: a lista de
+     * conhecidas fica igual o dia inteiro e o que se gasta é o slot. O
+     * preparado tem o `used` de cada magia preparada, que é outro fato.
+     *
+     * Fato de mesa, e por isso guardado (D7). O descanso zera junto com o
+     * resto, pelo `nightRest`.
+     */
+    case 'SET_SLOTS_USED':
+      return withVitals(state, action.playerId, (vitals, player) => {
+        const conj = player.sheet?.spellcasting
+        if (!conj) return null
+        const rank = Math.max(0, Math.round(Number(action.rank) || 0))
+        const total = Math.max(0, Math.round(Number(conj.perDay?.[rank]) || 0))
+        if (!total) return null
+        const usados = Math.min(total, Math.max(0, Math.round(Number(action.value) || 0)))
+        const atual = vitals.slotsUsed ?? {}
+        if ((Number(atual[rank]) || 0) === usados) return null
+        return { slotsUsed: { ...atual, [rank]: usados } }
       })
 
     /* Uma instância só, identificada por uid — pode estar preparada ou na

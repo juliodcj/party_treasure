@@ -816,6 +816,18 @@ A mesa fica salva em `data/mesa.json`, no PC. `Ctrl+C` encerra sem perder nada,
 e `npm start` de novo continua de onde parou. Se algum dia o arquivo corromper,
 existe um `data/mesa.bak.json` com a versão anterior.
 
+Toda vez que a mesa **fecha** — o `Ctrl+C` do fim da sessão, ou uma mesa
+importada substituindo a que estava aqui — fica também uma cópia datada em
+`data/backups/mesa-AAAA-MM-DDThh-mm-ss.json`. O `.bak` só cobre queda de energia
+no meio da gravação (ele é sempre a versão de uma gravação atrás); a pasta
+`backups/` é a que ainda tem a mesa da sessão passada quando o problema só
+aparece na semana seguinte. Nada é apagado de lá automaticamente.
+
+Pela engrenagem da aba **Mestre** dá para **exportar a mesa** para um arquivo
+JSON e **importar** um de volta — é o mesmo formato do `data/mesa.json`, e serve
+tanto de backup manual quanto de mudança de PC. Importar substitui a mesa de
+todo mundo, então pede confirmação e deixa antes o backup datado.
+
 Enquanto o servidor estiver no ar, o que um aparelho faz aparece nos outros na
 hora. Se o Wi-Fi cair, o celular avisa em vermelho e para de aceitar alterações
 até voltar — melhor não acontecer nada do que um item que some sozinho depois.
@@ -891,7 +903,8 @@ server/
   table.js              a mesa: estado autoritativo, quais ações são aceitas,
                         os patches do que mudou, e o saneamento de mesa vinda
                         de fora
-  storage.js            data/mesa.json — gravação atômica com backup
+  storage.js            data/mesa.json — gravação atômica, .bak e a
+                        cópia datada de cada mesa que fecha
   entries.js            lê um verbete por offset, sem carregar os 15 MB
   net.js                endereço da LAN e o QR code do terminal
 
@@ -918,8 +931,10 @@ src/
     catalog.js               categorias e a ordem de exibição
     traits.json / traits.js  dicionário de traços
     conditions.json          as 43 condições, com a descrição da Paizo
-    index.spells.json        1.993 magias, sem descrição (o compêndio)
-    index.actions.json       ações básicas e de perícia
+    index.spells.json        1.993 magias, sem descrição (o compêndio);
+                             `focus: true` nas 545 da pasta spells/focus/
+    index.actions.json       ações básicas, de perícia e de classe,
+                             com a perícia de cada uma e o "(Trained)"
     unarmed.json             o Punho, que não é item
     seed-sheets/             as duas fichas da mesa de exemplo
 
@@ -936,11 +951,13 @@ src/
     bulk.js             o Bulk do PF2e, com "L" e "—"
     items.js            resolver, agrupar, buscar e filtrar item
     sourceCategory.js   de qual livro veio o item, para o filtro de conteúdo
+    tableFile.js        a mesa em arquivo: exportar e ler o JSON de volta
     html.js / text.js   sanitização de descrição e plural/título
 
   state/
     reducer.js          as regras da mesa — rodam no SERVIDOR
-    initialState.js     a mesa de exemplo da primeira execução
+    initialState.js     a mesa de exemplo da primeira execução, e as
+                        chaves que formam uma mesa (`TABLE_KEYS`)
     migrations.js       migra a mesa de uma versão do schema para a seguinte
     history.js          o log de "Reverter" do mestre
     session.js          o que é do aparelho: personagem, loja, carrinho

@@ -29,6 +29,7 @@
 import UNARMED from '../data/unarmed.json' with { type: 'json' }
 import { ABILITY_CONDITION, conditionMods } from './conditions.js'
 import { RANK_NAMES, abilityMod, skillList } from './pathbuilder.js'
+import { truqueDeFoco } from './spells.js'
 
 /**
  * A regra de proficiência, num lugar só.
@@ -222,6 +223,51 @@ function buildAttack(item, { sheet, abilities, mods, itemMods, equipped, level }
   }
 }
 
+/* ------------------------------------------------------- traços de armadura
+
+   Três traços de armadura mexem em número que esta ficha mostra. Eles não são
+   regra escrita aqui: são o traço publicado que o catálogo já carrega, com o
+   texto em `src/data/traits.json` (saído do mesmo pack).
+
+     noisy     — "a penalidade de teste da armadura vale para Stealth mesmo
+                  quando você alcança a Força exigida"
+     flexible  — "você não aplica a penalidade de teste a Acrobatics nem a
+                  Athletics"
+     hindering — "−5 em todos os deslocamentos, no mínimo 5 pés, mesmo que a
+                  Força ou uma habilidade reduza a penalidade da armadura"
+
+   O resto dos traços de armadura do catálogo fica de fora, e é de propósito: o
+   número deles depende de algo que a ficha não tem como saber sozinha.
+
+     bulwark     só vale contra dano de área (a CA e o Reflexo da tela são um
+                 número só, sem "contra o quê")
+     aquadynamic só vale dentro d'água
+     laminar     só com a armadura quebrada, e a ficha não guarda isso
+     ponderous   é iniciativa — fora do escopo do programa
+     comfort     é dormir de armadura: não vira número nenhum
+
+   Aplicar qualquer um deles aqui seria pôr no número uma condição que não está
+   na tela — que é a mesma coisa que errar em silêncio. */
+
+/** Pergunta se a armadura vestida tem um traço. Sem armadura, é sempre não. */
+const tracoDaArmadura = (armadura) => {
+  const traits = armadura?.traits ?? []
+  return (nome) => traits.includes(nome)
+}
+
+/** −5 em todo deslocamento, com o piso de 5 pés que o traço `hindering` fixa. */
+const HINDERING = { penalidade: -5, minimo: 5 }
+
+/**
+ * O deslocamento com o que a armadura tira: a penalidade da própria armadura
+ * (só para quem não alcança a Força exigida) e a de `hindering` (sempre).
+ */
+function velocidade(base, { armadura, forcaFalta, hindering }) {
+  const comArmadura = base + (forcaFalta ? num(armadura?.armor?.speedPenalty, 0) : 0)
+  if (!hindering) return comArmadura
+  return Math.max(HINDERING.minimo, comArmadura + HINDERING.penalidade)
+}
+
 /* ------------------------------------------------------------------ escudo */
 
 function buildShield(item, vitals) {
@@ -298,10 +344,15 @@ export function buildSheet({ sheet, items = [], gear = {}, vitals = {}, itemMods
      A penalidade só vale para quem não alcança a Força exigida pela armadura.
      `armor.strength` é o MODIFICADOR de Força pedido, não o valor do atributo:
      Hide Armor pede 2, e o Rurik tem Str 18, ou seja mod +4 — ele carrega a
-     armadura sem penalidade. */
+     armadura sem penalidade.
+
+     Em cima disso valem os três traços da armadura que mexem no que a ficha
+     mostra (ver `tracoDaArmadura` no fim do arquivo). */
+  const traco = tracoDaArmadura(armadura)
   const forcaExigida = num(armadura?.armor?.strength, 0)
-  const checkPenalty =
-    armadura && abil('str') < forcaExigida ? num(armadura.armor?.checkPenalty, 0) : 0
+  const forcaFalta = Boolean(armadura) && abil('str') < forcaExigida
+  const penalidadeDaArmadura = num(armadura?.armor?.checkPenalty, 0)
+  const checkPenalty = forcaFalta ? penalidadeDaArmadura : 0
 
   /* ----------------------------------------------------- salvamentos e afins */
 
@@ -338,6 +389,25 @@ export function buildSheet({ sheet, items = [], gear = {}, vitals = {}, itemMods
 
   /* -------------------------------------------------------------- perícias */
 
+  /*
+   * Quanto a armadura tira de uma perícia.
+   *
+   * O caso base é o de sempre: quem não alcança a Força exigida leva a
+   * penalidade de teste nas perícias de Força e de Destreza. Os dois traços
+   * mudam o alcance dela, e não o valor:
+   *
+   *   flexible — não vale para Acrobatics nem para Athletics
+   *   noisy    — vale para Stealth mesmo com a Força exigida alcançada
+   */
+  const penalidadeNaPericia = (skill) => {
+    if (!armadura || !penalidadeDaArmadura) return 0
+    if (skill.key === 'stealth' && traco('noisy')) return penalidadeDaArmadura
+    if (!checkPenalty) return 0
+    if (skill.ability !== 'str' && skill.ability !== 'dex') return 0
+    if (traco('flexible') && (skill.key === 'acrobatics' || skill.key === 'athletics')) return 0
+    return checkPenalty
+  }
+
   const skills = skillList(sheet).map((skill) => {
     const partes = [
       { label: skill.ability.toUpperCase(), value: abil(skill.ability) },
@@ -346,9 +416,11 @@ export function buildSheet({ sheet, items = [], gear = {}, vitals = {}, itemMods
         value: profBonus(skill.rank, level),
       },
     ]
-    /* A penalidade da armadura pesa nas perícias de Força e Destreza. */
-    if (checkPenalty && (skill.ability === 'str' || skill.ability === 'dex')) {
-      partes.push({ label: `${armadura.name} (armadura)`, value: checkPenalty })
+    /* A penalidade da armadura pesa nas perícias de Força e Destreza — com o
+       que `flexible` tira e o que `noisy` acrescenta. */
+    const daArmadura = penalidadeNaPericia(skill)
+    if (daArmadura) {
+      partes.push({ label: `${armadura.name} (armadura)`, value: daArmadura })
     }
     return {
       ...skill,
@@ -432,10 +504,13 @@ export function buildSheet({ sheet, items = [], gear = {}, vitals = {}, itemMods
       : null,
 
     /* Deslocamento é número da ficha; a penalidade da armadura só entra quando
-       a Força não alcança o requisito, igual à de teste. */
-    speed:
-      num(sheet.speed, 0) +
-      (armadura && abil('str') < forcaExigida ? num(armadura.armor?.speedPenalty, 0) : 0),
+       a Força não alcança o requisito, igual à de teste. `hindering` entra
+       sempre — é o que o traço diz. */
+    speed: velocidade(num(sheet.speed, 0), {
+      armadura,
+      forcaFalta,
+      hindering: traco('hindering'),
+    }),
 
     conditions: vitals.conditions ?? {},
     conditionMods: mods,
@@ -451,24 +526,63 @@ export function buildSheet({ sheet, items = [], gear = {}, vitals = {}, itemMods
 export const MAX_FOCO = 3
 
 /**
- * As magias de foco que o personagem tem AGORA: as que a ficha trouxe, menos as
- * esquecidas na mesa, mais as ganhas na mesa. É a lista que a aba Magias mostra,
- * e é dela que sai o tamanho da reserva.
+ * As magias de foco que o personagem tem AGORA, nas duas listas que o
+ * Pathbuilder já exporta separadas e que a aba mostra separadas: **truque de
+ * foco** e **magia de foco**.
+ *
+ * São coisas diferentes na regra, e é por isso que a divisão importa: truque de
+ * foco não gasta ponto nenhum — lança-se à vontade — e magia de foco gasta um
+ * ponto da reserva. Enquanto as duas viviam numa lista só, um truque de foco
+ * inflava a reserva e o personagem ganhava um ponto que a regra não dá.
+ *
+ * As de mesa (`extraFocusSpells`) trazem o `rank` gravado na hora em que foram
+ * escolhidas: `0` é truque. Entrada antiga, gravada antes de o campo existir,
+ * fica como magia de foco — que é exatamente como ela já contava.
  */
-export function focusSpells(sheet, vitals = {}) {
+export function focusList(sheet, vitals = {}) {
   const conj = sheet?.spellcasting
-  if (!conj) return []
+  if (!conj) return { cantrips: [], spells: [] }
+
   const esquecidas = new Set(vitals.forgottenFocusSpells ?? [])
-  return [
-    ...[...(conj.focusCantrips ?? []), ...(conj.focusSpells ?? [])]
-      .filter((name) => !esquecidas.has(name))
-      .map((name) => ({ name })),
-    ...(vitals.extraFocusSpells ?? []),
-  ]
+  const cantrips = []
+  const spells = []
+
+  /*
+   * Quem decide de que lado a magia cai é o CORPUS, e não a lista de onde o
+   * nome veio: o pack sabe que Courageous Anthem é truque de foco mesmo que o
+   * export a tenha mandado como magia de foco. Quando o corpus não conhece o
+   * nome — conteúdo legado, slug que não resolve — vale o `padrao`, que é a
+   * lista do Pathbuilder que a trouxe ou o rank gravado na escolha de mesa.
+   */
+  const separar = (sp, padrao) => {
+    const doCorpus = truqueDeFoco(sp.name)
+    const truque = doCorpus == null ? padrao : doCorpus
+    if (truque) cantrips.push(sp)
+    else spells.push(sp)
+  }
+
+  for (const name of conj.focusCantrips ?? []) {
+    if (!esquecidas.has(name)) separar({ name }, true)
+  }
+  for (const name of conj.focusSpells ?? []) {
+    if (!esquecidas.has(name)) separar({ name }, false)
+  }
+  for (const sp of vitals.extraFocusSpells ?? []) {
+    separar(sp, sp.rank != null && Number(sp.rank) === 0)
+  }
+
+  return { cantrips, spells }
+}
+
+/** As duas listas numa só, para quem não precisa da divisão (a aba Ataques). */
+export function focusSpells(sheet, vitals = {}) {
+  const { cantrips, spells } = focusList(sheet, vitals)
+  return [...cantrips, ...spells]
 }
 
 /**
- * A reserva de foco: um ponto por magia de foco, até três.
+ * A reserva de foco: um ponto por MAGIA de foco, até três. Truque de foco não
+ * entra na conta — ele não gasta ponto, então também não dá ponto.
  *
  * É cálculo, não fato guardado — sai do que o personagem sabe agora. Ganhou uma
  * magia de foco, ganhou o ponto; esqueceu a magia, perdeu o ponto. O
@@ -476,7 +590,7 @@ export function focusSpells(sheet, vitals = {}) {
  * momento da exportação, e desanda assim que a lista muda aqui dentro.
  */
 export function focusPool(sheet, vitals = {}) {
-  return Math.min(MAX_FOCO, focusSpells(sheet, vitals).length)
+  return Math.min(MAX_FOCO, focusList(sheet, vitals).spells.length)
 }
 
 /**

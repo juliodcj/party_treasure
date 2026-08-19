@@ -1,6 +1,6 @@
 import { reducer } from '../src/state/reducer.js'
 import { withHistory } from '../src/state/history.js'
-import { createInitialState } from '../src/state/initialState.js'
+import { TABLE_KEYS, createInitialState } from '../src/state/initialState.js'
 import { migrate, withSheetFields } from '../src/state/migrations.js'
 
 /**
@@ -13,9 +13,6 @@ import { migrate, withSheetFields } from '../src/state/migrations.js'
  */
 
 const applyAction = withHistory(reducer)
-
-/** As chaves de primeiro nível que formam a mesa. Ordem sem importância. */
-const TABLE_KEYS = ['version', 'settings', 'history', 'players', 'campaignItems', 'shops']
 
 /**
  * Tudo que um aparelho tem direito de despachar. Bater a lista aqui em vez de
@@ -81,6 +78,7 @@ export const TABLE_ACTIONS = new Set([
   'REMOVE_FOCUS_SPELL',
   'REMOVE_SPELL',
   'USE_SPELL_SLOT',
+  'SET_SLOTS_USED',
   'UNDO_TO',
   'CLEAR_HISTORY',
   'RESET',
@@ -169,9 +167,14 @@ export function createTable(storage) {
       let incoming = action
       if (action.type === 'RESET') {
         // Sem `state` é "voltar para a mesa de exemplo". Com `state` é a mesa
-        // que alguém importou do próprio aparelho — nunca entra crua.
+        // que alguém importou (do arquivo, ou do próprio aparelho) — nunca
+        // entra crua.
         const clean = action.state ? sanitizeTable(action.state) : createInitialState()
         if (!clean) return { ok: false, error: 'A mesa enviada não é válida.' }
+        // A mesa que estava aqui está se fechando: sai com cópia datada, como
+        // no desligamento. É a única ação que substitui a mesa inteira, e é
+        // justamente a que a pessoa vai querer desfazer se importou a errada.
+        storage.backup('mesa substituída')
         incoming = { ...action, state: clean }
       }
 
