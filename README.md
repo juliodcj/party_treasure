@@ -474,6 +474,31 @@ Reimportar substitui a ficha inteira, mas **não** mexe no que é da mesa: HP,
 condições, escudo, o que está vestido e os modificadores manuais sobrevivem à
 reimportação e até à remoção da ficha. São fato de mesa, não cálculo.
 
+#### Os itens e as moedas vêm junto — uma vez só
+
+Na **primeira vinculação**, o que estava na mochila e na carteira do Pathbuilder
+(`equipment`, `weapons`, `armor`, `money`) entra no inventário do personagem,
+**somando** ao que ele já tiver. A tela de conferência lista item por item antes
+de confirmar, e a moeda aparece com o desenho de moeda do app — a platina vira
+ouro, porque a carteira daqui tem três denominações.
+
+**Atualizar a ficha depois não traz nada disso de novo.** Subir de nível é
+reimportar, e reimportar não pode ressuscitar a poção que o grupo bebeu nem
+devolver o ouro já gasto: depois da primeira vez, quem manda no inventário é a
+mesa. Quem quiser um item novo usa a Loja ou o **Dar item** do mestre.
+
+O nome é casado com o catálogo **exato**, com uma única exceção escrita e
+testada: quem vem da lista `armor` também tenta com o sufixo `Armor`, porque o
+Pathbuilder grava `"Hide"` onde o catálogo publica `"Hide Armor"`. Nome que não
+casa **não é aproximado e não some**: entra como item avulso, com o nome que
+veio, sem preço e sem nível, e aparece destacado na conferência. Runa, material,
+potência e tamanho não entram no item — viram aviso na leitura, e a resposta
+continua sendo o modificador manual (§ ficha). Contêiner também não: bulk está
+adiado, e todo item entra direto na mochila.
+
+O que está vestido no Pathbuilder chega **na mochila, não no corpo** — vestir é
+ato da mesa, feito na tela do inventário.
+
 ### 6.2 O que é lido do export, e o que é ignorado
 
 Levantado do código, campo por campo.
@@ -495,15 +520,18 @@ Levantado do código, campo por campo.
 `ancestry`, `heritage`, `background`, `deity`, `size`/`sizeName`, `languages`,
 `resistances`, `feats`, `specials`.
 
+**Lido e entregue uma vez, na primeira vinculação:** `equipment`, `weapons`,
+`armor` (viram itens da mochila) e `money` (soma à carteira). Ver logo acima.
+
 **Ignorado de propósito:**
 
 | Campo | Por que não entra |
 |---|---|
-| `equipment`, `weapons`, `armor`, `money` | o inventário e a carteira são da mesa, não do Pathbuilder — quem decide o que o personagem tem é a mesa, e é dela que sai o ataque |
 | `acTotal` | a CA é **calculada** do que está vestido agora; um número pronto ficaria errado no instante em que alguém trocasse de armadura |
 | `focusPoints` | é a foto do momento da exportação; a reserva de foco é calculada da lista de magias de foco atual |
 | `xp`, `alignment`, `gender`, `age` | nada na tela usa |
-| `rituals`, `formula`, `pets`, `familiars`, `inventorMods`, `mods`, `equipmentContainers` | sem tela que os mostre; se um dia houver, o campo está no export |
+| `equipmentContainers` | bulk e contêiner estão adiados; todo item entra direto na mochila, e a leitura avisa |
+| `rituals`, `formula`, `pets`, `familiars`, `inventorMods`, `mods` | sem tela que os mostre; se um dia houver, o campo está no export |
 
 `feats` e `specials` chegam só com o nome — o Pathbuilder não exporta descrição.
 O texto de regra vem depois, dos packs do Foundry, pelo servidor. Nome que não
@@ -899,6 +927,7 @@ src/
     sheet.js            O MOTOR: CA, salvamentos, perícias, ataques, dano,
                         conjuração, foco e descanso — em parcelas rotuladas
     pathbuilder.js      lê o JSON do Pathbuilder e nunca lança
+    startingGear.js     casa a bagagem do Pathbuilder com o catálogo (uma vez só)
     conditions.js       o efeito mecânico das oito condições que mexem em número
     spells.js           casa nome de magia com o verbete do compêndio
     loreResolve.js      resolve nome de feat/magia nos packs, pelo servidor
@@ -945,6 +974,8 @@ test/                   node --test nativo, sem dependência nova
   sheet.test.js         o motor, contra o fixture do Rurik
   pathbuilder.test.js   o leitor do export, com metade dos casos em entrada torta
   gear.test.js          equipar, desequipar e os invariantes de slot
+  startingGear.test.js  a bagagem do Pathbuilder: casamento com o catálogo,
+                        entra somando e só na primeira vinculação
   spells.test.js        conjuração, grimório e foco
   spellDefense.test.js  defesa das magias
   migrations.test.js    migração de schema e o histórico

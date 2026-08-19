@@ -8,6 +8,8 @@ import {
   namesToResolve,
   spellNamesToResolve,
 } from '../../lib/loreResolve.js'
+import { resolveStartingItems } from '../../lib/startingGear.js'
+import Coins from '../../components/Coins.jsx'
 import { useStore } from '../../state/store.jsx'
 
 /*
@@ -18,6 +20,11 @@ import { useStore } from '../../state/store.jsx'
  * O fluxo tem dois passos de propósito. Colar e já aplicar esconderia
  * justamente o que a pessoa precisa ver antes de confirmar: o que o app não
  * conseguiu resolver. A tela de conferência mostra isso com os nomes.
+ *
+ * Na PRIMEIRA vinculação, a conferência mostra também a bagagem — os itens e as
+ * moedas que vêm do Pathbuilder. Eles entram somando ao que já estiver na
+ * mochila, e só nesta vez: atualizar a ficha depois não encosta em inventário
+ * nem em carteira. Quem confirma precisa ver isso antes, não descobrir depois.
  */
 
 const PASSO = { COLAR: 'colar', CONFERIR: 'conferir' }
@@ -75,6 +82,14 @@ export default function ImportSheet({ player, onClose }) {
   }
 
   if (passo === PASSO.CONFERIR && previa) {
+    /* A bagagem só existe na primeira vinculação — na atualização não há o que
+       mostrar porque não há o que entregar. A mesma função que o reducer usa
+       para aplicar, senão a conferência mente sobre o que vai acontecer. */
+    const bagagem = jaTem ? null : resolveStartingItems(previa.startingItems)
+    const moedas = previa.startingCoins ?? { gold: 0, silver: 0, copper: 0 }
+    const temMoeda = moedas.gold + moedas.silver + moedas.copper > 0
+    const totalDeItens = bagagem ? bagagem.matched.length + bagagem.unmatched.length : 0
+
     return (
       <Sheet title={`Conferir a ficha de ${previa.name}`} onClose={onClose}>
         <div className="sheet__body">
@@ -86,7 +101,50 @@ export default function ImportSheet({ player, onClose }) {
             <Linha rotulo="Antecedente" valor={previa.background} />
             <Linha rotulo="PV máximos" valor={String(previa.hpMax)} />
             <Linha rotulo="Feats e features" valor={String(previa.feats.length + previa.actions.length)} />
+            {totalDeItens > 0 ? (
+              <Linha rotulo="Itens que entram na mochila" valor={String(totalDeItens)} />
+            ) : null}
+            {bagagem && temMoeda ? (
+              <div className="charsheet__preview-row">
+                <dt className="field-label">Moedas que entram na carteira</dt>
+                <dd className="charsheet__preview-value">
+                  <Coins {...moedas} size="sm" />
+                </dd>
+              </div>
+            ) : null}
           </dl>
+
+          {totalDeItens > 0 ? (
+            <details className="charsheet__details">
+              <summary>O que vai para a mochila ({totalDeItens})</summary>
+              <ul className="charsheet__warn-list">
+                {bagagem.matched.map((entrada) => (
+                  <li key={entrada.itemId}>
+                    {entrada.name}
+                    {entrada.qty > 1 ? ` ×${entrada.qty}` : ''}
+                  </li>
+                ))}
+                {bagagem.unmatched.map((entrada) => (
+                  <li key={`${entrada.category}:${entrada.name}`}>
+                    {entrada.name}
+                    {entrada.qty > 1 ? ` ×${entrada.qty}` : ''} — item avulso
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
+
+          {/* Nome que o catálogo não conhece entra assim mesmo, com o nome que
+              veio: some da tela seria o único desfecho proibido. */}
+          {bagagem?.unmatched.length ? (
+            <div className="charsheet__warn">
+              <div className="label">Item sem verbete no catálogo</div>
+              <p className="charsheet__warn-text">
+                {bagagem.unmatched.map((entrada) => entrada.name).join(' · ')} — entram como item
+                avulso, com o nome que veio, sem preço e sem nível.
+              </p>
+            </div>
+          ) : null}
 
           {semServidor ? (
             <div className="charsheet__warn">Servidor fora do ar: a ficha entra sem as descrições.</div>
@@ -103,7 +161,7 @@ export default function ImportSheet({ player, onClose }) {
 
           {previa.warnings.length > 0 ? (
             <details className="charsheet__details">
-              <summary>O que o JSON trouxe e eu não usei ({previa.warnings.length})</summary>
+              <summary>Avisos da leitura do JSON ({previa.warnings.length})</summary>
               <ul className="charsheet__warn-list">
                 {previa.warnings.map((aviso) => (
                   <li key={aviso}>{aviso}</li>
@@ -131,8 +189,16 @@ export default function ImportSheet({ player, onClose }) {
           Copie o texto todo e cole aqui.
         </p>
         {jaTem ? (
-          <p className="charsheet__note">A ficha atual será substituída inteira.</p>
-        ) : null}
+          <p className="charsheet__note">
+            A ficha atual será substituída inteira. Itens e moedas <strong>não</strong> vêm de novo:
+            eles entram só na primeira vinculação.
+          </p>
+        ) : (
+          <p className="charsheet__note">
+            Os itens e as moedas do Pathbuilder entram junto, somando ao que o personagem já tiver.
+            É a única vez: atualizar a ficha depois não mexe mais no inventário.
+          </p>
+        )}
 
         <textarea
           className="textarea import__field"
