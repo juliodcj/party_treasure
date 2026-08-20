@@ -2152,10 +2152,14 @@
   margin-bottom: 3px;
 }
 
-/* A nota que abre a folha dos modificadores da ficha. */
-.mods__hint {
-  margin: 0 0 12px;
-  line-height: var(--lh-text);
+/* A lista rola e o rodapé fica parado: numa folha que existe para acrescentar
+   linha, o Salvar não pode ir embora conforme a lista cresce. */
+.mods__list--scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* O respiro até o rodapé é do `.sheet__actions`; o da lista, aqui, sobraria. */
+  margin-bottom: 0;
 }
 
 /* O "quanto" é estreito de propósito: quem manda na largura da linha é o alvo,

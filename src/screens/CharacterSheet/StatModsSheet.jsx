@@ -32,15 +32,10 @@ export default function StatModsSheet({ player, onClose }) {
   }
 
   return (
-    <Sheet title="Modificadores manuais" onClose={onClose}>
-      <p className="form__hint mods__hint">
-        Ajuste fixo em qualquer número da ficha, para a interação de feat ou de
-        item que o app não calcula. Ele aparece no detalhe do número, com o nome
-        que você escrever. Modificador em atributo vale para tudo que depende
-        dele — perícia, ataque e dano junto.
-      </p>
-
-      <div className="mods__list">
+    /* `fill`: a folha para de rolar e quem rola é a lista, para o par
+       Salvar/Cancelar ficar parado no rodapé por mais modificador que entre. */
+    <Sheet title="Modificadores manuais" onClose={onClose} fill>
+      <div className="mods__list mods__list--scroll">
         {mods.map((mod, indice) => (
           // A ordem é a identidade aqui: dois modificadores podem ter o mesmo
           // rótulo enquanto a pessoa digita, então o índice é o que temos.
@@ -125,17 +120,17 @@ export default function StatModsSheet({ player, onClose }) {
         {mods.length === 0 ? (
           <div className="empty empty--inline">Nenhum modificador manual.</div>
         ) : null}
-      </div>
 
-      <button
-        type="button"
-        className="btn btn--tint btn--block"
-        onClick={() =>
-          setMods((atual) => [...atual, { label: '', target: PRIMEIRO_ALVO, value: 1 }])
-        }
-      >
-        Acrescentar modificador
-      </button>
+        <button
+          type="button"
+          className="btn btn--tint btn--block"
+          onClick={() =>
+            setMods((atual) => [...atual, { label: '', target: PRIMEIRO_ALVO, value: 1 }])
+          }
+        >
+          Acrescentar modificador
+        </button>
+      </div>
 
       <SheetActions onConfirm={salvar} onCancel={onClose} confirmLabel="Salvar" />
     </Sheet>
