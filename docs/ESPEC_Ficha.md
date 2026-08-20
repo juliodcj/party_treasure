@@ -309,8 +309,8 @@ player = {
   },
 
   statMods: [                       // por NÚMERO da ficha, não por item (§9.1)
-    { label: 'Bênção de Torag', target: 'ac', value: 1 },
-    { label: 'Botas velozes', target: 'speed', value: 10 },
+    { label: 'Bênção de Torag', target: 'ac', value: 1, enabled: true },
+    { label: 'Fúria', target: 'abil:str', value: 2, enabled: false },
   ],
 }
 ```
@@ -401,6 +401,12 @@ Três decisões que não são óbvias e valem estar escritas:
 - **`hpMax` é acertado nos dois lados.** O motor mostra a barra e o reducer
   limita a cura; se só um deles enxergasse o modificador, curar pararia num
   número diferente do que está escrito na tela.
+
+**Liga e desliga, não apaga.** A caixa na linha do Resumo — a mesma da magia
+preparada — desliga o modificador: ele continua guardado, com rótulo e número, e
+para de entrar em conta. É o caso da Fúria, que começa e acaba várias vezes por
+combate. `enabled` ausente é ligado, para o que foi gravado antes da caixa
+existir continuar valendo.
 
 Alvo gravado que deixou de existir — a perícia de Lore que uma reimportação
 levou — **não some**: continua na lista com a chave que veio, e não muda número
@@ -551,8 +557,9 @@ ficha vai em `src/screens/CharacterSheet/`, prefixo CSS `.charsheet__`.
 gerenciamento · atributos · defesas (CA, escudo, três salvamentos) · outras
 estatísticas (percepção, deslocamento, tamanho, DC de classe, DC e ataque de
 magia) · perícias com grau e bônus · proficiências de arma e armadura ·
-resistências, sentidos, idiomas · **modificadores manuais** (§9.1), com o botão
-"Adicionar modificador" no fim da aba · rodapé com data da importação. Todo
+resistências, sentidos, idiomas · **modificadores manuais** (§9.1), cada um com
+a caixa de ligar/desligar e o botão "Adicionar modificador" no fim da aba ·
+rodapé com data da importação. Todo
 número é tocável e abre o breakdown — o atributo também, que é onde se vê o que
 foi declarado nele. O botão **Atualizar** do rodapé não importa aqui (D14):
 leva para a linha do personagem na tela do Mestre.

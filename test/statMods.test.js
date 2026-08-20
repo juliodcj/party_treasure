@@ -17,7 +17,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { buildSheet, nightRest } from '../src/lib/sheet.js'
-import { normalizeStatMods, statModLabel, statModTargets } from '../src/lib/statMods.js'
+import { normalizeStatMods, statModAtivo, statModLabel, statModTargets } from '../src/lib/statMods.js'
 import { parsePathbuilder } from '../src/lib/pathbuilder.js'
 import { reducer } from '../src/state/reducer.js'
 import { createInitialState } from '../src/state/initialState.js'
@@ -276,7 +276,53 @@ test('modificador sem rótulo não entra: número que não diz de onde veio é o
     { label: '  Bênção  ', target: 'ac', value: '2.7' },
     null,
   ])
-  assert.deepEqual(limpo, [{ label: 'Bênção', target: 'ac', value: 3 }])
+  assert.deepEqual(limpo, [{ label: 'Bênção', target: 'ac', value: 3, enabled: true }])
+})
+
+/* ------------------------------------------------------------- ligar/desligar */
+
+test('modificador desligado não entra em conta nenhuma, e continua guardado', () => {
+  const mods = [{ label: 'Fúria', target: 'abil:str', value: 2, enabled: false }]
+  const view = ver(mods, { items: [GREATPICK], gear: { equippedWeaponIds: [GREATPICK.id] } })
+  const sem = ver([], { items: [GREATPICK], gear: { equippedWeaponIds: [GREATPICK.id] } })
+
+  assert.equal(view.abilityMods.str, sem.abilityMods.str)
+  assert.equal(ataque(view, 'Greatpick').damage.bonus.total, ataque(sem, 'Greatpick').damage.bonus.total)
+  assert.deepEqual(
+    view.abilityStats.str.parts.map((p) => p.label),
+    ['STR'],
+    'desligado não aparece nem como parcela no breakdown',
+  )
+
+  // …mas a lista do jogador não perde a linha: ligar de volta é um toque.
+  const state = reducer(createInitialState(), { type: 'SET_STAT_MODS', playerId: 'p-valeros', mods })
+  assert.deepEqual(state.players.find((p) => p.id === 'p-valeros').statMods, mods)
+})
+
+test('desligar e ligar de volta devolve exatamente o mesmo número', () => {
+  const ligado = [{ label: 'Fúria', target: 'abil:str', value: 2, enabled: true }]
+  const desligado = [{ ...ligado[0], enabled: false }]
+  assert.equal(ver(desligado).abilityMods.str, ver([]).abilityMods.str)
+  assert.equal(ver(ligado).abilityMods.str, ver([]).abilityMods.str + 2)
+})
+
+test('modificador gravado antes da caixa existir nasce ligado', () => {
+  const antigo = { label: 'Bênção', target: 'ac', value: 1 }
+  assert.equal(statModAtivo(antigo), true)
+  assert.equal(ver([antigo]).ac.total, ver([]).ac.total + 1)
+  assert.equal(normalizeStatMods([antigo])[0].enabled, true)
+})
+
+test('desligado também não conta no PV máximo, nem no teto da cura', () => {
+  const mods = [{ label: 'Robustez', target: 'hpMax', value: 6, enabled: false }]
+  assert.equal(ver(mods).hpMax, ver([]).hpMax)
+
+  let state = createInitialState()
+  state = reducer(state, { type: 'SET_STAT_MODS', playerId: 'p-valeros', mods })
+  state = reducer(state, { type: 'APPLY_DAMAGE', playerId: 'p-valeros', amount: 100 })
+  state = reducer(state, { type: 'APPLY_HEAL', playerId: 'p-valeros', amount: 100 })
+  const valeros = state.players.find((p) => p.id === 'p-valeros')
+  assert.equal(valeros.vitals.hp, valeros.sheet.hpMax)
 })
 
 test('a ação grava a lista inteira de uma vez, e o saneamento vale para ela', () => {
@@ -290,7 +336,7 @@ test('a ação grava a lista inteira de uma vez, e o saneamento vale para ela', 
     ],
   })
   assert.deepEqual(state.players.find((p) => p.id === 'p-valeros').statMods, [
-    { label: 'Bênção', target: 'ac', value: 1 },
+    { label: 'Bênção', target: 'ac', value: 1, enabled: true },
   ])
 
   state = reducer(state, { type: 'SET_STAT_MODS', playerId: 'p-valeros', mods: [] })
@@ -299,7 +345,7 @@ test('a ação grava a lista inteira de uma vez, e o saneamento vale para ela', 
 
 test('remover a ficha não apaga o que o jogador declarou', () => {
   let state = createInitialState()
-  const mods = [{ label: 'Bênção', target: 'ac', value: 1 }]
+  const mods = [{ label: 'Bênção', target: 'ac', value: 1, enabled: true }]
   state = reducer(state, { type: 'SET_STAT_MODS', playerId: 'p-valeros', mods })
   state = reducer(state, { type: 'REMOVE_SHEET', playerId: 'p-valeros' })
   assert.deepEqual(state.players.find((p) => p.id === 'p-valeros').statMods, mods)

@@ -8,9 +8,14 @@
  * fazer. Então o jogador declara, com o rótulo dele, e a declaração aparece no
  * breakdown junto das parcelas que o app calculou.
  *
- * Cada modificador é `{ label, target, value }`, e mora em `player.statMods` —
- * uma lista só, não um mapa por alvo: dois modificadores podem apontar para a
- * mesma perícia, e a tela mostra os dois.
+ * Cada modificador é `{ label, target, value, enabled }`, e mora em
+ * `player.statMods` — uma lista só, não um mapa por alvo: dois modificadores
+ * podem apontar para a mesma perícia, e a tela mostra os dois.
+ *
+ * `enabled: false` é o modificador DESLIGADO: continua na lista, continua na
+ * tela, e não entra em conta nenhuma. É o que a Fúria pede — ela liga e desliga
+ * várias vezes por combate, e apagar para reescrever depois seria perder o
+ * rótulo e o número toda vez.
  *
  * O ALVO é uma chave com prefixo, e o prefixo é o que separa homônimos:
  *
@@ -110,9 +115,12 @@ const num = (value) => {
   return Number.isFinite(n) ? Math.round(n) : 0
 }
 
-/** Os modificadores que apontam para um alvo, na ordem em que foram criados. */
+/** Um modificador desligado continua guardado e não entra em conta nenhuma. */
+export const statModAtivo = (mod) => Boolean(mod) && mod.enabled !== false
+
+/** Os modificadores LIGADOS que apontam para um alvo, na ordem de criação. */
 export const statModsOf = (statMods, target) =>
-  (statMods ?? []).filter((mod) => mod && mod.target === target)
+  (statMods ?? []).filter((mod) => statModAtivo(mod) && mod.target === target)
 
 /** O que eles somam. Para o número que não tem breakdown (deslocamento, PV). */
 export const statModTotal = (statMods, target) =>
@@ -141,6 +149,9 @@ export function normalizeStatMods(mods) {
       label: String(mod?.label ?? '').trim(),
       target: String(mod?.target ?? '').trim(),
       value: num(mod?.value),
+      /* Ligado é o padrão: modificador gravado antes de a caixa existir, ou
+         criado agora, nasce valendo. Só o `false` explícito desliga. */
+      enabled: mod?.enabled !== false,
     }))
     .filter((mod) => mod.label && mod.target)
 }

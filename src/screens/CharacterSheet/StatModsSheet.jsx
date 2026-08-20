@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Sheet, { SheetActions } from '../../components/Sheet.jsx'
 import { TrashIcon } from '../../components/Icons.jsx'
 import { useStore } from '../../state/store.jsx'
-import { PRIMEIRO_ALVO, statModTargets } from '../../lib/statMods.js'
+import { PRIMEIRO_ALVO, statModAtivo, statModTargets } from '../../lib/statMods.js'
 
 /*
  * Modificadores manuais da ficha.
@@ -40,13 +40,25 @@ export default function StatModsSheet({ player, onClose }) {
           // A ordem é a identidade aqui: dois modificadores podem ter o mesmo
           // rótulo enquanto a pessoa digita, então o índice é o que temos.
           <div className="mods__row" key={indice}>
-            <input
-              className="input"
-              placeholder="Escudo de Ferro"
-              value={mod.label}
-              onChange={(event) => alterar(indice, 'label', event.target.value)}
-              aria-label="Nome do modificador"
-            />
+            <div className="mods__head">
+              {/* A mesma caixa do Resumo, para as duas telas contarem a mesma
+                  história: um modificador desligado não vira número em lugar
+                  nenhum, e some da folha seria pior do que aparecer apagado. */}
+              <button
+                type="button"
+                className={`checkbox${statModAtivo(mod) ? ' checkbox--on' : ''}`}
+                aria-pressed={statModAtivo(mod)}
+                aria-label={`${statModAtivo(mod) ? 'Desligar' : 'Ligar'} o modificador ${mod.label || indice + 1}`}
+                onClick={() => alterar(indice, 'enabled', !statModAtivo(mod))}
+              />
+              <input
+                className="input"
+                placeholder="Escudo de Ferro"
+                value={mod.label}
+                onChange={(event) => alterar(indice, 'label', event.target.value)}
+                aria-label="Nome do modificador"
+              />
+            </div>
             <div className="mods__numbers">
               <label className="form__field">
                 <span className="field-label">Onde</span>

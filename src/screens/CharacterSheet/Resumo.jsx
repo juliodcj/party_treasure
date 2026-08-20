@@ -4,7 +4,7 @@ import Stepper from '../../components/Stepper.jsx'
 import SENSES from '../../data/senses.json' with { type: 'json' }
 import { useStore } from '../../state/store.jsx'
 import { nightRest, sgn } from '../../lib/sheet.js'
-import { statModLabel } from '../../lib/statMods.js'
+import { statModAtivo, statModLabel } from '../../lib/statMods.js'
 import { slugify } from '../../lib/loreResolve.js'
 import { RANK_NAMES } from '../../lib/pathbuilder.js'
 import { BedIcon } from '../../components/Icons.jsx'
@@ -247,18 +247,33 @@ export default function Resumo({ player, view, onGoToGm }) {
       {statMods.length ? (
         <Bloco titulo="Modificadores manuais" contagem={statMods.length}>
           <div className="statmods">
-            {statMods.map((mod, indice) => (
-              <button
-                type="button"
-                className="statmod"
-                key={`${mod.target}-${mod.label}-${indice}`}
-                onClick={() => setModsAberto(true)}
-              >
-                <span className="statmod__name">{mod.label}</span>
-                <span className="statmod__target">{statModLabel(sheet, mod.target)}</span>
-                <span className="statmod__value">{sgn(mod.value)}</span>
-              </button>
-            ))}
+            {statMods.map((mod, indice) => {
+              const ligado = statModAtivo(mod)
+              return (
+                /* A linha inteira é o interruptor — desligar e ligar é o que
+                   acontece no meio do combate (a Fúria começa e acaba), e
+                   editar mora no botão logo abaixo do bloco. A caixa é a mesma
+                   da magia preparada: vazia é uma coisa, cheia é a outra. */
+                <button
+                  type="button"
+                  className={`statmod${ligado ? '' : ' statmod--off'}`}
+                  key={`${mod.target}-${mod.label}-${indice}`}
+                  aria-pressed={ligado}
+                  onClick={() =>
+                    dispatch({
+                      type: 'SET_STAT_MODS',
+                      playerId: player.id,
+                      mods: statMods.map((m, i) => (i === indice ? { ...m, enabled: !ligado } : m)),
+                    })
+                  }
+                >
+                  <span className={`checkbox${ligado ? ' checkbox--on' : ''}`} />
+                  <span className="statmod__name">{mod.label}</span>
+                  <span className="statmod__target">{statModLabel(sheet, mod.target)}</span>
+                  <span className="statmod__value">{sgn(mod.value)}</span>
+                </button>
+              )
+            })}
           </div>
         </Bloco>
       ) : null}

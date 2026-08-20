@@ -424,7 +424,7 @@ para personagem sem ficha ser caso de primeira classe e não estado de transiç�
 | `vitals` | o que está acontecendo com o personagem: `hp`, `tempHp`, `conditions`, `focusPoints`, `shieldHp`, `shieldRaised`, `slotsUsed`, `preparedSpells`, `extraSpells`, `bookSpells`, `forgottenSpells`, `extraFocusSpells`, `forgottenFocusSpells`, `favorites` |
 | `gear` | os slots do que está vestido: `wornArmorId`, `heldShieldId`, `equippedWeaponIds[]` |
 | `itemMods` | por item, a lista de modificadores manuais `{ label, atk, dmg, extraDice }` |
-| `statMods` | por número da ficha, a lista de modificadores manuais `{ label, target, value }` |
+| `statMods` | por número da ficha, a lista de modificadores manuais `{ label, target, value, enabled }` |
 
 Três detalhes que são decisão, não descuido:
 
@@ -585,6 +585,11 @@ percepção, deslocamento, PV máximo, DCs e perícias. Ele entra com o rótulo 
 pessoa escreveu e aparece no detalhamento como qualquer outra parcela.
 Modificador em atributo vale para tudo que depende dele — perícia, ataque e dano
 junto. Os alvos vivem em `src/lib/statMods.js`.
+
+Cada um **liga e desliga pela caixa na lista do Resumo**, como a magia
+preparada: desligado continua guardado, com o rótulo e o número, e não entra em
+conta nenhuma. É o que a Fúria pede — ela começa e acaba várias vezes por
+combate, e apagar para reescrever depois perderia o que já estava escrito.
 
 ### 6.4 Como o equipamento entra nos números
 

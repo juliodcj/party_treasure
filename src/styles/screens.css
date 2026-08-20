@@ -2147,6 +2147,17 @@
   gap: 8px;
 }
 
+/* A caixa de ligar e o nome, na mesma linha. */
+.mods__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mods__head .input {
+  min-width: 0;
+}
+
 /* A lixeira encosta na linha dos campos, não na base do rótulo deles. */
 .mods__tirar {
   margin-bottom: 3px;
@@ -2231,6 +2242,19 @@
   font-variant-numeric: tabular-nums;
   min-width: 26px;
   text-align: right;
+}
+
+/* Desligado se lê como a magia já usada: riscado e no cinza mais claro. O
+   número continua na tela porque ele volta com um toque — o que ele não faz é
+   entrar em conta nenhuma. */
+.statmod--off .statmod__name {
+  text-decoration: line-through;
+  color: var(--text-3);
+}
+
+.statmod--off .statmod__target,
+.statmod--off .statmod__value {
+  color: var(--text-3);
 }
 
 /* Descrição escrita à mão para um feat que os packs não conhecem. Campo alto
