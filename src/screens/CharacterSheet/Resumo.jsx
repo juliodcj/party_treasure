@@ -4,12 +4,14 @@ import Stepper from '../../components/Stepper.jsx'
 import SENSES from '../../data/senses.json' with { type: 'json' }
 import { useStore } from '../../state/store.jsx'
 import { nightRest, sgn } from '../../lib/sheet.js'
+import { statModLabel } from '../../lib/statMods.js'
 import { slugify } from '../../lib/loreResolve.js'
 import { RANK_NAMES } from '../../lib/pathbuilder.js'
 import { BedIcon } from '../../components/Icons.jsx'
 import BreakdownSheet, { FactCell, StatCell } from './BreakdownSheet.jsx'
 import ConditionsSheet, { ConditionChips } from './ConditionsSheet.jsx'
 import HpSheet from './HpSheet.jsx'
+import StatModsSheet from './StatModsSheet.jsx'
 
 /*
  * A aba Resumo.
@@ -47,8 +49,10 @@ export default function Resumo({ player, view, onGoToGm }) {
   const [hpAberto, setHpAberto] = useState(false)
   const [condAberto, setCondAberto] = useState(false)
   const [descansando, setDescansando] = useState(false)
+  const [modsAberto, setModsAberto] = useState(false)
 
   const sheet = player.sheet
+  const statMods = player.statMods ?? []
   const abrir = (stat) => setBreakdown(stat)
   const pct = Math.max(0, Math.min(100, Math.round((view.hp / view.hpMax) * 100)))
 
@@ -105,10 +109,13 @@ export default function Resumo({ player, view, onGoToGm }) {
       </section>
 
       {/* ---------------------------------------------------------- atributos */}
+      {/* O atributo abre o breakdown como qualquer outro número: sem
+          modificador manual ele mostra só a linha da ficha, e com um mostra de
+          onde vieram os pontos a mais. */}
       <Bloco titulo="Atributos">
         <div className="grid grid--6">
           {ATRIBUTOS.map(([key, rotulo]) => (
-            <FactCell key={key} label={rotulo} value={sgn(view.abilityMods[key] ?? 0)} />
+            <StatCell key={key} label={rotulo} stat={view.abilityStats[key]} onOpen={abrir} />
           ))}
         </div>
       </Bloco>
@@ -231,6 +238,39 @@ export default function Resumo({ player, view, onGoToGm }) {
         <Linha rotulo="Idiomas" valor={sheet.languages?.join(' · ')} />
       </Bloco>
 
+      {/* ------------------------------------------------- modificadores manuais
+
+          O que o jogador declarou, junto, no fim da aba: cada linha diz o
+          rótulo, em que número ela entra e quanto vale. É a única tela onde
+          eles aparecem todos — no resto da ficha cada um vive dentro do
+          breakdown do número em que foi posto. */}
+      {statMods.length ? (
+        <Bloco titulo="Modificadores manuais" contagem={statMods.length}>
+          <div className="statmods">
+            {statMods.map((mod, indice) => (
+              <button
+                type="button"
+                className="statmod"
+                key={`${mod.target}-${mod.label}-${indice}`}
+                onClick={() => setModsAberto(true)}
+              >
+                <span className="statmod__name">{mod.label}</span>
+                <span className="statmod__target">{statModLabel(sheet, mod.target)}</span>
+                <span className="statmod__value">{sgn(mod.value)}</span>
+              </button>
+            ))}
+          </div>
+        </Bloco>
+      ) : null}
+
+      <button
+        type="button"
+        className="btn btn--tint btn--block"
+        onClick={() => setModsAberto(true)}
+      >
+        Adicionar modificador
+      </button>
+
       <div className="charsheet__foot">
         <span>
           Importada em {dataCurta(sheet.importedAt)} · Nv {sheet.level}
@@ -243,6 +283,7 @@ export default function Resumo({ player, view, onGoToGm }) {
       </div>
 
       {breakdown ? <BreakdownSheet stat={breakdown} onClose={() => setBreakdown(null)} /> : null}
+      {modsAberto ? <StatModsSheet player={player} onClose={() => setModsAberto(false)} /> : null}
       {hpAberto ? <HpSheet player={player} view={view} onClose={() => setHpAberto(false)} /> : null}
       {condAberto ? <ConditionsSheet player={player} onClose={() => setCondAberto(false)} /> : null}
       {descansando ? (
@@ -364,7 +405,7 @@ function Escudo({ player, shield }) {
 /* Exportado porque a aba Magias também descansa: o botão "Descansar" da faixa
    de conjuração abre esta mesma confirmação, não uma cópia dela. */
 export function DescansoSheet({ player, onClose, onConfirm }) {
-  const patch = nightRest(player.sheet, player.vitals)
+  const patch = nightRest(player.sheet, player.vitals, player.statMods)
   return (
     <Sheet center onClose={onClose}>
       <div className="sheet__question">

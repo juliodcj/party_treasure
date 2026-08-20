@@ -2152,6 +2152,83 @@
   margin-bottom: 3px;
 }
 
+/* A nota que abre a folha dos modificadores da ficha. */
+.mods__hint {
+  margin: 0 0 12px;
+  line-height: var(--lh-text);
+}
+
+/* O "quanto" é estreito de propósito: quem manda na largura da linha é o alvo,
+   que é o campo com nome de perícia dentro. */
+.mods__valor {
+  flex: 0 0 100px;
+}
+
+/* Sinal e número são um campo só: o botão do sinal existe porque o teclado
+   numérico do celular esconde o menos, e metade dos modificadores de mesa é
+   penalidade. */
+.mods__amount {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.mods__amount .input--sm {
+  min-width: 0;
+  text-align: center;
+}
+
+.mods__sign {
+  min-width: var(--tap-sm);
+}
+
+/* -------------------------------- ficha: modificadores manuais no Resumo
+
+   Mesma lista de fio de cabelo das perícias, numa coluna só: a linha tem três
+   informações (rótulo, alvo e valor) e duas por linha espremeriam o nome que a
+   pessoa escreveu, que é justamente o que explica o número. */
+.statmods {
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+
+.statmod {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  min-height: var(--tap-md);
+  background: var(--surface);
+  text-align: left;
+}
+
+.statmod__name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statmod__target {
+  font-size: var(--t-meta);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.statmod__value {
+  font-size: var(--t-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 26px;
+  text-align: right;
+}
+
 /* Descrição escrita à mão para um feat que os packs não conhecem. Campo alto
    como o da observação de item — é texto de regra, não um rótulo. */
 .feat-note__field {

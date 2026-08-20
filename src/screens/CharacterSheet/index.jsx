@@ -45,8 +45,9 @@ export default function CharacterSheetScreen({ player, sub, onGoToGm }) {
         gear: player.gear,
         vitals: player.vitals,
         itemMods: player.itemMods,
+        statMods: player.statMods,
       }),
-    [player.sheet, player.gear, player.vitals, player.itemMods, items],
+    [player.sheet, player.gear, player.vitals, player.itemMods, player.statMods, items],
   )
 
   if (!view) return <EmptySheet />

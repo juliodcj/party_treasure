@@ -74,6 +74,7 @@ test('todo jogador ganha os campos da ficha, vazios', () => {
     assert.equal(player.vitals.shieldRaised, false)
     assert.deepEqual(player.gear, { wornArmorId: null, heldShieldId: null, equippedWeaponIds: [] })
     assert.deepEqual(player.itemMods, {})
+    assert.deepEqual(player.statMods, [], 'a lista de modificadores manuais nasce vazia')
   }
 })
 
