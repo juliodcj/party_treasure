@@ -1807,12 +1807,17 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Registro dos dez últimos danos e curas, aberto pelo relógio do cabeçalho. */
+/* Registro dos dez últimos danos e curas. Mora em folha própria, aberta pelo
+   relógio do cabeçalho: embutido na folha de HP, empurrava "Acrescentar" e
+   "Reduzir" para fora do alcance do polegar. */
 .hp-sheet__log {
-  margin-bottom: 14px;
   padding: 4px 12px;
   border-radius: var(--r-md);
   background: var(--surface-sunken);
+}
+
+.hp-sheet__log-back {
+  margin-top: 16px;
 }
 
 .hp-sheet__log-row {
