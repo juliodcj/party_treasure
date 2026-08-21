@@ -385,3 +385,20 @@ export function SheetIcon() {
     </svg>
   )
 }
+
+/* Relógio: o registro dos últimos danos e curas, no cabeçalho da folha de HP. */
+export function ClockIcon({ size = 15 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <path
+        d="M12 7v5l3.5 2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
