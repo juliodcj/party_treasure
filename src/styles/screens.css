@@ -807,10 +807,27 @@
   white-space: nowrap;
 }
 
+/* Filete que fecha o verbete: separa o que veio do livro do que é moldura
+   nossa — a linha do livro de origem e o rodapé de ações.
+ *
+ * O traço é um só, e fica no primeiro dos dois que aparecer. Quando há livro,
+ * o rodapé não repete o traço (`~` alcança o rodapé mesmo com a observação do
+ * item no meio, que também é moldura nossa). */
+.item__source,
+.item__foot {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.item__source ~ .item__foot {
+  border-top: none;
+  padding-top: 0;
+}
+
 .item__source {
   font-size: var(--t-meta);
   color: var(--text-3);
-  margin-top: 8px;
+  margin-top: 12px;
 }
 
 /* Rodapé do item aberto: ações à esquerda, quantidade à direita */

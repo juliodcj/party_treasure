@@ -266,13 +266,17 @@
   border-color: var(--accent);
 }
 
-/* Traço clicável */
+/* Traço clicável.
+ *
+ * Tingido de azul, e não do cinza de pastilha inerte: tocar num traço abre o
+ * verbete da regra, então ele age — e o que age é azul. No cinza, a fileira
+ * lia como um monte de metadado morto e ninguém descobria que dava para tocar. */
 .trait {
-  font-size: var(--t-meta);
+  font-size: var(--t-sm);
   font-weight: 600;
-  color: var(--text-2);
-  background: var(--surface-raised);
-  padding: 4px 10px;
+  color: var(--accent-ink);
+  background: var(--accent-tint);
+  padding: 5px 12px;
   border-radius: var(--r-pill);
 }
 
