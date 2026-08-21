@@ -29,6 +29,7 @@
 import UNARMED from '../data/unarmed.json' with { type: 'json' }
 import { ABILITY_CONDITION, conditionMods } from './conditions.js'
 import { RANK_NAMES, abilityMod, skillList } from './pathbuilder.js'
+import { statModParts, statModTotal } from './statMods.js'
 import { truqueDeFoco } from './spells.js'
 
 /**
@@ -114,9 +115,9 @@ const temTraco = (item, nome) =>
  * - arremesso: Destreza no ataque e **Força no dano** — é o caso do Javelin, e
  *   é o que faz o Pathbuilder marcar ataque +5 e dano 1d6+4
  */
-function weaponAbilities(item, abilities) {
-  const str = abilityMod(abilities.str)
-  const dex = abilityMod(abilities.dex)
+function weaponAbilities(item, abilMods) {
+  const str = abilMods.str
+  const dex = abilMods.dex
   const thrown = temTraco(item, 'thrown')
   const ranged = Boolean(item.weapon?.ranged)
 
@@ -156,14 +157,14 @@ function damageFormula(dice, die, bonus) {
   return bonus > 0 ? `${dados}+${bonus}` : `${dados}−${Math.abs(bonus)}`
 }
 
-function buildAttack(item, { sheet, abilities, mods, itemMods, equipped, level }) {
+function buildAttack(item, { sheet, abilMods, abilParts, mods, itemMods, equipped, level }) {
   const arma = item.weapon ?? {}
   const rank = weaponRank(item, sheet)
-  const { attack: atkAbil, damage: dmgAbil } = weaponAbilities(item, abilities)
+  const { attack: atkAbil, damage: dmgAbil } = weaponAbilities(item, abilMods)
   const manuais = itemMods[item.id] ?? []
 
   const partesAtaque = [
-    { label: atkAbil.toUpperCase(), value: abilityMod(abilities[atkAbil]) },
+    ...abilParts(atkAbil),
     { label: `Proficiência (${rankLabel(rank)})`, value: profBonus(rank, level) },
     ...manuais
       .filter((m) => num(m.atk) !== 0)
@@ -181,9 +182,11 @@ function buildAttack(item, { sheet, abilities, mods, itemMods, equipped, level }
      penalidade a testes e dano baseados em Força. */
   const partesDano = []
   if (dmgAbil === 'str') {
-    partesDano.push({ label: 'STR', value: abilityMod(abilities.str) })
+    partesDano.push(...abilParts('str'))
   } else if (dmgAbil === 'propulsive') {
-    const str = abilityMod(abilities.str)
+    /* Metade da Força, e a metade é do TOTAL: um modificador manual em `str`
+       entra na conta antes de dividir, como qualquer outro ponto de Força. */
+    const str = abilMods.str
     partesDano.push({ label: 'STR (propulsive)', value: str >= 0 ? Math.floor(str / 2) : str })
   }
   for (const m of manuais) {
@@ -303,15 +306,40 @@ function buildShield(item, vitals) {
  * @param gear     `{ wornArmorId, heldShieldId, equippedWeaponIds }`
  * @param vitals   HP, condições, escudo — o que está acontecendo agora
  * @param itemMods modificadores manuais, por item
+ * @param statMods modificadores manuais em número da ficha (`lib/statMods.js`)
  */
-export function buildSheet({ sheet, items = [], gear = {}, vitals = {}, itemMods = {} } = {}) {
+export function buildSheet({
+  sheet,
+  items = [],
+  gear = {},
+  vitals = {},
+  itemMods = {},
+  statMods = [],
+} = {}) {
   if (!sheet) return null
 
   const level = Math.max(1, num(sheet.level, 1))
   const abilities = sheet.abilities ?? {}
   const mods = conditionMods(vitals.conditions ?? {})
   const prof = (key) => num(sheet.proficiencies?.[key], 0)
-  const abil = (key) => abilityMod(abilities[key])
+
+  /* O modificador manual entra como PARCELA, não somado por dentro: quem abrir
+     o breakdown vê o rótulo que o jogador escreveu junto do que o app calculou.
+     `manual()` devolve as parcelas de um alvo; `total()` devolve a soma, para o
+     número que não tem breakdown (deslocamento, PV máximo). */
+  const manual = (target) => statModParts(statMods, target)
+  const total = (target) => statModTotal(statMods, target)
+
+  /* Atributo é o caso especial: um `abil:str` de +1 sobe Atletismo, o ataque e o
+     dano junto, porque é isso que um ponto de Força faz. Por isso ele aparece
+     nas parcelas de TODA estatística que depende do atributo (`abilParts`), e o
+     valor somado (`abil`) é o que a regra compara — requisito de Força da
+     armadura, `finesse`, metade da Força do `propulsive`. */
+  const abilParts = (key) => [
+    { label: key.toUpperCase(), value: abilityMod(abilities[key]) },
+    ...manual(`abil:${key}`),
+  ]
+  const abil = (key) => abilityMod(abilities[key]) + total(`abil:${key}`)
 
   const porId = new Map(items.filter(Boolean).map((item) => [item.id, item]))
   const armadura = porId.get(gear.wornArmorId) ?? null
@@ -324,6 +352,10 @@ export function buildSheet({ sheet, items = [], gear = {}, vitals = {}, itemMods
   const dexCap = armadura?.armor?.dexCap
   const dexNaCA = dexCap == null ? abil('dex') : Math.min(abil('dex'), num(dexCap, 0))
 
+  /* DEX entra na CA como parcela ÚNICA, e não como base + manual: o limite de
+     Destreza da armadura vale para o total, então separar as duas mostraria uma
+     soma que o teto já cortou. O rótulo do que foi declarado continua visível na
+     célula Dex dos Atributos, e na lista de modificadores. */
   const partesCA = [
     { label: 'Base', value: 10 },
     { label: 'DEX', value: dexNaCA },
@@ -336,6 +368,8 @@ export function buildSheet({ sheet, items = [], gear = {}, vitals = {}, itemMods
   if (escudo?.raised && !escudo.broken && escudo.acBonus) {
     partesCA.push({ label: `${escudo.name} (circumstance)`, value: escudo.acBonus })
   }
+
+  partesCA.push(...manual('ac'))
 
   const ac = stat('Classe de Armadura', partesCA, { dc: true, ability: 'dex', ac: true }, mods)
 
@@ -356,32 +390,34 @@ export function buildSheet({ sheet, items = [], gear = {}, vitals = {}, itemMods
 
   /* ----------------------------------------------------- salvamentos e afins */
 
-  const salvamento = (key, ability, titulo) =>
+  const salvamento = (key, ability, titulo, alvo) =>
     stat(
       titulo,
       [
-        { label: ability.toUpperCase(), value: abil(ability) },
+        ...abilParts(ability),
         { label: `Proficiência (${rankLabel(prof(key))})`, value: profBonus(prof(key), level) },
+        ...manual(alvo),
       ],
       { check: true, ability },
       mods,
     )
 
   const saves = {
-    fortitude: salvamento('fortitude', 'con', 'Fortitude'),
-    reflex: salvamento('reflex', 'dex', 'Reflex'),
-    will: salvamento('will', 'wis', 'Will'),
+    fortitude: salvamento('fortitude', 'con', 'Fortitude', 'save:fortitude'),
+    reflex: salvamento('reflex', 'dex', 'Reflex', 'save:reflex'),
+    will: salvamento('will', 'wis', 'Will', 'save:will'),
   }
 
-  const perception = salvamento('perception', 'wis', 'Perception')
+  const perception = salvamento('perception', 'wis', 'Perception', 'perception')
 
   const chave = sheet.keyability ?? 'str'
   const classDc = stat(
     'DC de classe',
     [
       { label: 'Base', value: 10 },
-      { label: chave.toUpperCase(), value: abil(chave) },
+      ...abilParts(chave),
       { label: `Proficiência (${rankLabel(prof('classDC'))})`, value: profBonus(prof('classDC'), level) },
+      ...manual('classDc'),
     ],
     { dc: true, ability: chave },
     mods,
@@ -410,11 +446,12 @@ export function buildSheet({ sheet, items = [], gear = {}, vitals = {}, itemMods
 
   const skills = skillList(sheet).map((skill) => {
     const partes = [
-      { label: skill.ability.toUpperCase(), value: abil(skill.ability) },
+      ...abilParts(skill.ability),
       {
         label: `Proficiência (${rankLabel(skill.rank)})`,
         value: profBonus(skill.rank, level),
       },
+      ...manual(`skill:${skill.key}`),
     ]
     /* A penalidade da armadura pesa nas perícias de Força e Destreza — com o
        que `flexible` tira e o que `noisy` acrescenta. */
@@ -436,7 +473,8 @@ export function buildSheet({ sheet, items = [], gear = {}, vitals = {}, itemMods
 
   /* O Punho vem do `unarmed.json`, extraído do código do Foundry na ingestão:
      não é item, não está na mochila, e existe sempre (§10.3). */
-  const contexto = { sheet, abilities, mods, itemMods, level }
+  const abilMods = Object.fromEntries(Object.keys(abilities).map((k) => [k, abil(k)]))
+  const contexto = { sheet, abilMods, abilParts, mods, itemMods, level }
   const attacks = [
     ...armas
       .filter((item) => equipadas.has(item.id))
@@ -468,16 +506,29 @@ export function buildSheet({ sheet, items = [], gear = {}, vitals = {}, itemMods
     spellRank = rankConj
     const atributo = conj.ability ?? 'int'
     const partes = [
-      { label: atributo.toUpperCase(), value: abil(atributo) },
+      ...abilParts(atributo),
       { label: `Proficiência (${rankLabel(rankConj)})`, value: profBonus(rankConj, level) },
     ]
-    spellDc = stat('DC de magia', [{ label: 'Base', value: 10 }, ...partes], { dc: true, ability: atributo }, mods)
-    spellAttack = stat('Ataque de magia', partes, { check: true, attack: true, ability: atributo }, mods)
+    spellDc = stat(
+      'DC de magia',
+      [{ label: 'Base', value: 10 }, ...partes, ...manual('spellDc')],
+      { dc: true, ability: atributo },
+      mods,
+    )
+    spellAttack = stat(
+      'Ataque de magia',
+      [...partes, ...manual('spellAttack')],
+      { check: true, attack: true, ability: atributo },
+      mods,
+    )
   }
 
   /* ------------------------------------------------------------------ HP */
 
-  const hpMax = Math.max(1, num(sheet.hpMax, 1))
+  /* O teto da barra também aceita modificador manual — é o que resolve o feat
+     de resistência que o motor não conhece. Piso de 1: personagem com PV máximo
+     zero não existe, nem depois de um modificador negativo exagerado. */
+  const hpMax = Math.max(1, num(sheet.hpMax, 1) + total('hpMax'))
   const hp = vitals.hp == null ? hpMax : Math.max(0, Math.min(hpMax, num(vitals.hp, hpMax)))
 
   return {
@@ -486,7 +537,12 @@ export function buildSheet({ sheet, items = [], gear = {}, vitals = {}, itemMods
     hp,
     tempHp: Math.max(0, num(vitals.tempHp, 0)),
     abilities,
-    abilityMods: Object.fromEntries(Object.keys(abilities).map((k) => [k, abil(k)])),
+    abilityMods: abilMods,
+    /* O atributo também se explica: a célula abre o breakdown e mostra o que
+       veio da ficha e o que o jogador declarou. */
+    abilityStats: Object.fromEntries(
+      Object.keys(abilities).map((k) => [k, stat(k.toUpperCase(), abilParts(k), {}, mods)]),
+    ),
 
     ac,
     saves,
@@ -505,12 +561,16 @@ export function buildSheet({ sheet, items = [], gear = {}, vitals = {}, itemMods
 
     /* Deslocamento é número da ficha; a penalidade da armadura só entra quando
        a Força não alcança o requisito, igual à de teste. `hindering` entra
-       sempre — é o que o traço diz. */
-    speed: velocidade(num(sheet.speed, 0), {
-      armadura,
-      forcaFalta,
-      hindering: traco('hindering'),
-    }),
+       sempre — é o que o traço diz. O modificador manual vem depois de tudo, e
+       o piso é zero: parado é estado que existe na mesa, negativo não. */
+    speed: Math.max(
+      0,
+      velocidade(num(sheet.speed, 0), {
+        armadura,
+        forcaFalta,
+        hindering: traco('hindering'),
+      }) + total('speed'),
+    ),
 
     conditions: vitals.conditions ?? {},
     conditionMods: mods,
@@ -601,11 +661,14 @@ export function focusPool(sheet, vitals = {}) {
  * nível, e **reduz Doomed em 1 — Doomed não zera**. Wounded não é tocado aqui:
  * ele some quando o HP volta ao máximo, não pelo descanso.
  */
-export function nightRest(sheet, vitals = {}) {
+export function nightRest(sheet, vitals = {}, statMods = []) {
   if (!sheet) return null
   const level = Math.max(1, num(sheet.level, 1))
-  const hpMax = Math.max(1, num(sheet.hpMax, 1))
-  const cura = Math.max(level, abilityMod(sheet.abilities?.con) * level)
+  /* O mesmo PV máximo que `buildSheet` mostra, com o mesmo modificador manual:
+     descansar até o teto e ver a barra cheia têm de ser a mesma coisa. */
+  const hpMax = Math.max(1, num(sheet.hpMax, 1) + statModTotal(statMods, 'hpMax'))
+  const con = abilityMod(sheet.abilities?.con) + statModTotal(statMods, 'abil:con')
+  const cura = Math.max(level, con * level)
 
   const conditions = { ...(vitals.conditions ?? {}) }
   const doomed = num(conditions.doomed, 0)

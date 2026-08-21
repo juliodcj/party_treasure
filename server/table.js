@@ -51,6 +51,9 @@ export const TABLE_ACTIONS = new Set([
   'EQUIP_ITEM',
   'UNEQUIP_ITEM',
   'SET_ITEM_MODS',
+  // Modificador manual em número da ficha (CA, perícia, deslocamento…): sai do
+  // botão no fim do Resumo.
+  'SET_STAT_MODS',
   // Ficha de personagem. Vincular/atualizar/remover só sai da tela do Mestre
   // (D14), mas quem barra isso é a tela: sem papéis e sem login, qualquer
   // aparelho pode despachar qualquer uma — o histórico registra quem foi.

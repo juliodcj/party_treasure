@@ -307,19 +307,25 @@ player = {
       { label: 'Giant Instinct', atk: 0, dmg: 0, extraDice: 1 },
     ],
   },
+
+  statMods: [                       // por NÚMERO da ficha, não por item (§9.1)
+    { label: 'Bênção de Torag', target: 'ac', value: 1, enabled: true },
+    { label: 'Fúria', target: 'abil:str', value: 2, enabled: false },
+  ],
 }
 ```
 
 **Migração:** mesa está na `version: 5`; `src/state/migrations.js` aplica em
 cadeia sem descartar. Acrescentar a `6`: `sheet: null`, `vitals` padrão, `gear`
 vazio, `itemMods: {}`. Os semeados Valeros/Seelah/Ezren viram o caso de teste do
-estado "sem ficha".
+estado "sem ficha". A `7` acrescenta `statMods: []`, e só isso — nenhum número
+de mesa muda por causa dela.
 
 **Ações novas do reducer:** `IMPORT_SHEET` `UPDATE_SHEET` `REMOVE_SHEET`
 `APPLY_DAMAGE` `APPLY_HEAL` `SET_TEMP_HP` `SET_CONDITION` `CLEAR_CONDITIONS`
 `EQUIP_ITEM` `UNEQUIP_ITEM` `SET_ITEM_MODS` `TOGGLE_SHIELD_RAISED` `SET_SHIELD_HP`
 `SET_FOCUS` `USE_SPELL_SLOT` `PREPARE_SPELL` `ADD_SPELL` `REMOVE_SPELL` `REST`
-`TOGGLE_FAVORITE`.
+`TOGGLE_FAVORITE` `SET_STAT_MODS`.
 
 ---
 
@@ -369,6 +375,42 @@ Large Greatpick — Ataque +7
   Rage (manual)             +0
   Frightened (status)       −0
 ```
+
+### 9.1 Modificador manual em número da ficha
+
+O modificador de item (D6) resolve a arma; o resto da ficha tem o irmão dele,
+`player.statMods`, e a mesma regra: o app não chuta, o jogador declara, e a
+declaração aparece como parcela rotulada — `Bênção de Torag (manual) +1`.
+
+O alvo é uma chave com prefixo, definida em `src/lib/statMods.js`:
+
+```
+abil:str … abil:cha · ac · save:fortitude|reflex|will · perception
+speed · hpMax · classDc · spellDc · spellAttack · skill:<chave da perícia>
+```
+
+Três decisões que não são óbvias e valem estar escritas:
+
+- **Atributo se espalha.** `abil:str` entra em toda estatística que depende de
+  Força — perícia, ataque, dano, requisito de armadura, metade do `propulsive`.
+  É o que um ponto de Força faz; valer só na célula do Resumo seria mostrar um
+  número que não é usado em lugar nenhum.
+- **DEX na CA é parcela única.** O limite de Destreza da armadura vale para o
+  total, então a CA soma primeiro e capa depois. Separar as duas parcelas
+  mostraria uma soma que o teto já cortou.
+- **`hpMax` é acertado nos dois lados.** O motor mostra a barra e o reducer
+  limita a cura; se só um deles enxergasse o modificador, curar pararia num
+  número diferente do que está escrito na tela.
+
+**Liga e desliga, não apaga.** A caixa na linha do Resumo — a mesma da magia
+preparada — desliga o modificador: ele continua guardado, com rótulo e número, e
+para de entrar em conta. É o caso da Fúria, que começa e acaba várias vezes por
+combate. `enabled` ausente é ligado, para o que foi gravado antes da caixa
+existir continuar valendo.
+
+Alvo gravado que deixou de existir — a perícia de Lore que uma reimportação
+levou — **não some**: continua na lista com a chave que veio, e não muda número
+nenhum. Modificador sem rótulo não é gravado.
 
 **Regra de proficiência** (fonte de erro mais comum):
 
@@ -515,8 +557,11 @@ ficha vai em `src/screens/CharacterSheet/`, prefixo CSS `.charsheet__`.
 gerenciamento · atributos · defesas (CA, escudo, três salvamentos) · outras
 estatísticas (percepção, deslocamento, tamanho, DC de classe, DC e ataque de
 magia) · perícias com grau e bônus · proficiências de arma e armadura ·
-resistências, sentidos, idiomas · rodapé com data da importação. Todo número é
-tocável e abre o breakdown. O botão **Atualizar** do rodapé não importa aqui (D14):
+resistências, sentidos, idiomas · **modificadores manuais** (§9.1), cada um com
+a caixa de ligar/desligar e o botão "Adicionar modificador" no fim da aba ·
+rodapé com data da importação. Todo
+número é tocável e abre o breakdown — o atributo também, que é onde se vê o que
+foi declarado nele. O botão **Atualizar** do rodapé não importa aqui (D14):
 leva para a linha do personagem na tela do Mestre.
 
 **Ataques** — montada do inventário: todas as armas, **as equipadas primeiro**.

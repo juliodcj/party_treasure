@@ -11,9 +11,10 @@
  * `hp = sheet.hpMax` no `IMPORT_SHEET`.
  *
  * `vitals` sobrevive à reimportação e à remoção da ficha — é fato de mesa, não
- * cálculo. `gear`, `itemMods` e `featNotes` idem: o que a pessoa está vestindo,
- * o que o mestre concedeu e o texto que ela mesma escreveu para um feat que os
- * packs não conhecem não se perdem porque a ficha foi trocada.
+ * cálculo. `gear`, `itemMods`, `statMods` e `featNotes` idem: o que a pessoa
+ * está vestindo, o que o mestre concedeu, o modificador que ela declarou e o
+ * texto que ela mesma escreveu para um feat que os packs não conhecem não se
+ * perdem porque a ficha foi trocada.
  */
 export function emptySheetFields() {
   return {
@@ -36,6 +37,7 @@ export function emptySheetFields() {
     },
     gear: { wornArmorId: null, heldShieldId: null, equippedWeaponIds: [] },
     itemMods: {},
+    statMods: [],
     featNotes: {},
   }
 }
@@ -52,6 +54,7 @@ export function withSheetFields(player) {
     vitals: { ...empty.vitals, ...(player.vitals ?? {}) },
     gear: { ...empty.gear, ...(player.gear ?? {}) },
     itemMods: player.itemMods ?? {},
+    statMods: Array.isArray(player.statMods) ? player.statMods : [],
     featNotes: player.featNotes ?? {},
   }
 }
@@ -88,6 +91,14 @@ const MIGRATIONS = {
   5: (state) => ({
     ...state,
     version: 6,
+    players: state.players.map(withSheetFields),
+  }),
+  // O modificador manual saiu do item e passou a valer para qualquer número da
+  // ficha. Todo jogador ganha a lista vazia — quem já está na mesa continua
+  // exatamente como estava, com os mesmos números de sempre.
+  6: (state) => ({
+    ...state,
+    version: 7,
     players: state.players.map(withSheetFields),
   }),
 }

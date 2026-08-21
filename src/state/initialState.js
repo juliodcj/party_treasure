@@ -45,7 +45,7 @@ export const TABLE_KEYS = ['version', 'settings', 'history', 'players', 'campaig
  */
 export function createInitialState() {
   return comFichasDeExemplo({
-    version: 6,
+    version: 7,
     // Config da mesa: nome, livros que o mestre possui e remaster/legado,
     // persistida e compartilhada por todas as telas (não é um filtro por aba,
     // como os outros). O nome nasce vazio: quem batiza a mesa é o mestre.

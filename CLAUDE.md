@@ -10,6 +10,19 @@ Este arquivo é o que precisa ser obedecido ao escrever código.
   em inglês — é o vocabulário publicado. **Moldura nossa é traduzida**: rótulo de
   categoria, título de tela, botão, mensagem.
 
+## Texto de tela
+
+**O app não se explica dentro do app.** Nada de parágrafo de ajuda, nota
+didática, "isto serve para…" ou instrução de uso na folha. A tela mostra o que
+existe, o rótulo do botão diz o que ele faz, e o resto se aprende usando. A
+explicação de como uma peça funciona e por que ela existe vai para o README ou
+para `docs/` — não para a tela que a pessoa abre no meio da mesa.
+
+Continua valendo como texto de tela, e não é explicação: rótulo, título, botão,
+estado vazio ("Nenhum modificador manual."), e o aviso que muda a decisão de
+quem está lendo — "Quebrado: o escudo parou de dar bônus", "Cura 12 PV e zera o
+HP temporário". Isso é informação de mesa.
+
 ## Sistema visual
 
 A referência completa, com o porquê de cada valor, está em

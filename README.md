@@ -415,7 +415,7 @@ formatos variantes, runas (categoria própria, derivada do `usage`
 
 ### 5.8 As estruturas que a ficha trouxe
 
-A ficha acrescentou quatro campos a cada jogador na mesa. Todos nascem vazios,
+A ficha acrescentou cinco campos a cada jogador na mesa. Todos nascem vazios,
 para personagem sem ficha ser caso de primeira classe e não estado de transição.
 
 | Campo | O que guarda |
@@ -424,15 +424,17 @@ para personagem sem ficha ser caso de primeira classe e não estado de transiç�
 | `vitals` | o que está acontecendo com o personagem: `hp`, `tempHp`, `conditions`, `focusPoints`, `shieldHp`, `shieldRaised`, `slotsUsed`, `preparedSpells`, `extraSpells`, `bookSpells`, `forgottenSpells`, `extraFocusSpells`, `forgottenFocusSpells`, `favorites` |
 | `gear` | os slots do que está vestido: `wornArmorId`, `heldShieldId`, `equippedWeaponIds[]` |
 | `itemMods` | por item, a lista de modificadores manuais `{ label, atk, dmg, extraDice }` |
+| `statMods` | por número da ficha, a lista de modificadores manuais `{ label, target, value, enabled }` |
 
 Três detalhes que são decisão, não descuido:
 
 - **`hp: null` de propósito.** Sem ficha não existe HP máximo, e zero seria
   mentira — um personagem sem ficha não está morrendo. Quem importa ficha recebe
   `hp = sheet.hpMax` na hora.
-- **`vitals`, `gear` e `itemMods` sobrevivem** à reimportação e até à remoção da
-  ficha. São fato de mesa: o que a pessoa está vestindo e o que o mestre concedeu
-  não se perdem porque a ficha foi trocada.
+- **`vitals`, `gear`, `itemMods` e `statMods` sobrevivem** à reimportação e até
+  à remoção da ficha. São fato de mesa: o que a pessoa está vestindo, o que o
+  mestre concedeu e o modificador que ela declarou não se perdem porque a ficha
+  foi trocada.
 - **Slots nomeados, não uma marca `equipped` em cada item.** Com slot, "duas
   armaduras vestidas ao mesmo tempo" não é um estado representável.
 
@@ -441,7 +443,7 @@ instâncias, então o modificador vale para a pilha inteira — não dá para te
 adaga com runa e outra sem. Mudar isso reescreveria compra, venda, transferência
 e a Loja.
 
-**Versão do schema: 6.** `state/migrations.js` migra em cadeia da versão de
+**Versão do schema: 7.** `state/migrations.js` migra em cadeia da versão de
 origem até a atual, e **nunca descarta a mesa** porque um campo mudou de forma.
 
 ---
@@ -567,9 +569,27 @@ quando uma condição mexeu nele.
 | Deslocamento | `speed da ficha + penalidade da armadura (se aplicável)` |
 | Reserva de foco | um ponto por magia de foco, no máximo 3 |
 
+Em cima de qualquer linha desta tabela ainda entram os modificadores manuais que
+apontam para ela — é o parágrafo abaixo.
+
 **Destreinado não soma o nível.** É o erro mais comum do PF2e: a Arcana de um
 personagem de nível 1 e destreinado é +0, não +1. A regra mora num lugar só
 (`profBonus`) e vale para perícia, salvamento, arma e armadura.
+
+**Onde o app não sabe, ele admite.** O motor não conhece Rage, Giant Instinct,
+weapon specialization nem a interação de feat que só o livro explica. Para isso
+existem os modificadores manuais, em dois níveis: o de item (na linha da arma) e
+o da ficha — o botão **Adicionar modificador**, no fim da aba Resumo, que põe um
+ajuste fixo, positivo ou negativo, em qualquer número: atributo, CA, salvamento,
+percepção, deslocamento, PV máximo, DCs e perícias. Ele entra com o rótulo que a
+pessoa escreveu e aparece no detalhamento como qualquer outra parcela.
+Modificador em atributo vale para tudo que depende dele — perícia, ataque e dano
+junto. Os alvos vivem em `src/lib/statMods.js`.
+
+Cada um **liga e desliga pela caixa na lista do Resumo**, como a magia
+preparada: desligado continua guardado, com o rótulo e o número, e não entra em
+conta nenhuma. É o que a Fúria pede — ela começa e acaba várias vezes por
+combate, e apagar para reescrever depois perderia o que já estava escrito.
 
 ### 6.4 Como o equipamento entra nos números
 

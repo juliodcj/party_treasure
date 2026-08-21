@@ -4,6 +4,7 @@ import { resolveStartingItems } from '../lib/startingGear.js'
 import { SELL_RATE } from '../config.js'
 import { emptySheetFields } from './migrations.js'
 import { focusPool, nightRest } from '../lib/sheet.js'
+import { normalizeStatMods, statModTotal } from '../lib/statMods.js'
 
 /*
  * As regras da mesa. Desde a Fase 3 quem roda este arquivo é o SERVIDOR, não o
@@ -197,7 +198,13 @@ const toTrimmed = (value) => {
    "é a mesma magia?". O `\t` não aparece em nome de magia; um `-` apareceria. */
 export const spellKey = (rank, name) => `${rank}\t${name}`
 
-const hpMaxOf = (player) => Math.max(1, Math.round(Number(player.sheet?.hpMax) || 1))
+/* O mesmo teto que a ficha mostra: o modificador manual em `hpMax` conta aqui
+   também, senão curar pararia num número diferente do que está na barra. */
+const hpMaxOf = (player) =>
+  Math.max(
+    1,
+    Math.round(Number(player.sheet?.hpMax) || 1) + statModTotal(player.statMods, 'hpMax'),
+  )
 
 /** Sem HP gravado, o personagem está inteiro — nunca em zero. */
 const hpNow = (player) => {
@@ -844,6 +851,25 @@ export function reducer(state, action) {
         }),
       }
 
+    /*
+     * Modificador manual em número da ficha — a mesma saída honesta do
+     * `SET_ITEM_MODS`, um degrau acima: em vez de valer para um item, vale para
+     * um número (a CA, um salvamento, uma perícia, o deslocamento). É o que
+     * cobre a interação de feat que o motor não percebe.
+     *
+     * A folha inteira chega de uma vez, como nas condições: acrescentar, mudar
+     * e tirar acontecem juntos ou não acontecem — em três despachos, um Wi-Fi
+     * oscilando deixaria a lista pela metade.
+     */
+    case 'SET_STAT_MODS':
+      return {
+        ...state,
+        players: mapPlayer(state.players, action.playerId, (player) => ({
+          ...player,
+          statMods: normalizeStatMods(action.mods),
+        })),
+      }
+
     // ------------------------------------------------------- HP e condições
 
     /* Dano come o HP temporário antes do real (§10.8), e o HP não passa de
@@ -917,7 +943,7 @@ export function reducer(state, action) {
     case 'REST':
       return withVitals(state, action.playerId, (vitals, player) => {
         if (!player.sheet) return null
-        const { curado, ...patch } = nightRest(player.sheet, vitals)
+        const { curado, ...patch } = nightRest(player.sheet, vitals, player.statMods)
         return {
           ...patch,
           /* "Repõe os slots preparados" (§10.7): a magia continua preparada,
