@@ -252,6 +252,19 @@ function withVitals(state, playerId, fn) {
   }
 }
 
+/* Registro de dano e cura: os dez últimos, o mais recente primeiro.
+ *
+ * É fato de mesa — aconteceu, todo mundo vê, e não se recalcula do HP atual —,
+ * por isso mora em `vitals` e viaja junto com o resto da mesa. Só entra o que
+ * de fato mudou o personagem: pedir 20 de dano em quem tem 3 de HP registra 3,
+ * e "curar 0" não é evento nenhum. */
+const HP_LOG_MAX = 10
+
+function pushHpLog(vitals, kind, amount) {
+  const log = Array.isArray(vitals.hpLog) ? vitals.hpLog : []
+  return [{ kind, amount, at: Date.now() }, ...log].slice(0, HP_LOG_MAX)
+}
+
 export function reducer(state, action) {
   switch (action.type) {
     case 'SET_SETTINGS':
@@ -880,9 +893,13 @@ export function reducer(state, action) {
         if (!amount || !player.sheet) return null
         const fromTemp = Math.min(vitals.tempHp ?? 0, amount)
         const hp = hpNow(player)
+        const hpDepois = Math.max(0, hp - (amount - fromTemp))
+        const aplicado = fromTemp + (hp - hpDepois)
+        if (!aplicado) return null
         return {
           tempHp: (vitals.tempHp ?? 0) - fromTemp,
-          hp: Math.max(0, hp - (amount - fromTemp)),
+          hp: hpDepois,
+          hpLog: pushHpLog(vitals, 'dano', aplicado),
         }
       })
 
@@ -890,7 +907,10 @@ export function reducer(state, action) {
       return withVitals(state, action.playerId, (vitals, player) => {
         const amount = positive(action.amount)
         if (!amount || !player.sheet) return null
-        return { hp: Math.min(hpMaxOf(player), hpNow(player) + amount) }
+        const hp = hpNow(player)
+        const hpDepois = Math.min(hpMaxOf(player), hp + amount)
+        if (hpDepois === hp) return null
+        return { hp: hpDepois, hpLog: pushHpLog(vitals, 'cura', hpDepois - hp) }
       })
 
     /* HP temporário não empilha: vale o maior entre o que já tinha e o novo
@@ -898,7 +918,10 @@ export function reducer(state, action) {
     case 'SET_TEMP_HP':
       return withVitals(state, action.playerId, (vitals) => {
         const value = Math.max(0, Math.round(Number(action.value) || 0))
-        return { tempHp: value === 0 ? 0 : Math.max(vitals.tempHp ?? 0, value) }
+        const atual = vitals.tempHp ?? 0
+        const novo = value === 0 ? 0 : Math.max(atual, value)
+        if (novo === atual) return null
+        return { tempHp: novo, hpLog: pushHpLog(vitals, 'temp', novo) }
       })
 
     /* Condição em zero (ou desmarcada) some do objeto em vez de virar `0`:

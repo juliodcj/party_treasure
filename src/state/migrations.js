@@ -22,6 +22,7 @@ export function emptySheetFields() {
     vitals: {
       hp: null,
       tempHp: 0,
+      hpLog: [],
       conditions: {},
       focusPoints: 0,
       shieldHp: null,

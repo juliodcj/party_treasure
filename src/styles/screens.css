@@ -1745,11 +1745,23 @@
 
 /* ---------------------------------------------------------------- folha de HP */
 
+/* Linha de cima: o HP atual à esquerda, ocupando o que sobra, e a pastilha de
+   HP temporário à direita — que só existe quando há temporário para mostrar. */
+.hp-sheet__top {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
 .hp-sheet__now {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: baseline;
   gap: 6px;
-  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--surface-sunken);
 }
 
 .hp-sheet__hp {
@@ -1765,19 +1777,107 @@
   color: var(--text-3);
 }
 
-.hp-sheet__temp {
-  font-size: var(--t-meta);
-  font-weight: 700;
-  color: var(--accent-ink);
-  background: var(--accent-tint);
-  border-radius: var(--r-pill);
-  padding: 2px 8px;
+/* "Curar tudo" mora dentro da caixa do HP, encostado na direita: é a cura que
+   não precisa de número. */
+.hp-sheet__full {
+  margin-left: auto;
+  align-self: center;
 }
 
-/* Campo de quantia, logo abaixo do "Quanto?". */
-.hp-sheet__amount {
-  margin-top: 6px;
+/* Pastilha de HP temporário: largura do conteúdo, nunca estica. */
+.hp-sheet__temp-badge {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  background: var(--accent-tint);
+}
+
+.hp-sheet__temp-label {
+  color: var(--accent-ink);
+}
+
+.hp-sheet__temp-value {
+  font-size: var(--t-lg);
+  font-weight: 700;
+  color: var(--accent-ink);
   font-variant-numeric: tabular-nums;
+}
+
+/* Registro dos dez últimos danos e curas, aberto pelo relógio do cabeçalho. */
+.hp-sheet__log {
+  margin-bottom: 14px;
+  padding: 4px 12px;
+  border-radius: var(--r-md);
+  background: var(--surface-sunken);
+}
+
+.hp-sheet__log-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.hp-sheet__log-row + .hp-sheet__log-row {
+  border-top: 1px solid var(--line);
+}
+
+.hp-sheet__log-kind {
+  font-size: var(--t-sm);
+  color: var(--text-body);
+}
+
+.hp-sheet__log-amount {
+  font-size: var(--t-sm);
+  font-weight: 700;
+  color: var(--accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.hp-sheet__log-amount--dano {
+  color: var(--danger-ink);
+}
+
+.hp-sheet__log-time {
+  margin-left: auto;
+  font-size: var(--t-meta);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* "Quanto?", o campo e os três atalhos, tudo numa linha só. */
+.hp-sheet__amount-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.hp-sheet__amount {
+  width: 56px;
+  flex: 0 0 auto;
+  text-align: center;
+  padding: 8px 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Atalho de digitação: soma no campo ao lado, não aplica nada. Retângulo de
+   raio pequeno para não competir com as pílulas de ação. */
+.hp-sheet__quick {
+  flex: 1;
+  min-width: 0;
+  padding: 6px;
+  border-radius: var(--r-sm);
+}
+
+.hp-sheet__quick--temp {
+  flex: 0 0 auto;
+  padding: 6px 8px;
+  font-size: var(--t-meta);
 }
 
 /* Acrescentar e Reduzir agem as duas, então a positiva fica à esquerda — mesma
@@ -1798,28 +1898,25 @@
   gap: 8px;
 }
 
-.hp-sheet__temp-head {
+.hp-sheet__temp-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
 }
 
-.hp-sheet__temp-now {
-  font-size: var(--t-sm);
-  font-weight: 700;
-  color: var(--accent-ink);
+.hp-sheet__temp-amount {
+  width: 44px;
+  flex: 0 0 auto;
+  text-align: center;
+  padding: 6px 4px;
   font-variant-numeric: tabular-nums;
 }
 
-.hp-sheet__temp-row {
-  display: flex;
-  gap: 8px;
-}
-
-.hp-sheet__temp-row .input {
+.hp-sheet__temp-apply {
   flex: 1;
   min-width: 0;
+  padding: 6px 8px;
+  font-size: var(--t-meta);
 }
 
 /* ------------------------------------------------------------------ escudo */
